@@ -1,0 +1,37 @@
+# Changelog
+
+All notable changes to `@rexezuge/*` packages are documented here. Packages are
+versioned in lockstep.
+
+## 1.0.0
+
+Initial release of the converged kit, distilled from eight worker monorepos
+(AWS-AccessBridge, CalDAV-Bridge, Durable-DAV, Durable-DAV-Router, Edge-Git,
+Edge-Sonic, Mail-Meow, Mail-Otter):
+
+- **`@rexezuge/errors`** — catalog-driven error taxonomy. Per-status classes are
+  derived from a single `CATALOG` table (no drift between status, code, and
+  default message possible). `ServiceError` carries `status`, `type`,
+  `retryable`, `expose`, and `cause` as public fields. `RetryableError` /
+  `NonRetryableError` markers and `ServiceError.from()` / `toResponse()`
+  normalize error handling at boundaries.
+- **`@rexezuge/runtime`** — DI container with branded tokens, request scope,
+  `AppConfiguration` with `EnvParser`, `AbstractEntrypointWorker` /
+  `AbstractDurableObjectWorker` / `AbstractQueueWorker` / `AbstractWorkflowWorker`,
+  logger, `KvCache`.
+- **`@rexezuge/shared`** — pure utilities that were duplicated across repos:
+  UUID, Timestamp, Crypto, Base64 (single non-doubling codec), `CursorCodec`,
+  SSRF policy, `PasswordFingerprint`, `SubrequestMeter`, and friends.
+- **`@rexezuge/i18n`** — backend string bundle with the shared 12-locale table.
+- **`@rexezuge/d1`** — one retry engine (exponential backoff, dual failure
+  shapes), error classifier with retryable-first ordering, straight-line
+  `BaseDAO` (`run`/`first`/`all`/`count`/`batch`/`deleteOlderThan`), AES-GCM.
+  Cursor pagination and subrequest budgeting moved out of the DAO into a
+  utility and an injectable port respectively.
+- **`@rexezuge/identity`** — `UserIdentityService` carrying the strictest
+  invariants found in the family (frozen email anchor, verified-address
+  semantics), canonical `users`/`user_emails` migrations, upgrade test fixture.
+- **`@rexezuge/web`** — themed UI primitives and normalized React hooks.
+- **`@rexezuge/tooling`** — ESLint config factory, vitest/vite bases, repo
+  scripts (god-files guard, spa-shell verification, wrangler config, locale and
+  migration validation), GitHub Actions workflow templates.

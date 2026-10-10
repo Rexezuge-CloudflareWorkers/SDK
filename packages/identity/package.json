@@ -1,0 +1,37 @@
+{
+  "name": "@rexezuge/identity",
+  "version": "1.0.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@rexezuge/d1": "workspace:*",
+    "@rexezuge/errors": "workspace:*",
+    "@rexezuge/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.4",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
+  }
+}

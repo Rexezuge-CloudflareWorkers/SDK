@@ -1,0 +1,13 @@
+import { HttpServiceError } from './HttpServiceError';
+
+/**
+ * 429 — the caller exceeded its rate budget. Retrying is not just futile but
+ * punished; honor `retryAfter`-style backoff at the caller.
+ */
+class RateLimitedError extends HttpServiceError<'rateLimited'> {
+  constructor(message?: string) {
+    super('rateLimited', message);
+  }
+}
+
+export { RateLimitedError };
