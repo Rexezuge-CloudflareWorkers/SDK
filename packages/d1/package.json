@@ -25,7 +25,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@rexezuge/errors": "workspace:*"
+    "@rexezuge/errors": "workspace:*",
+    "@rexezuge/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "26.6.4",
