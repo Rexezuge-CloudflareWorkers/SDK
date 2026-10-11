@@ -5,9 +5,18 @@ import { FixedClock, SystemClock } from './Clock';
 // Converged TimestampUtil: full method set with an injectable Clock seam.
 describe('TimestampUtil', () => {
   it('reads the current time in milliseconds and seconds', () => {
+    // Bracketed rather than equal: a wall-clock read taken before and after the
+    // assertion can straddle a second boundary, and a test that assumes two
+    // independent Date.now() reads agree in every unit fails on nothing but
+    // clock granularity.
     const before = Date.now();
     expect(TimestampUtil.getCurrentUnixTimestampInMilliseconds()).toBeGreaterThanOrEqual(before);
-    expect(TimestampUtil.getCurrentUnixTimestampInSeconds()).toBe(Math.floor(Date.now() / 1000));
+    expect(TimestampUtil.getCurrentUnixTimestampInSeconds()).toBeGreaterThanOrEqual(
+      Math.floor(before / 1000),
+    );
+    expect(TimestampUtil.getCurrentUnixTimestampInSeconds()).toBeLessThanOrEqual(
+      Math.floor(Date.now() / 1000),
+    );
   });
 
   it('honors an injected clock for both readers', () => {
@@ -40,6 +49,12 @@ describe('TimestampUtil', () => {
 
 describe('SystemClock', () => {
   it('tracks Date.now()', () => {
-    expect(new SystemClock().now()).toBe(Date.now());
+    // Bracketed rather than equal: two Date.now() reads a millisecond apart
+    // are not the same number, and a test that assumes they are fails on
+    // nothing but clock granularity (CI caught this one).
+    const before = Date.now();
+    const now = new SystemClock().now();
+    expect(now).toBeGreaterThanOrEqual(before);
+    expect(now).toBeLessThanOrEqual(Date.now());
   });
 });
