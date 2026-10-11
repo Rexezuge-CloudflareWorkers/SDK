@@ -82,6 +82,18 @@ export const KIT_PACKAGE_FOR: Readonly<Record<string, string>> = {
 };
 
 /**
+ * DD's i18n barrel names → the kit's canonical ones. Shells, not re-exports:
+ * a repo keeping `BACKEND_STRINGS` locally would be a second source of truth
+ * for the locale table the kit's parity tests pin.
+ */
+export const I18N_RENAMES: Readonly<Record<string, string>> = {
+  BACKEND_STRINGS: 'LOCALE_STRINGS',
+  SUPPORTED_BACKEND_LOCALES: 'SUPPORTED_LOCALES',
+  getBackendStrings: 'getLocalizedStrings',
+  normalizeBackendLocale: 'normalizeLocale',
+};
+
+/**
  * DAO retry-surface renames (method call sites and the helper names).
  *
  * `findById` is deliberately absent: it is a BaseDAO *static* in the one repo

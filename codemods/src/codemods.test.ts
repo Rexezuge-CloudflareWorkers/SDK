@@ -94,6 +94,17 @@ describe('renameImports', () => {
 });
 
 describe('renameSymbols', () => {
+  it('renames the i18n barrel onto the kit names', () => {
+    // The kit's canonical locale table; a repo keeping its own BACKEND_STRINGS
+    // would be a second source of truth for the parity tests.
+    const source = "import { BACKEND_STRINGS, getBackendStrings } from '@rexezuge/i18n';\nconst strings = getBackendStrings('en');";
+    const result = renameSymbols(source);
+    expect(result.output).toContain("import { LOCALE_STRINGS, getLocalizedStrings } from '@rexezuge/i18n';");
+    expect(result.output).toContain('getLocalizedStrings(\'en\')');
+    expect(result.changes).toBeGreaterThanOrEqual(3);
+  });
+
+
   it('renames this-call sites', () => {
     expect(renameSymbols('await this.withRetry(() => run(), "create user");').output).toContain('await this.run(');
     expect(renameSymbols('await this.firstWithRetry(stmt, "get user");').output).toContain('await this.first(');
