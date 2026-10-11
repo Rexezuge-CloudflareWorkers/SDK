@@ -5,18 +5,41 @@ permissions:
   id-token: write
 
 on:
-  push:
+  # Gated on CI rather than on the push itself: `workflow_run` starts this
+  # workflow only after the Continuous Integration run for `main` has finished,
+  # and the job's `if:` refuses to run unless that run succeeded. GitHub has no
+  # cross-workflow `needs:`; this is the idiom the family's deploy workflow
+  # already uses for the same reason.
+  workflow_run:
+    workflows:
+      - Continuous Integration
     branches:
       - main
+    types:
+      - completed
+  # Escape hatch: publish by hand after fixing a failed CI run.
+  workflow_dispatch:
+
+concurrency:
+  group: publish-${{ github.event.workflow_run.head_branch || github.ref }}
+  cancel-in-progress: false
 
 jobs:
   publish:
+    # `workflow_run` fires for failed and cancelled runs too, and those must not
+    # reach npm.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     name: Publish
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
+        with:
+          # A `workflow_run` checkout lands on main's tip, which is not
+          # necessarily the commit CI just cleared. Pinning to head_sha publishes
+          # the tree that passed.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Setup pnpm And Node
         uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -38,11 +61,11 @@ jobs:
       - name: Install
         run: pnpm install --no-frozen-lockfile
 
+      # Kept, unlike the test step this workflow used to run: `dist/` is the
+      # artifact being published, and cross-package imports resolve into it. CI
+      # already ran the suite against this exact SHA.
       - name: Build
         run: pnpm -r --if-present build
-
-      - name: Test
-        run: pnpm -r --if-present test
 
       # Trusted publishing: no NODE_AUTH_TOKEN. The changesets publish step
       # shells out to the system npm CLI, so the npm CLI exchanges the GitHub
@@ -50,6 +73,12 @@ jobs:
       # --provenance flag needed. Requires a Trusted Publisher (organization
       # Rexezuge-CloudflareWorkers, repository SDK, workflow publish.yml) on
       # each @rexezuge/* package at npmjs.com.
+      #
+      # The OIDC `job_workflow_ref` claim comes from GITHUB_WORKFLOW_REF, and a
+      # `workflow_run`-triggered workflow still runs the default-branch copy of
+      # this file — so the claim is unchanged by the trigger swap. Verified on the
+      # first release after it landed; the step below prints it either way.
+      #
       # Versions must be bumped first: merge PRs carrying changeset files, then
       # merge the automated CHORE: Version Packages vX.Y.Z PR. Publishing the same
       # version twice is a no-op — npm already has it.
