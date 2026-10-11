@@ -1,5 +1,13 @@
 # @rexezuge/d1
 
+## 1.0.9
+
+### Patch Changes
+
+- Updated dependencies [7c76159]
+  - @rexezuge/errors@1.0.9
+  - @rexezuge/shared@1.0.9
+
 ## 1.0.8
 
 ### Patch Changes

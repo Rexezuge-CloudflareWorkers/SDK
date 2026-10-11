@@ -1,5 +1,9 @@
 # @rexezuge/i18n
 
+## 1.0.9
+
+No changes in this release.
+
 ## 1.0.8
 
 No changes in this release.
