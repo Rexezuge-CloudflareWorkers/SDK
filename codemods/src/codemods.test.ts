@@ -21,6 +21,15 @@ describe('renameImports', () => {
     }
   });
 
+  it('moves Durable-DAV\'s shared/net URL-policy subtree', () => {
+    // The kit converged DD's RemoteUrlPolicy, so `net` is a kernel subtree:
+    // its barrel exports (normalizeRemoteUrl, RemoteUrlRejectedError,
+    // MAX_REDIRECTS) all live at the kit's shared root.
+    const result = renameImports("import { normalizeRemoteUrl } from '@dav/shared/net';", '@dav');
+    expect(result.output).toBe("import { normalizeRemoteUrl } from '@rexezuge/shared';");
+    expect(result.unmapped).toStrictEqual([]);
+  });
+
   it('moves the i18n bundle to its own package', () => {
     const result = renameImports("import { SUPPORTED_LOCALES } from '@dav/shared/i18n';", '@dav');
     expect(result.output).toBe("import { SUPPORTED_LOCALES } from '@rexezuge/i18n';");
