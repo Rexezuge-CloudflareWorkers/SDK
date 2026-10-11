@@ -25,12 +25,16 @@ export const WHOLE_PACKAGE_MAP: Readonly<Record<string, string>> = {
  *   operator sees it instead of a silent half-migration.
  */
 export const SUBPATH_RULES: Readonly<Record<string, Record<string, string | null | undefined> & { default?: string | null }>> = {
-  // shared keeps constants/model/schema; utils and the i18n bundle move.
+  // shared keeps constants/model/schema; utils, the i18n bundle and the URL
+  // policy subtree move.
   shared: {
     '/utils': '',
     '/utils/UUIDUtil': '',
     '/utils/TimestampUtil': '',
     '/i18n': '@rexezuge/i18n',
+    // Durable-DAV's `shared/net` barrel is the kit's RemoteUrlPolicy (the kit
+    // converged it, so `net` is a kernel subtree, not a business one).
+    '/net': '',
     '/constants': null,
     '/model': null,
     '/schema': null,
