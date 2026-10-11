@@ -30,7 +30,8 @@ repos adapt to it.**
 | `@rexezuge/web`           | React UI primitives, hooks (`useNotice`, `useSpaLanguage`, `useCurrentUser`), API client |
 | `@rexezuge/tooling`       | ESLint config factory, vitest/vite bases, scripts, GitHub Actions workflow templates |
 
-Packages are versioned in lockstep; a single version covers all eight.
+Packages are versioned in lockstep via Changesets; a single version covers all
+eight. See `.changeset/README.md` for how to add a changeset.
 
 ## Layout
 
@@ -53,6 +54,17 @@ pnpm run checks      # all of the above
 Every published version must pass the CI matrix: all eight consumer repos are
 typechecked, linted, and tested against the kit HEAD. No green matrix, no
 version.
+
+## Releasing
+
+```bash
+pnpm changeset            # PRs touching packages/* add one changeset file
+```
+
+Merging those PRs lets the `Version Packages` workflow open a
+`CHORE: Version Packages` PR that bumps every `@rexezuge/*` version together.
+Merge it, cut a GitHub Release, and the `Publish` workflow runs
+`pnpm changeset publish`.
 
 ## Consumer adoption
 

@@ -17,9 +17,13 @@
     "lint": "eslint --fix --quiet .",
     "lint:check": "eslint --quiet .",
     "checks": "pnpm run build && pnpm run typecheck && pnpm run test",
-    "clean": "pnpm -r exec rm -rf dist"
+    "clean": "pnpm -r exec rm -rf dist",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "3.0.3",
     "@types/node": "26.6.4",
     "@vitest/coverage-v8": "4.1.11",
     "eslint": "10.11.0",
