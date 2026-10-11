@@ -3,9 +3,9 @@ import { HttpServiceError } from './HttpServiceError';
 /**
  * 400 — malformed or missing input. Retrying without a change always fails.
  */
-class BadRequestError extends HttpServiceError<'badRequest'> {
+class BadRequestError extends HttpServiceError<'BadRequest'> {
   constructor(message?: string) {
-    super('badRequest', message);
+    super('BadRequest', message);
   }
 }
 

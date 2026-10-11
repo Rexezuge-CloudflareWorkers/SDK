@@ -18,75 +18,75 @@ interface HttpErrorDefinition {
 }
 
 const CATALOG = {
-  badRequest: {
+  BadRequest: {
     status: 400,
     code: 'BAD_REQUEST',
     defaultMessage: 'The request could not be understood or was missing required parameters.',
     expose: true,
   },
-  unauthorized: {
+  Unauthorized: {
     status: 401,
     code: 'UNAUTHORIZED',
     defaultMessage: 'Authentication is required and has failed or has not yet been provided.',
     expose: true,
   },
-  forbidden: {
+  Forbidden: {
     status: 403,
     code: 'FORBIDDEN',
     defaultMessage: 'You do not have permission to perform this action.',
     expose: true,
   },
-  notFound: {
+  NotFound: {
     status: 404,
     code: 'NOT_FOUND',
     defaultMessage: 'The requested resource was not found.',
     expose: true,
   },
-  methodNotAllowed: {
+  MethodNotAllowed: {
     status: 405,
     code: 'METHOD_NOT_ALLOWED',
     defaultMessage: 'The requested method is not allowed for this resource.',
     expose: true,
   },
-  conflict: {
-    // Distinct from `badRequest` so callers can tell "invalid input" from
+  Conflict: {
+    // Distinct from `BadRequest` so callers can tell "invalid input" from
     // "that value is taken" — the latter never succeeds without a change.
     status: 409,
     code: 'CONFLICT',
     defaultMessage: 'The request conflicts with the current state of the resource.',
     expose: true,
   },
-  preconditionFailed: {
+  PreconditionFailed: {
     status: 412,
     code: 'PRECONDITION_FAILED',
     defaultMessage: 'A precondition for this request failed.',
     expose: true,
   },
-  payloadTooLarge: {
+  PayloadTooLarge: {
     status: 413,
     code: 'PAYLOAD_TOO_LARGE',
     defaultMessage: 'The request payload is larger than the server is willing to process.',
     expose: true,
   },
-  unsupportedMediaType: {
+  UnsupportedMediaType: {
     status: 415,
     code: 'UNSUPPORTED_MEDIA_TYPE',
     defaultMessage: 'The request payload format is not supported by this resource.',
     expose: true,
   },
-  rateLimited: {
+  RateLimited: {
     status: 429,
     code: 'RATE_LIMITED',
     defaultMessage: 'Too many requests — slow down and retry later.',
     expose: true,
   },
-  internalServerError: {
+  InternalServerError: {
     status: 500,
     code: 'INTERNAL_SERVER_ERROR',
     defaultMessage: 'The server encountered an internal error and was unable to complete your request.',
     expose: false,
   },
-  notImplemented: {
+  NotImplemented: {
     status: 501,
     code: 'NOT_IMPLEMENTED',
     defaultMessage: 'The server does not support the functionality required to fulfil this request.',
@@ -94,13 +94,13 @@ const CATALOG = {
   },
   // Upstream dependency failures: 502 is the honest status here, and the
   // retryable marker (not the status) is what schedules a retry.
-  badGateway: {
+  BadGateway: {
     status: 502,
     code: 'BAD_GATEWAY',
     defaultMessage: 'The server received an invalid response from an upstream service.',
     expose: false,
   },
-  serviceUnavailable: {
+  ServiceUnavailable: {
     status: 503,
     code: 'SERVICE_UNAVAILABLE',
     defaultMessage: 'The server is currently unable to handle the request — retry after a delay.',

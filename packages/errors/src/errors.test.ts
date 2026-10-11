@@ -42,8 +42,8 @@ describe('per-status errors', () => {
   it('derives status, type, and default message from the catalog', () => {
     const error = new NotFoundError();
     expect(error.status).toBe(404);
-    expect(error.type).toBe('notFound');
-    expect(error.message).toBe(CATALOG.notFound.defaultMessage);
+    expect(error.type).toBe('NotFound');
+    expect(error.message).toBe(CATALOG.NotFound.defaultMessage);
     expect(error.expose).toBe(true);
   });
 
@@ -67,7 +67,7 @@ describe('ServiceError.toErrorResponse', () => {
   it('emits the envelope for a client-safe error', () => {
     const payload = new BadRequestError('bad input').toErrorResponse();
     expect(payload.status).toBe(400);
-    expect(payload.body.Exception).toStrictEqual({ Type: 'badRequest', Message: 'bad input' });
+    expect(payload.body.Exception).toStrictEqual({ Type: 'BadRequest', Message: 'bad input' });
   });
 
   it('substitutes a generic message for non-exposing errors', () => {

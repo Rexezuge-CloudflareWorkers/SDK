@@ -3,9 +3,9 @@ import { HttpServiceError } from './HttpServiceError';
 /**
  * 500 — the catch-all server fault.
  */
-class InternalServerError extends HttpServiceError<'internalServerError'> {
+class InternalServerError extends HttpServiceError<'InternalServerError'> {
   constructor(message?: string, options?: { cause?: unknown }) {
-    super('internalServerError', message, options);
+    super('InternalServerError', message, options);
   }
 }
 

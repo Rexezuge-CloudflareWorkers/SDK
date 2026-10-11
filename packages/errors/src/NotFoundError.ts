@@ -3,9 +3,9 @@ import { HttpServiceError } from './HttpServiceError';
 /**
  * 404 — no such resource.
  */
-class NotFoundError extends HttpServiceError<'notFound'> {
+class NotFoundError extends HttpServiceError<'NotFound'> {
   constructor(message?: string) {
-    super('notFound', message);
+    super('NotFound', message);
   }
 }
 
