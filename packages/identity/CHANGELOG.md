@@ -1,5 +1,13 @@
 # @rexezuge/identity
 
+## 1.0.6
+
+### Patch Changes
+
+- @rexezuge/d1@1.0.6
+  - @rexezuge/errors@1.0.6
+  - @rexezuge/shared@1.0.6
+
 ## 1.0.5
 
 ### Patch Changes
