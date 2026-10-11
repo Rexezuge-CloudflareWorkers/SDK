@@ -79,7 +79,19 @@ async function decryptSecret(envelope: EncryptedEnvelope, encodedKey: string | u
   const key = await importKey(encodedKey);
   const iv: Uint8Array = base64ToBytes(envelope.iv);
   const ciphertext: Uint8Array = base64ToBytes(envelope.ciphertext);
-  const opened: ArrayBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv as BufferSource }, key, ciphertext as BufferSource);
+  let opened: ArrayBuffer;
+  try {
+    opened = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv as BufferSource }, key, ciphertext as BufferSource);
+  } catch {
+    // A wrong key and a tampered ciphertext are the same failure to GCM — it
+    // authenticates the tag and refuses — and both must land as a typed error.
+    // Without this the platform's `OperationError: The operation failed for
+    // an operation-specific reason` escapes: a caller catching the documented
+    // `AesGcmKeyError` misses it, a fail-closed caller that catches by type
+    // falls through, and the one place it surfaces is a run's error message
+    // with nothing an owner can act on.
+    throw new AesGcmKeyError('The envelope could not be decrypted: wrong key or tampered ciphertext');
+  }
   return new TextDecoder().decode(opened);
 }
 
