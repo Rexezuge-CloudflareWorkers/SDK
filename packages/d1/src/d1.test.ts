@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DatabaseError } from '@rexezuge/errors';
-import { BaseDAO, assertSqlIdentifier, decryptSecret, encryptSecret, roundTripSecret } from './index';
+import { AesGcmKeyError, BaseDAO, assertSqlIdentifier, decryptSecret, encryptSecret, roundTripSecret } from './index';
 import { D1_RETRY_DEFAULTS } from './D1Retry';
 import { isD1ErrorRetryable } from './D1ErrorClassifier';
 import type { D1PreparedStatement, D1Queryable, D1Result } from './D1Types';
@@ -270,9 +270,13 @@ describe('aes-gcm', () => {
   it('fails closed on a wrong key or tampered ciphertext', async () => {
     const envelope = await encryptSecret('tamper me', key);
     const otherKey: string = Buffer.from(new Uint8Array(32).fill(9)).toString('base64');
-    await expect(decryptSecret(envelope, otherKey)).rejects.toThrow();
+    // The typed error, not merely "rejects": a bare `rejects.toThrow()` let the
+    // platform's raw `OperationError` escape as the documented behavior, and
+    // every consumer catching `AesGcmKeyError` — the contract the module
+    // documents — missed it.
+    await expect(decryptSecret(envelope, otherKey)).rejects.toThrow(AesGcmKeyError);
     await expect(
       decryptSecret({ ...envelope, ciphertext: `${envelope.ciphertext.slice(0, 8)}AAAA${envelope.ciphertext.slice(12)}` }, key),
-    ).rejects.toThrow();
+    ).rejects.toThrow(AesGcmKeyError);
   });
 });
