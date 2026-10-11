@@ -4,7 +4,13 @@ import { FixedClock, SystemClock } from './Clock';
 // Converged Clock: AWS's `now()` name, Mail-Otter/ChordDHT's mutable FixedClock.
 describe('Clock', () => {
   it('SystemClock returns Date.now()', () => {
-    expect(new SystemClock().now()).toBe(Date.now());
+    // Bracketed rather than equal: two Date.now() reads a millisecond apart
+    // are not the same number, and a test that assumes they are fails on
+    // nothing but clock granularity.
+    const before = Date.now();
+    const now = new SystemClock().now();
+    expect(now).toBeGreaterThanOrEqual(before);
+    expect(now).toBeLessThanOrEqual(Date.now());
   });
 
   it('FixedClock is settable and advanceable', () => {

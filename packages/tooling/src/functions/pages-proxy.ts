@@ -20,7 +20,31 @@
  *   body is a stream. Without it this threw a `TypeError` on every non-GET
  *   request rather than proxying it.
  * - **Edge-Sonic** — the client-forwarding-header strip list, which additionally
- *   removes `Forwarded`, `True-Client-IP` and `X-Real-Ip`.
+ *   removes `Forwarded`, `True-Client-IP` and `X-Real-Ip`. Edge-Sonic goes
+ *   further and *never* sets `X-Forwarded-For` at all, because its worker keys
+ *   the rate limiter on `CF-Connecting-IP` and refuses `X-Forwarded-For` on
+ *   purpose.
+ *
+ * ### The convergence decision on `X-Forwarded-For`
+ *
+ * The two families disagree, and the disagreement is about which worker is
+ * behind the binding. Mail-Meow's behaviour is kept as the default because it is
+ * the only one that preserves the client IP for the audit trail, which five repos
+ * read. A repo whose worker refuses the header — Edge-Sonic's — passes
+ * `forwardClientIp: false`, which deletes it and sets nothing. What is *not*
+ * available is the source repos' conditional `if (clientIp) set(...)`: that is
+ * the defect Mail-Meow recorded fixing, and a factory that could reintroduce it
+ * would be a factory that carries the bug forward.
+ *
+ * ### `duplex: 'half'` rides with the body
+ *
+ * Required by the Fetch spec whenever a `Request` is constructed with a **stream**
+ * body. workerd does not throw without it, which is why the line was absent from
+ * every Pages copy — and Node does, which is why `test/pages-proxy.test.ts` in
+ * Edge-Sonic could not drive the handler at all. It is spread only where a body
+ * is forwarded, because a `RequestInit` carrying `duplex` and no body is a shape
+ * no runtime documents; the cast is `as RequestInit` either way, since `duplex`
+ * is not in the DOM lib's type.
  *
  * The result is a handler factory, so a consumer's `functions/[[path]].ts` is a
  * one-line re-export. Structural `Fetcher` and `PagesFunction` types are declared
@@ -90,3 +114,74 @@ const CLIENT_FORWARDING_HEADERS: readonly string[] = [
   'True-Client-IP',
   'X-Real-Ip',
 ];
+
+/** The header Cloudflare sets with the socket's peer address. */
+const CF_CONNECTING_IP_HEADER = 'CF-Connecting-IP';
+
+/**
+ * What `createPagesProxy` accepts.
+ */
+export interface PagesProxyOptions {
+  /**
+   * Set `X-Forwarded-For` from `CF-Connecting-IP`.
+   *
+   * Default `true` — Mail-Meow's behaviour, which five repos rely on for their
+   * audit trail. Pass `false` for a worker that refuses the header outright
+   * (Edge-Sonic's does), and the header is deleted and nothing set.
+   */
+  readonly forwardClientIp?: boolean;
+}
+
+/**
+ * The `onRequest` handler for `functions/[[path]].ts`.
+ *
+ * Usage — the consumer's `functions/[[path]].ts` becomes two lines:
+ *
+ * ```ts
+ * import { createPagesProxy } from '@rexezuge/tooling/functions/pages-proxy';
+ * export const onRequest = createPagesProxy();
+ * ```
+ *
+ * @param options see {@link PagesProxyOptions}. Omitted gives the family's
+ *   majority behaviour.
+ */
+export function createPagesProxy(options: PagesProxyOptions = {}): PagesFunction {
+  const forwardClientIp = options.forwardClientIp ?? true;
+
+  return async ({ request, env }: PagesFunctionContext): Promise<Response> => {
+    const originalUrl: URL = new URL(request.url);
+
+    const headers: Headers = new Headers(request.headers);
+    for (const header of CLIENT_FORWARDING_HEADERS) headers.delete(header);
+
+    // Set from values read off the request rather than from the client: only the
+    // proxy knows which host it served, and a service binding hands over a
+    // rewritten URL, so the original path is what has to be carried across.
+    headers.set('X-Forwarded-Host', originalUrl.host);
+    headers.set('X-Forwarded-Proto', originalUrl.protocol.replace(':', ''));
+    headers.set('X-Forwarded-Uri', `${originalUrl.pathname}${originalUrl.search}`);
+
+    if (forwardClientIp) {
+      const clientIp: string | null = request.headers.get(CF_CONNECTING_IP_HEADER);
+      if (clientIp) headers.set('X-Forwarded-For', clientIp);
+    }
+
+    // `GET`/`HEAD` carry no body, and a `Request` with one is rejected outright
+    // for those methods. The body is forwarded as a *stream*, so a large upload
+    // does not have to fit in memory on the Pages side.
+    const hasBody: boolean = request.method !== 'GET' && request.method !== 'HEAD';
+
+    const proxyRequest: Request = new Request(originalUrl.href, {
+      method: request.method,
+      headers,
+      body: hasBody ? request.body : undefined,
+      // See the header: `duplex` is not in the DOM lib's `RequestInit` type, and
+      // removing the cast would mean not forwarding bodies at all, which is a
+      // worse answer than one assertion.
+      ...(hasBody && { duplex: 'half' }),
+      redirect: request.redirect,
+    } as RequestInit);
+
+    return env.API_WORKER.fetch(proxyRequest);
+  };
+}
