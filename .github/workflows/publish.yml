@@ -40,7 +40,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Build
-        run: pnpm -r --if-present exec tsc -p tsconfig.json
+        run: pnpm -r --if-present build
 
       - name: Test
         run: pnpm -r --if-present test
