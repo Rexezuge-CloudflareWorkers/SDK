@@ -1,5 +1,12 @@
 # @rexezuge/tooling
 
+## 1.0.6
+
+### Patch Changes
+
+- 6502598: Fix file-system race conditions in spa-shell stub creation and migration lock writes: use atomic exclusive creation and read without pre-check.
+- @rexezuge/d1@1.0.6
+
 ## 1.0.5
 
 ### Patch Changes
