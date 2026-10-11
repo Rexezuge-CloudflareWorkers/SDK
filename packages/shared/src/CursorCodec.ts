@@ -52,13 +52,20 @@ class CursorCodec {
   }
 
   /**
-   * Decode a cursor, throwing a plain `Error` on malformed input.
+   * Decode a cursor that is known to be present, throwing a plain `Error` on
+   * malformed input.
    *
    * For a call site that treats a bad cursor as a client error; the HTTP mapping
    * to `BadRequest` is the caller's layer's job (see the file header).
+   *
+   * The parameter is `string`, not `string | undefined | null`, and there is no
+   * `undefined` in the return. Two behaviours in one signature — "absent" and
+   * "malformed" — meant a caller could not tell them apart without re-reading
+   * the input it had already passed. Deciding absence belongs to the caller;
+   * this function's whole contract is that a cursor which *is* present either
+   * decodes or throws. Use {@link decode} when absence is an ordinary answer.
    */
-  public static decodeOrThrow<T>(cursor: string | undefined | null): T | undefined {
-    if (!cursor) return undefined;
+  public static decodeOrThrow<T>(cursor: string): T {
     try {
       return JSON.parse(atob(cursor)) as T;
     } catch {

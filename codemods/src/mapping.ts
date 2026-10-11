@@ -82,6 +82,24 @@ export const KIT_PACKAGE_FOR: Readonly<Record<string, string>> = {
 };
 
 /**
+ * Identity DAOs living inside `backend-data`, which stays a local package.
+ *
+ * They move to `@rexezuge/identity` rather than `@rexezuge/d1` because the
+ * convergence that produced them was the *identity* one — the frozen anchor and
+ * the verified-address registry — and shipping them from `d1` would freeze the
+ * pre-identity shape as the canonical one.
+ *
+ * Applied *after* `SUBPATH_RULES`, so a repo can override them by declaring its
+ * own row: that is the escape hatch for a repo whose `users` table has columns
+ * the kit's DAO does not model.
+ */
+export const IDENTITY_DAO_SUBPATHS: Readonly<Record<string, string>> = {
+  '/dao/UserDAO': '@rexezuge/identity',
+  '/dao/UserEmailDAO': '@rexezuge/identity',
+  '/dao/identity': '@rexezuge/identity',
+};
+
+/**
  * DD's i18n barrel names → the kit's canonical ones. Shells, not re-exports:
  * a repo keeping `BACKEND_STRINGS` locally would be a second source of truth
  * for the locale table the kit's parity tests pin.

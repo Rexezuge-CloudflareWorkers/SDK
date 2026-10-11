@@ -6,6 +6,7 @@
     [
       "@rexezuge/d1",
       "@rexezuge/errors",
+      "@rexezuge/http",
       "@rexezuge/i18n",
       "@rexezuge/identity",
       "@rexezuge/runtime",

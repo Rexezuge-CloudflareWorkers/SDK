@@ -10,14 +10,17 @@
  *   2. Renames the drifted symbols (withRetry→run, AppConfig→AppConfiguration, …)
  *      at call, construction, and import sites.
  *   3. Reports the workspace packages whose imports went to zero — those are the
- *      ones safe to delete (only with `--remove-packages`).
+ *      ones safe to delete (only with `--write --remove-packages`). Packages that
+ *      are still imported are reported **with their reference counts**, so the
+ *      zero-import list is never mistaken for the whole picture.
  *   4. Reports the package.json dependency edits to make (never edits them: a
  *      lockfile change wants the human's `pnpm install` in the loop).
  *
  * `--dry-run` (the default in CI) writes nothing.
  */
-import { readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { renameImports } from './rename-imports';
 import { renameSymbols } from './rename-symbols';
 import { SUBPATH_RULES, WHOLE_PACKAGE_MAP } from './mapping';
@@ -32,6 +35,46 @@ interface AdoptReport {
   symbolChanges: number;
   unmappedImports: string[];
   removablePackages: string[];
+}
+
+/**
+ * Workspace packages, mapped to how many imports still point at each one.
+ *
+ * This is what makes `--remove-packages` safe rather than a guess: a package is
+ * only offered for deletion when **nothing in the scanned tree still imports
+ * it**, so a package whose imports are still live is reported with its count
+ * instead of being removed out from under a working build.
+ */
+function collectWorkspacePackages(root: string, scope: string): Map<string, { dir: string; references: number }> {
+  const packages = new Map<string, { dir: string; references: number }>();
+  const packagesDir = join(root, 'packages');
+  if (!existsSync(packagesDir)) return packages;
+  for (const entry of readdirSync(packagesDir)) {
+    const dir = join(packagesDir, entry);
+    if (!statSync(dir).isDirectory()) continue;
+    if (existsSync(join(dir, 'package.json'))) {
+      packages.set(`${scope}/${entry}`, { dir, references: 0 });
+    }
+  }
+  return packages;
+}
+
+/** Count the imports in `source` that name each tracked workspace package. */
+function countReferences(source: string, scope: string, packages: Map<string, { dir: string; references: number }>): void {
+  for (const name of packages.keys()) {
+    // Matches `@scope/pkg` and `@scope/pkg/sub` but not `@scope/pkg-extra`,
+    // which is a different package whose name merely starts with the same text.
+    const pattern = new RegExp(`from\\s+['"\`]${escapeRegExp(name)}(?:['"\`/])`);
+    const matches = source.match(pattern);
+    if (matches) {
+      const entry = packages.get(name);
+      if (entry) entry.references += matches.length;
+    }
+  }
+}
+
+function escapeRegExp(value: string): string {
+  return value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 }
 
 function walk(dir: string, out: string[] = []): string[] {
@@ -65,6 +108,12 @@ function main(): void {
     removablePackages: [],
   };
 
+  // Counts are taken against the **post-rewrite** text, so a package whose only
+  // imports were the ones this run migrated reads as unreferenced rather than as
+  // still-live. Counting the pre-rewrite text would report every migrated
+  // package as still in use and make the removal list permanently empty.
+  const packages = collectWorkspacePackages(root, scope);
+
   for (const file of walk(root)) {
     const source = readFileSync(file, 'utf8');
     report.filesScanned += 1;
@@ -77,10 +126,15 @@ function main(): void {
       report.symbolChanges += symbols.changes;
       if (!dryRun) writeFileSync(file, symbols.output, 'utf8');
     }
+    countReferences(symbols.output, scope, packages);
     for (const specifier of imports.unmapped) {
       if (!report.unmappedImports.includes(specifier)) report.unmappedImports.push(specifier);
     }
   }
+
+  const stillReferenced = [...packages.entries()].filter(([, value]) => value.references > 0);
+  const unreferenced = [...packages.entries()].filter(([, value]) => value.references === 0);
+  report.removablePackages = unreferenced.map(([name]) => name);
 
   console.log(`scanned ${report.filesScanned} source files (${dryRun ? 'dry run' : 'written'})`);
   console.log(`  files changed:   ${report.filesChanged}`);
@@ -89,12 +143,57 @@ function main(): void {
   if (report.unmappedImports.length > 0) {
     console.log(`  UNMAPPED (migrate by hand): ${report.unmappedImports.join(', ')}`);
   }
+
+  if (unreferenced.length > 0) {
+    console.log(`  no remaining imports (${unreferenced.length}): ${unreferenced.map(([name]) => name).join(', ')}`);
+  }
+  if (stillReferenced.length > 0) {
+    // Reported with their counts, because "still imported" is the answer that
+    // keeps a half-migrated repo honest: it names what is still live instead of
+    // letting an operator assume the list above is the whole truth.
+    console.log(
+      `  still imported (${stillReferenced.length}): ${stillReferenced.map(([name, value]) => `${name} ×${value.references}`).join(', ')}`,
+    );
+  }
+
+  if (removePackages) {
+    // Guarded twice: `--remove-packages` never implies `--write`, and only a
+    // package with zero remaining imports is touched. Deleting a package that
+    // something still imports turns a migration into a broken build, and the
+    // cost of being wrong here is a red test suite rather than a reviewable diff.
+    if (dryRun) {
+      console.log('  --remove-packages needs --write too; reporting only. Re-run with --write to delete.');
+    } else {
+      for (const [name, value] of unreferenced) {
+        rmSync(value.dir, { recursive: true, force: true });
+        console.log(`  removed ${name}`);
+      }
+      console.log('  next: remove the dropped packages from the workspace package.json files.');
+    }
+  }
+
   console.log('  next: run `pnpm add` for each kit package, then `pnpm -r typecheck`.');
-  void removePackages;
 }
 
+/**
+ * Read a `--flag value` pair.
+ *
+ * Returns `undefined` when the flag is absent. The absent case is the reason
+ * this is not an inline `argv[argv.indexOf(flag) + 1]`: `indexOf` answers `-1`
+ * for a missing flag, so that expression yields `argv[0]` — the **positional
+ * root** — and the missing `--scope` silently becomes the scope. The tool would
+ * then scan the repo, rewrite nothing, and report a clean run against a scope
+ * that matches no import in it.
+ */
 function flagValue(argv: readonly string[], flag: string): string | undefined {
-  return argv[argv.indexOf(flag) + 1];
+  const index = argv.indexOf(flag);
+  if (index === -1) return undefined;
+  return argv[index + 1];
 }
 
-main();
+// Entry-point guard rather than a bare `main()`, so importing this module for a
+// test does not immediately walk and rewrite whatever directory the test runner
+// was started from. Same shape as the `scripts/verify-*.ts` entry points.
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}

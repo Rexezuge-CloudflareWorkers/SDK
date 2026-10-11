@@ -45,17 +45,20 @@ abstract class BaseDAO {
   }
 
   /**
-   * Read one row. `first()` resolving to `null` is "no row", a success, not an
-   * error; only a rejected statement is retried and normalized. Callers get
-   * `undefined` — the shape every repo's row check (`row ? … : …`) already
-   * treats as absent, unlike a null.
+   * Read one row. A `null` result is "no row", a success, not an error; only a
+   * rejected statement is retried and normalized.
+   *
+   * `null` rather than `undefined` because that is what the platform says
+   * (`D1Result.first<T>()` returns `T | null`) and an adapter should hand back
+   * what it was given. It also makes this layer agree with `KvCache`, which has
+   * always returned `null` for a miss, so one convention covers both.
    */
-  protected async first<T>(sql: string, bindings: unknown[] = []): Promise<T | undefined> {
+  protected async first<T>(sql: string, bindings: unknown[] = []): Promise<T | null> {
     const envelope = await executeWithRetry(async (): Promise<StatementEnvelope<T | null>> => {
       const row: T | null = await this.statement(sql, bindings).first<T>();
       return { success: true, value: row };
     }, 'read a row');
-    return envelope.value ?? undefined;
+    return envelope.value;
   }
 
   /** A list read. `.all()` returning `[]` is a success like `first()`'s null. */

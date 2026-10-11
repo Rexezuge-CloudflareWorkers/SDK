@@ -39,8 +39,12 @@ describe('CursorCodec.decodeOrThrow', () => {
     expect(CursorCodec.decodeOrThrow<{ after: string }>(cursor)).toEqual({ after: 'k1' });
   });
 
-  it('undefined for a missing cursor', () => {
-    expect(CursorCodec.decodeOrThrow(undefined)).toBeUndefined();
+  // Absence is no longer answered here — the parameter is `string`, so a
+  // caller holding `undefined` cannot reach this function at all. `decode` is
+  // the lenient path for that, and the two failing together is the assertion
+  // that the split is real rather than documented.
+  it('throws on an empty cursor rather than reporting absence', () => {
+    expect(() => CursorCodec.decodeOrThrow('')).toThrow('Invalid cursor');
   });
 
   it('throws a plain Error on a malformed cursor (a higher layer maps it to BadRequest)', () => {

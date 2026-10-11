@@ -67,12 +67,22 @@ describe('renameImports', () => {
       "import { encryptSecret } from '@rexezuge/d1';",
     );
     // The barrel and the business DAOs stay: this repo's backend-data survives.
-    for (const local of ['/dao', '/dao/CalDavCredentialDAO', '/dao/UserDAO', '/crypto', '/utils/D1SessionUtil']) {
+    for (const local of ['/dao', '/dao/CalDavCredentialDAO', '/crypto', '/utils/D1SessionUtil']) {
       const source = `import { X } from '@dav/backend-data${local}';`;
       const result = renameImports(source, '@dav');
       expect(result.output).toBe(source);
       expect(result.changes).toStrictEqual([]);
       expect(result.unmapped).toStrictEqual([]);
+    }
+  });
+
+  it('moves the identity DAOs out of backend-data onto @rexezuge/identity', () => {
+    // `backend-data` has `default: null`, which would park these as "stays
+    // local" forever. They are converged code, so they move.
+    for (const moved of ['/dao/UserDAO', '/dao/UserEmailDAO', '/dao/identity']) {
+      expect(renameImports(`import { X } from '@dav/backend-data${moved}';`, '@dav').output).toBe(
+        `import { X } from '@rexezuge/identity';`,
+      );
     }
   });
 

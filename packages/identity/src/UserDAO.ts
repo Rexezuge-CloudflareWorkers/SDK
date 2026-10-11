@@ -99,17 +99,17 @@ export class UserDAO extends BaseDAO {
    * findable here by its new one. It is the pre-identity floor and the
    * attribution read.
    */
-  public async getByEmail(email: string): Promise<UserRow | undefined> {
+  public async getByEmail(email: string): Promise<UserRow | null> {
     return this.first<UserRow>('SELECT * FROM users WHERE email = ? LIMIT 1', [email.toLowerCase()]);
   }
 
   /** The account behind a stable key. Null on a pre-identity database. */
-  public async getById(id: string): Promise<UserRow | undefined> {
+  public async getById(id: string): Promise<UserRow | null> {
     return this.first<UserRow>('SELECT * FROM users WHERE id = ? LIMIT 1', [id]);
   }
 
   /** The account currently signing in with this address. Identity-era only. */
-  public async getByCurrentEmail(email: string): Promise<UserRow | undefined> {
+  public async getByCurrentEmail(email: string): Promise<UserRow | null> {
     return this.first<UserRow>('SELECT * FROM users WHERE current_email = ? LIMIT 1', [email.toLowerCase()]);
   }
 
@@ -126,7 +126,7 @@ export class UserDAO extends BaseDAO {
   }
 
   /** Lookup by handle. */
-  public async getByUsernameCi(usernameCi: string): Promise<UserRow | undefined> {
+  public async getByUsernameCi(usernameCi: string): Promise<UserRow | null> {
     return this.first<UserRow>('SELECT * FROM users WHERE username = ? LIMIT 1', [usernameCi.toLowerCase()]);
   }
 }
