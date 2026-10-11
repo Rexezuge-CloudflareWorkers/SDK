@@ -31,6 +31,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Create Version Pull Request
+        id: changesets
         uses: changesets/action@v1
         with:
           version: pnpm version-packages
@@ -38,3 +39,26 @@ jobs:
           title: 'CHORE: Version Packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Include Version In Pull Request Title
+        if: steps.changesets.outputs.pullRequestNumber != ''
+        run: |
+          VERSION=$(node -p "require('./packages/errors/package.json').version")
+          gh pr edit "${{ steps.changesets.outputs.pullRequestNumber }}" --title "CHORE: Version Packages v$VERSION"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Close Superseded Version Pull Requests
+        if: steps.changesets.outputs.pullRequestNumber != ''
+        run: |
+          CURRENT="${{ steps.changesets.outputs.pullRequestNumber }}"
+          VERSION=$(node -p "require('./packages/errors/package.json').version")
+          gh pr list --state open --limit 100 --json number,title --jq '.[] | select(.title | startswith("CHORE: Version Packages")) | .number' | while read -r NUMBER; do
+            if [ "$NUMBER" != "$CURRENT" ]; then
+              gh pr close "$NUMBER" --comment "Superseded by #$CURRENT (v$VERSION)." --delete-branch
+            fi
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
