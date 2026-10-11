@@ -6,12 +6,15 @@ pnpm workspace (`pnpm@11.2.2`, Node 24 per CI). Eight public packages in
 
 ## Commands
 
-- `pnpm install` then `pnpm run checks` (`build && typecheck && test`, all
-  recursive via `pnpm -r --if-present`). CI (`ci.yml`) runs exactly these three,
-  in this order — keep the order.
+- `pnpm install` then `pnpm run checks`, which runs `build && typecheck && test && format:check`,
+  all recursive via `pnpm -r --if-present`. CI (`ci.yml`) runs these four as four
+  separate jobs — keep the order and the split.
+- `pnpm run format` rewrites formatting in place; `pnpm run format:check` is the
+  CI gate, and the only one of the two that fails instead of repairing.
 - Per package: `pnpm --filter @rexezuge/<name> <build|typecheck|test>`.
 - Single file: `pnpm --filter @rexezuge/<name> exec vitest run src/<file>`.
-- No root eslint config and lint is **not** a CI gate; do not add one.
+- No root eslint config and lint is **not** a CI gate; do not add one. Formatting
+  is a separate Prettier gate and does not change that decision.
 
 ## Structure quirks
 
@@ -46,5 +49,4 @@ pnpm workspace (`pnpm@11.2.2`, Node 24 per CI). Eight public packages in
   new lockstep version into the title and closes superseded version PRs) → `Publish`
   workflow runs on `main` push and executes `pnpm changeset publish` (`pnpm release`).
   Never `pnpm -r publish`: without a version bump the registry already holds the
-  local version and pnpm no-ops with `There are no new packages that should be
-  published`.
+  local version and pnpm no-ops with `There are no new packages that should be published`.
