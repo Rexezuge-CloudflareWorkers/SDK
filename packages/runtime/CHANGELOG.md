@@ -1,5 +1,9 @@
 # @rexezuge/runtime
 
+## 1.0.4
+
+No changes in this release.
+
 ## 1.0.3
 
 ### Patch Changes
