@@ -1,0 +1,11 @@
+# Prettier ignores `node_modules` by default but does NOT read `.gitignore`, so
+# every gitignored build artifact has to be named here. Without `dist/`, a
+# `format:check` run after a build walks all eight compiled packages — the same
+# trap Edge-Sonic hit when `worker-configuration.d.ts` exhausted the heap.
+dist/
+coverage/
+node_modules/
+
+# Machine-generated. Reformatting the lockfile produces a diff no human reads
+# and no reviewer should approve by reflex.
+pnpm-lock.yaml
