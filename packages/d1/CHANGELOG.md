@@ -1,5 +1,12 @@
 # @rexezuge/d1
 
+## 1.2.0
+
+### Patch Changes
+
+- @rexezuge/errors@1.2.0
+  - @rexezuge/shared@1.2.0
+
 ## 1.1.0
 
 ### Minor Changes
