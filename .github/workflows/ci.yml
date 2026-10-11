@@ -27,7 +27,7 @@ jobs:
         uses: ./.github/actions/setup-env
 
       - name: Build
-        run: pnpm -r --if-present exec tsc -p tsconfig.json
+        run: pnpm -r --if-present build
 
       - name: Typecheck
         run: pnpm -r --if-present typecheck
