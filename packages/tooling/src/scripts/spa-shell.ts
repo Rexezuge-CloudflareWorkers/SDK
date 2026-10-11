@@ -53,11 +53,15 @@ function resolvePaths(options: SpaShellPaths): { shell: string; distIndex: strin
  */
 function ensureSpaShellStub(options: SpaShellPaths): { created: boolean; path: string } {
   const { shell } = resolvePaths(options);
-  if (existsSync(shell)) {
-    return { created: false, path: shell };
-  }
   mkdirSync(dirname(shell), { recursive: true });
-  writeFileSync(shell, STUB_CONTENT, 'utf8');
+  try {
+    writeFileSync(shell, STUB_CONTENT, { encoding: 'utf8', flag: 'wx' });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException)?.code === 'EEXIST') {
+      return { created: false, path: shell };
+    }
+    throw error;
+  }
   return { created: true, path: shell };
 }
 
