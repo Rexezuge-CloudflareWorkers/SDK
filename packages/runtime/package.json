@@ -33,5 +33,6 @@
     "@types/node": "26.6.4",
     "typescript": "6.0.3",
     "vitest": "4.1.11"
-  }
+  },
+  "description": "DI container, configuration, worker bases, logger, and KV cache for Cloudflare Workers."
 }

@@ -33,5 +33,6 @@
     "@types/node": "26.6.4",
     "typescript": "6.0.3",
     "vitest": "4.1.11"
-  }
+  },
+  "description": "Catalog-driven HTTP/service error taxonomy with retry markers and wire envelopes for the Rexezuge-CloudflareWorkers family."
 }

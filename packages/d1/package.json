@@ -37,5 +37,6 @@
     "@types/node": "26.6.4",
     "typescript": "6.0.3",
     "vitest": "4.1.11"
-  }
+  },
+  "description": "D1 retry engine, error classifier, BaseDAO, SQL splitter, and AES-GCM envelope."
 }
