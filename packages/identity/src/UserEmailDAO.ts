@@ -48,7 +48,7 @@ export class UserEmailDAO extends BaseDAO {
     return 'claimed';
   }
 
-  public async get(email: string): Promise<UserEmailRow | undefined> {
+  public async get(email: string): Promise<UserEmailRow | null> {
     // Lowercase the *parameter*: the column is stored lowercased by every
     // writer, so `lower(email) = ?` matched identically while making the
     // primary key unusable.
@@ -56,7 +56,7 @@ export class UserEmailDAO extends BaseDAO {
   }
 
   /** Login resolution: only a verified address identifies an account. */
-  public async resolveVerified(email: string): Promise<UserEmailRow | undefined> {
+  public async resolveVerified(email: string): Promise<UserEmailRow | null> {
     return this.first<UserEmailRow>('SELECT * FROM user_emails WHERE email = ? AND is_verified = 1 LIMIT 1', [email.toLowerCase()]);
   }
 

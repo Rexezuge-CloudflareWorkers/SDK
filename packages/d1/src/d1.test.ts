@@ -73,7 +73,7 @@ class TestDAO extends BaseDAO {
     return this.run(sql, bindings);
   }
 
-  public readRow<T>(sql: string, bindings?: unknown[]): Promise<T | undefined> {
+  public readRow<T>(sql: string, bindings?: unknown[]): Promise<T | null> {
     return this.first<T>(sql, bindings);
   }
 
@@ -181,9 +181,9 @@ describe('executeWithRetry (via BaseDAO)', () => {
 // ---------- BaseDAO surface ----------
 
 describe('BaseDAO', () => {
-  it('reads a row, mapping absence to undefined', async () => {
+  it('reads a row, mapping absence to null', async () => {
     expect(await new TestDAO(new FakeDb(undefined, { id: 'u1' })).readRow<{ id: string }>('SELECT', [1])).toStrictEqual({ id: 'u1' });
-    expect(await new TestDAO(new FakeDb()).readRow<{ id: string }>('SELECT')).toBeUndefined();
+    expect(await new TestDAO(new FakeDb()).readRow<{ id: string }>('SELECT')).toBeNull();
   });
 
   it('reads rows with a default empty array', async () => {

@@ -50,6 +50,14 @@ export type { InputProps, LabelProps, SelectProps, TextareaProps } from './Input
 export { LoadingButton } from './LoadingButton';
 export type { LoadingButtonProps } from './LoadingButton';
 
+// Converged from the `ModalShell` / `ConfirmDeleteModal` / `PageState` copies
+// that Durable-DAV, Durable-DAV-Router, Mail-Otter and Edge-Git each shipped.
+// Deliberately dependency-free — labels are props, not `useTranslation` — so
+// adopting these does not require a translation library or an icon set.
+export { ModalShell } from './ModalShell';
+export type { ModalShellProps } from './ModalShell';
+export { ConfirmDeleteModal, EmptyState, LoadingSpinner } from './PageState';
+
 export { Pagination, clampPage, pageCountFor, pageWindow } from './Pagination';
 export type { PaginationLabels, PaginationProps } from './Pagination';
 

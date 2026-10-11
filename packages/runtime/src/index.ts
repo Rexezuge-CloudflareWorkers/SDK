@@ -22,3 +22,5 @@ export { createLogger, isLogLevel, resolveLogLevel } from './logger';
 export type { LogLevel, Logger } from './logger';
 export { KvCache, KV_DOMAINS, buildKvKey, clampTtl, digest128 } from './kv';
 export type { KvDomainDef, KvDomainName, KvNamespaceLike } from './kv';
+export { AbstractScheduledTask, TaskRegistry } from './scheduled';
+export type { ApplicationRunHandle, ScheduledTaskEnv, TaskLogger, TaskRunRecorder, TaskRunSummary } from './scheduled';

@@ -48,8 +48,15 @@ export interface ResolvedAccount {
 /** The denormalized subset routes and the permission path use. */
 export type AccountSummary = Pick<ResolvedAccount, 'id' | 'email' | 'username'>;
 
-/** Shape every `users` read has, whether or not the identity migration has run. */
-export type UserRowLike = Pick<UserRow, 'id' | 'email' | 'current_email' | 'username'> | undefined;
+/**
+ * Shape every `users` read has, whether or not the identity migration has run.
+ *
+ * `| null` for the absent row because that is what `UserDAO` returns now — the
+ * DAO layer answers `null` for "no row", matching D1 and KV. The union is
+ * widened into `summarize` rather than normalised there, so `summarize` accepts
+ * either a row or the absence of one without a caller rewriting it first.
+ */
+export type UserRowLike = Pick<UserRow, 'id' | 'email' | 'current_email' | 'username'> | null;
 
 /** Project a `users` row onto a `ResolvedAccount`. */
 export function summarize(row: UserRowLike): ResolvedAccount | null {

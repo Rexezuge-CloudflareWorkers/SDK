@@ -66,13 +66,13 @@ class FakeDb {
     const normalized = sql.replaceAll(/\s+/g, ' ').trim();
     if (normalized.startsWith('INSERT INTO users')) return [this.insertUser(params)];
     if (normalized.startsWith('INSERT INTO user_emails')) return [this.insertUserEmail(params)];
-    if (normalized === 'SELECT * FROM users WHERE email = ? LIMIT 1') return [rowOf(this.users.get(params[0] as string))];
+    if (normalized === 'SELECT * FROM users WHERE email = ? LIMIT 1') return [rowOf(this.users.get(params[0] as string) ?? null)];
     if (normalized === 'SELECT * FROM users WHERE id = ? LIMIT 1')
-      return [rowOf([...this.users.values()].find((row) => row.id === params[0]))];
+      return [rowOf([...this.users.values()].find((row) => row.id === params[0]) ?? null)];
     if (normalized === 'SELECT * FROM users WHERE current_email = ? LIMIT 1')
-      return [rowOf([...this.users.values()].find((row) => (row.current_email ?? row.email) === params[0]))];
+      return [rowOf([...this.users.values()].find((row) => (row.current_email ?? row.email) === params[0]) ?? null)];
     if (normalized === 'SELECT * FROM users WHERE username = ? LIMIT 1')
-      return [rowOf([...this.users.values()].find((row) => row.username === params[0]))];
+      return [rowOf([...this.users.values()].find((row) => row.username === params[0]) ?? null)];
     if (normalized.startsWith('SELECT * FROM user_emails WHERE email = ? AND is_verified = 1')) {
       if (this.failsOn.has('user_emails')) throw new Error('D1_ERROR: database is locked');
       const row = this.userEmails.get(params[0] as string);
@@ -158,7 +158,7 @@ class FakeDb {
   }
 }
 
-function rowOf(row: UserRow | undefined): UserRow | null {
+function rowOf(row: UserRow | null): UserRow | null {
   if (!row) return null;
   const { id, email, current_email, created_at, username, updated_at } = row;
   return { id, email, current_email, created_at, username, updated_at };

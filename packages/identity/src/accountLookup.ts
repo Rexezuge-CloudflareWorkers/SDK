@@ -43,6 +43,11 @@ export async function resolveAccount(deps: AccountLookupDeps, email: string): Pr
   //
   // So the degradation is narrowed to `isMissingSchemaError`, and everything
   // else rethrows.
+  // The `null` in the `catch` answers the same question the DAO's own `null`
+  // answers — no row — so the two branches below share one type. When this read
+  // returned `undefined` on success and `null` on a missing schema, the widened
+  // union had to be narrowed by truthiness at a point that had nothing to do
+  // with which branch it came from.
   const registered = await deps
     .userEmailDAO()
     .then((dao) => dao.get(normalized))

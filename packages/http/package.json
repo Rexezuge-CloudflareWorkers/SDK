@@ -1,0 +1,45 @@
+{
+  "name": "@rexezuge/http",
+  "version": "1.0.8",
+  "private": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rexezuge-CloudflareWorkers/SDK.git",
+    "directory": "packages/http"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@rexezuge/errors": "workspace:*",
+    "@rexezuge/shared": "workspace:*",
+    "chanfana": "^3.4.0",
+    "hono": "^4.13.13",
+    "jose": "^6.2.12"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.4",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
+  },
+  "description": "Hono/chanfana layer for the Rexezuge family: rate limiter, security headers, route bases, Cloudflare Access auth, error mapper."
+}

@@ -8,7 +8,7 @@
  * local*; a specifier inside a rules package that matches no rule is reported,
  * because a silent skip is how a half-migrated repo typechecks green.
  */
-import { KIT_PACKAGE_FOR, SUBPATH_RULES, WHOLE_PACKAGE_MAP } from './mapping';
+import { IDENTITY_DAO_SUBPATHS, KIT_PACKAGE_FOR, SUBPATH_RULES, WHOLE_PACKAGE_MAP } from './mapping';
 
 export interface RenameResult {
   output: string;
@@ -45,6 +45,17 @@ function mapSpecifier(specifier: string, scope: string): SpecifierMapping {
   const rules = SUBPATH_RULES[packageName];
   if (rules === undefined) return stay; // business package: never touched
   if (subpath === '') return stay; // the bare package stays local
+
+  // Identity DAOs sit inside `backend-data`, whose `default: null` would
+  // otherwise park them as "stays local" forever. Checked *before* the rules so
+  // a repo that declares its own row for a given specifier still wins — see the
+  // table's doc comment for that escape hatch.
+  const hasOverride = Object.hasOwn(rules, subpath);
+  if (!hasOverride && packageName === 'backend-data') {
+    const identityTarget = IDENTITY_DAO_SUBPATHS[subpath];
+    if (identityTarget !== undefined) return { specifier: identityTarget, outcome: 'rewritten' };
+  }
+
   const mapped = rules[subpath];
   if (mapped === null) return stay; // explicitly stays local
   if (mapped === undefined) {
