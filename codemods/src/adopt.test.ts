@@ -113,6 +113,59 @@ describe('adopt: scanning and rewriting', () => {
   });
 });
 
+describe('adopt: web components', () => {
+  const VIEW = [
+    "import { AppPage } from '../components/layout/AppPage';",
+    "import { RefreshButton } from '../components/shared/RefreshButton';",
+    "import { VolumeDAO } from '../dao/VolumeDAO';",
+    '',
+    'export function View() {',
+    '  return null;',
+    '}',
+    '',
+  ].join('\n');
+
+  it('moves relative component imports onto the kit', () => {
+    const root = fixture({ 'apps/web/src/views/View.tsx': VIEW });
+
+    const output = adopt(root, ['--write']);
+
+    expect(output).toContain('component moves: 2 (onto @rexezuge/web)');
+    const rewritten = readFileSync(join(root, 'apps/web/src/views/View.tsx'), 'utf8');
+    expect(rewritten).toContain("import { AppPage, RefreshButton } from '@rexezuge/web';");
+    // The unrelated local import is untouched, and still in place.
+    expect(rewritten).toContain("import { VolumeDAO } from '../dao/VolumeDAO';");
+  });
+
+  it('names the components the kit has NOT converged, rather than skipping them', () => {
+    const root = fixture({
+      'apps/web/src/views/View.tsx': "import { VolumeCard } from '../components/volume/VolumeCard';\n",
+    });
+
+    // A silent skip here is how a repo ends up half-migrated and green.
+    expect(adopt(root)).toContain('components the kit has NOT converged (left as-is): VolumeCard');
+  });
+
+  it('leaves an unconverged component exactly as it was', () => {
+    const source = "import { VolumeCard } from '../components/volume/VolumeCard';\n";
+    const root = fixture({ 'apps/web/src/views/View.tsx': source });
+
+    adopt(root, ['--write']);
+
+    expect(readFileSync(join(root, 'apps/web/src/views/View.tsx'), 'utf8')).toBe(source);
+  });
+
+  it('is idempotent across a second run', () => {
+    const root = fixture({ 'apps/web/src/views/View.tsx': VIEW });
+
+    adopt(root, ['--write']);
+    const second = adopt(root, ['--write']);
+
+    expect(second).toContain('files changed:   0');
+    expect(second).toContain('component moves: 0');
+  });
+});
+
 describe('adopt: --remove-packages', () => {
   it('offers a package whose imports all migrated away', () => {
     const root = fixture({

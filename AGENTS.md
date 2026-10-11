@@ -29,10 +29,17 @@ pnpm workspace (`pnpm@11.2.2`, Node 24 per CI). Nine public packages in
 - `@rexezuge/tooling` must stay dependency-free except its declared `@rexezuge/d1`
   dep (used only by `scripts/backup/encrypt-backup.ts`); its ESLint/vitest/vite
   factories take consumer repos as arguments and never encode kit paths.
-- `@rexezuge/http` is the **one** package that carries framework dependencies
-  (`hono`, `chanfana`). The other eight are framework-free on purpose, and that
-  is what lets a consumer adopt `shared`/`errors`/`runtime` without adopting a
-  web framework. Do not let a Hono type leak into the other eight.
+- **No server framework outside `@rexezuge/http`.** `hono` and `chanfana` live
+  there and nowhere else, and that is what lets a consumer adopt
+  `shared`/`errors`/`runtime` without adopting a web framework. Do not let a
+  Hono or chanfana type leak into the other eight. A _client-side_ peer is a
+  different question: `@rexezuge/web` peers on `react`, `react-dom` and
+  `lucide-react`, because a UI kit that refuses to render an icon hands the
+  duplication straight back to whoever adopts it.
+- **`@rexezuge/web` components take labels as props, never
+  `useTranslation`.** The app owns its string catalogue. Icons are the exception,
+  for the reason above — so the line is: **glyph in, string out.** Do not add a
+  `react-i18next` dependency to this package.
 
 ## Null and undefined (load-bearing)
 

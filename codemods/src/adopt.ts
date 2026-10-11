@@ -9,11 +9,13 @@
  *   1. Rewrites every `@scope/<pkg>` import to the kit specifier.
  *   2. Renames the drifted symbols (withRetry→run, AppConfig→AppConfiguration, …)
  *      at call, construction, and import sites.
- *   3. Reports the workspace packages whose imports went to zero — those are the
+ *   3. Rewrites the **relative** `components/…` imports onto `@rexezuge/web` for
+ *      the components the kit has converged, and reports the ones it has not.
+ *   4. Reports the workspace packages whose imports went to zero — those are the
  *      ones safe to delete (only with `--write --remove-packages`). Packages that
  *      are still imported are reported **with their reference counts**, so the
  *      zero-import list is never mistaken for the whole picture.
- *   4. Reports the package.json dependency edits to make (never edits them: a
+ *   5. Reports the package.json dependency edits to make (never edits them: a
  *      lockfile change wants the human's `pnpm install` in the loop).
  *
  * `--dry-run` (the default in CI) writes nothing.
@@ -24,6 +26,7 @@ import { pathToFileURL } from 'node:url';
 import { renameImports } from './rename-imports';
 import { renameSymbols } from './rename-symbols';
 import { SUBPATH_RULES, WHOLE_PACKAGE_MAP } from './mapping';
+import { rewriteComponentImports } from './web-components';
 
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts'];
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'coverage', 'coverage-spa', '.wrangler', '.git', 'local']);
@@ -33,7 +36,10 @@ interface AdoptReport {
   filesChanged: number;
   importChanges: number;
   symbolChanges: number;
+  /** Component files this run moved onto `@rexezuge/web`. */
+  componentChanges: number;
   unmappedImports: string[];
+  unmappedComponents: string[];
   removablePackages: string[];
 }
 
@@ -104,7 +110,9 @@ function main(): void {
     filesChanged: 0,
     importChanges: 0,
     symbolChanges: 0,
+    componentChanges: 0,
     unmappedImports: [],
+    unmappedComponents: [],
     removablePackages: [],
   };
 
@@ -118,17 +126,26 @@ function main(): void {
     const source = readFileSync(file, 'utf8');
     report.filesScanned += 1;
     const imports = renameImports(source, scope);
-    const symbols = renameSymbols(imports.output);
-    const changed = imports.changes.length > 0 || symbols.changes > 0;
+    // Component imports are relative, not `@scope/pkg`, so the kernel rename
+    // cannot see them. This runs after it because `renameSymbols` may have
+    // changed a component name on the way past — running it first would rewrite
+    // a specifier whose identifier no longer matches what the file uses.
+    const components = rewriteComponentImports(imports.output);
+    const symbols = renameSymbols(components.output);
+    const changed = imports.changes.length > 0 || symbols.changes > 0 || components.changed.length > 0;
     if (changed) {
       report.filesChanged += 1;
       report.importChanges += imports.changes.length;
       report.symbolChanges += symbols.changes;
+      report.componentChanges += components.changed.length;
       if (!dryRun) writeFileSync(file, symbols.output, 'utf8');
     }
     countReferences(symbols.output, scope, packages);
     for (const specifier of imports.unmapped) {
       if (!report.unmappedImports.includes(specifier)) report.unmappedImports.push(specifier);
+    }
+    for (const component of components.unmapped) {
+      if (!report.unmappedComponents.includes(component)) report.unmappedComponents.push(component);
     }
   }
 
@@ -140,8 +157,15 @@ function main(): void {
   console.log(`  files changed:   ${report.filesChanged}`);
   console.log(`  import rewrites: ${report.importChanges}`);
   console.log(`  symbol renames:  ${report.symbolChanges}`);
+  console.log(`  component moves: ${report.componentChanges} (onto @rexezuge/web)`);
   if (report.unmappedImports.length > 0) {
     console.log(`  UNMAPPED (migrate by hand): ${report.unmappedImports.join(', ')}`);
+  }
+  if (report.unmappedComponents.length > 0) {
+    // Distinct from the package unmapped list, and reported rather than skipped
+    // for the same reason: a component the kit has not converged is fine, but a
+    // missing table row is a silent half-migration.
+    console.log(`  components the kit has NOT converged (left as-is): ${report.unmappedComponents.join(', ')}`);
   }
 
   if (unreferenced.length > 0) {
