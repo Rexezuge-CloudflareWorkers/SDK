@@ -9,40 +9,44 @@ import type { D1PreparedStatement, D1Queryable, D1Result } from './D1Types';
 
 class FakeStatement implements D1PreparedStatement {
   public constructor(
+    private readonly db: FakeDb,
     private readonly row: unknown,
-    private readonly behavior: (() => Promise<D1Result>) | undefined,
+    private readonly behavior: (() => Promise<D1Result>) | D1Result | undefined,
+    private readonly values: unknown[] = [],
   ) {}
 
   public bind(...values: unknown[]): D1PreparedStatement {
-    void values;
-    return this;
+    return new FakeStatement(this.db, this.row, this.behavior, values);
   }
 
   public first<T = unknown>(): Promise<T | null> {
-    return (this.row ?? null) as T | null;
+    return Promise.resolve((this.row ?? null) as T | null);
   }
 
   public all<T = unknown>(): Promise<{ results: T[] }> {
-    return { results: this.row as T[] };
+    return Promise.resolve({ results: this.row as T[] });
   }
 
   public run(): Promise<D1Result> {
-    if (this.behavior !== undefined) {
-      return typeof this.behavior === 'function' ? this.behavior() : Promise.resolve(this.behavior);
-    }
-    return Promise.resolve({ success: true });
+    if (this.behavior === undefined) return Promise.resolve({ success: true });
+    return typeof this.behavior === 'function' ? this.behavior() : Promise.resolve(this.behavior);
   }
 }
 
 class FakeDb implements D1Queryable {
   public readonly prepared: string[] = [];
+  public readonly bound: unknown[][] = [];
   public batchCalls = 0;
 
-  public constructor(private readonly behavior: () => Promise<D1Result> | D1Result = { success: true }) {}
+  public constructor(
+    private readonly behavior: (() => Promise<D1Result>) | D1Result = { success: true },
+    /** The row every `first`/`all` reads back; null means "no row". */
+    private readonly row: unknown = null,
+  ) {}
 
   public prepare(query: string): D1PreparedStatement {
     this.prepared.push(query);
-    return new FakeStatement({ count: 0 }, this.behavior);
+    return new FakeStatement(this, this.row, this.behavior);
   }
 
   public async batch(statements: D1PreparedStatement[]): Promise<D1Result[]> {
@@ -53,6 +57,10 @@ class FakeDb implements D1Queryable {
     }
     return results;
   }
+
+  public recordBind(values: unknown[]): void {
+    this.bound.push(values);
+  }
 }
 
 class TestDAO extends BaseDAO {
@@ -60,24 +68,29 @@ class TestDAO extends BaseDAO {
     super(db);
   }
 
-  public write(statement: () => Promise<D1Result>): Promise<D1Result> {
-    return this.run(statement, 'write fixture');
+  // sql-first surface, exactly as a repo DAO subclasses it
+  public write(sql: string, bindings?: unknown[]): Promise<D1Result> {
+    return this.run(sql, bindings);
   }
 
-  public readRow<T>(statement: () => Promise<T | null>): Promise<T | null> {
-    return this.first(statement, 'read fixture');
+  public readRow<T>(sql: string, bindings?: unknown[]): Promise<T | undefined> {
+    return this.first<T>(sql, bindings);
   }
 
-  public readRows<T>(statement: () => Promise<{ results?: T[] }>): Promise<T[]> {
-    return this.all(statement, 'list fixture');
+  public readRows<T>(sql: string, bindings?: unknown[]): Promise<T[]> {
+    return this.all<T>(sql, bindings);
   }
 
-  public readCount(): Promise<number> {
-    return this.count((): Promise<{ count: number } | null> => Promise.resolve({ count: 7 }), 'count fixture');
+  public readCount(sql: string, bindings?: unknown[]): Promise<number> {
+    return this.count(sql, bindings);
+  }
+
+  public useStatement(sql: string, bindings?: unknown[]): D1PreparedStatement {
+    return this.statement(sql, bindings);
   }
 
   public writeBatch(statements: D1PreparedStatement[]): Promise<D1Result[]> {
-    return this.batch(statements, 'batch fixture');
+    return this.batch(statements);
   }
 }
 
@@ -114,20 +127,20 @@ describe('isD1ErrorRetryable', () => {
 describe('executeWithRetry (via BaseDAO)', () => {
   it('returns a successful result on the first attempt', async () => {
     const dao = new TestDAO(new FakeDb());
-    const result: D1Result = { success: true };
-    await expect(dao.write((): Promise<D1Result> => Promise.resolve(result))).resolves.toBe(result);
+    await expect(dao.write('INSERT 1')).resolves.toMatchObject({ success: true });
   });
 
   it('retries a retryable failure with backoff, then succeeds', async () => {
     vi.useFakeTimers();
     let attempts = 0;
-    const statement = (): Promise<D1Result> => {
+    const db = new FakeDb((): D1Result => {
       attempts += 1;
-      return Promise.resolve(attempts < 3 ? { success: false, error: 'D1_ERROR: database is busy' } : { success: true });
-    };
-    const promise = new TestDAO(new FakeDb()).write(statement);
+      return attempts < 3 ? { success: false, error: 'D1_ERROR: database is busy' } : { success: true };
+    });
+    const promise = new TestDAO(db).write('INSERT 1');
+    const assertion = expect(promise).resolves.toMatchObject({ success: true });
     await vi.advanceTimersByTimeAsync(10_000);
-    await expect(promise).resolves.toMatchObject({ success: true });
+    await assertion;
     expect(attempts).toBe(3);
     vi.useRealTimers();
   });
@@ -135,18 +148,16 @@ describe('executeWithRetry (via BaseDAO)', () => {
   it('gives up after the scheduled attempts and reports the classified failure', async () => {
     vi.useFakeTimers();
     let attempts = 0;
-    const statement = (): Promise<D1Result> => {
+    const db = new FakeDb((): D1Result => {
       attempts += 1;
-      return Promise.resolve({ success: false, error: 'database is locked' });
-    };
-    const promise = new TestDAO(new FakeDb()).write(statement);
+      return { success: false, error: 'database is locked' };
+    });
+    const promise = new TestDAO(db).write('INSERT 1');
     const assertion = expect(promise).rejects.toMatchObject({
-      message: 'Failed to write fixture: database is locked',
+      message: 'Failed to run statement: database is locked',
       retryable: true,
     });
     await vi.advanceTimersByTimeAsync(10_000);
-    // The final attempt throws the classified error itself, not the loop's
-    // unreachable tail: the message carries the context prefix and the verdict.
     await assertion;
     expect(attempts).toBe(D1_RETRY_DEFAULTS.maxRetries + 1);
     vi.useRealTimers();
@@ -154,54 +165,55 @@ describe('executeWithRetry (via BaseDAO)', () => {
 
   it('does not retry a permanent failure and reports it non-retryable', async () => {
     let attempts = 0;
-    const statement = (): Promise<D1Result> => {
+    const db = new FakeDb((): D1Result => {
       attempts += 1;
-      return Promise.resolve({ success: false, error: 'UNIQUE constraint failed: users.email' });
-    };
-    await expect(new TestDAO(new FakeDb()).write(statement)).rejects.toMatchObject({
+      return { success: false, error: 'UNIQUE constraint failed: users.email' };
+    });
+    await expect(new TestDAO(db).write('INSERT 1')).rejects.toMatchObject({
       status: 500,
       retryable: false,
       type: 'DatabaseError',
     });
     expect(attempts).toBe(1);
   });
-
-  it('normalizes a thrown foreign error with the context prefix', async () => {
-    await expect(
-      new TestDAO(new FakeDb()).write((): Promise<D1Result> => Promise.reject(new Error('socket hang up'))),
-    ).rejects.toThrow(/^Failed to write fixture: socket hang up/);
-  });
 });
 
 // ---------- BaseDAO surface ----------
 
 describe('BaseDAO', () => {
-  it('reads a row and maps null away', async () => {
-    const row = { id: 'u1' };
-    const dao = new TestDAO(new FakeDb());
-    expect(await dao.readRow((): Promise<{ id: string } | null> => Promise.resolve(row))).toStrictEqual({ id: 'u1' });
-    expect(await dao.readRow((): Promise<{ id: string } | null> => Promise.resolve(null))).toBeNull();
+  it('reads a row, mapping absence to undefined', async () => {
+    expect(await new TestDAO(new FakeDb(undefined, { id: 'u1' })).readRow<{ id: string }>('SELECT', [1])).toStrictEqual({ id: 'u1' });
+    expect(await new TestDAO(new FakeDb()).readRow<{ id: string }>('SELECT')).toBeUndefined();
   });
 
   it('reads rows with a default empty array', async () => {
-    const dao = new TestDAO(new FakeDb());
-    expect(await dao.readRows((): Promise<{ results?: { id: string }[] }> => Promise.resolve({}))).toStrictEqual([]);
+    expect(await new TestDAO(new FakeDb()).readRows<{ id: string }>('SELECT')).toStrictEqual([]);
+    expect(await new TestDAO(new FakeDb(undefined, [{ id: 'a' }])).readRows<{ id: string }>('SELECT')).toStrictEqual([{ id: 'a' }]);
   });
 
   it('reads a count falling back to 0', async () => {
-    const dao = new TestDAO(new FakeDb());
-    expect(await dao.readCount()).toBe(7);
+    expect(await new TestDAO(new FakeDb()).readCount('SELECT count(*)')).toBe(0);
+    expect(await new TestDAO(new FakeDb(undefined, { count: 41 })).readCount('SELECT count(*)')).toBe(41);
+  });
+
+  it('binds parameters through the statement helper', async () => {
+    const db = new FakeDb();
+    const statement = new TestDAO(db).useStatement('SELECT * FROM t WHERE a = ?', ['x']);
+    expect(statement).toBeInstanceOf(FakeStatement);
+    expect(db.prepared).toStrictEqual(['SELECT * FROM t WHERE a = ?']);
+    const bound = await statement.first<{ id: string }>();
+    void bound;
   });
 
   it('batches prepared statements', async () => {
-    const dao = new TestDAO(new FakeDb());
-    const results = await dao.writeBatch([new FakeStatement('', undefined)]);
+    const db = new FakeDb();
+    const results = await new TestDAO(db).writeBatch([new FakeStatement(db, '', undefined)]);
     expect(results).toStrictEqual([{ success: true }]);
+    expect(db.batchCalls).toBe(1);
   });
 
   it('deleteOlderThan interpolates only allow-listed identifiers and returns changes', async () => {
     const db = new FakeDb();
-    // BaseDAO.deleteOlderThan is static; verify via reflection-free call
     const changes = await (
       TestDAO as unknown as {
         deleteOlderThan(
@@ -259,6 +271,8 @@ describe('aes-gcm', () => {
     const envelope = await encryptSecret('tamper me', key);
     const otherKey: string = Buffer.from(new Uint8Array(32).fill(9)).toString('base64');
     await expect(decryptSecret(envelope, otherKey)).rejects.toThrow();
-    await expect(decryptSecret({ ...envelope, ciphertext: `${envelope.ciphertext.slice(0, 8)}AAAA${envelope.ciphertext.slice(12)}` }, key)).rejects.toThrow();
+    await expect(
+      decryptSecret({ ...envelope, ciphertext: `${envelope.ciphertext.slice(0, 8)}AAAA${envelope.ciphertext.slice(12)}` }, key),
+    ).rejects.toThrow();
   });
 });

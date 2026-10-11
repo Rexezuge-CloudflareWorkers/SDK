@@ -13,100 +13,89 @@ interface StatementEnvelope<T> extends D1Result {
 /**
  * Canonical DAO base: retry is a policy, methods are a promise.
  *
- * Converged from the nine consumer repos' `BaseDAO`s, which had drifted into
- * seven spellings of the same idea (`withRetry`, `runWithRetry`,
- * `runWriteStatement`, `firstWithRetry`, `allWithRetry`, `runWriteBatch`, plus
- * Mail-Meow's static `findById`). The kit ships one straight-line surface —
- * **clients adapt to these names** — with the non-DAO concerns extracted:
+ * Converged from the nine consumer repos' BaseDAOs. The API is the **sql-first**
+ * shape CalDAV-Bridge and ChordDHT-Tracker used, not the closure-first shape
+ * Durable-DAV's family used: a DAO states its SQL and bindings directly, and
+ * the retry/normalization wrapper is invisible at the call site. The closure
+ * form made every read site pay for a wrapper 90% of them never needed, and
+ * each of the two shapes drifted its own method names (`withRetry` vs
+ * `run(sql, bindings)`); the sql-first form is what survived.
  *
- * - cursor pagination moved to `@rexezuge/shared`'s `CursorCodec` (it is a
- *   codec, not a DAO method);
- * - subrequest accounting became an injected concern, so the seven repos that
- *   never needed it do not inherit it;
- * - retry policy lives in `D1Retry` — one schedule, one classifier, one place
- *   the `Failed to <context>` prefix is added.
- *
- * Identifier safety: `table`/`column` names cannot be bound, so the two methods
- * that interpolate them (`deleteOlderThan`) allow-list each segment against
- * `/^[A-Za-z_][A-Za-z0-9_]*$/`. Everything else in a statement goes through
- * `.bind()`.
+ * Non-DAO concerns stay out: cursor pagination lives in `@rexezuge/shared`
+ * (`CursorCodec`), subrequest accounting is an injectable port. Retry policy
+ * lives in `D1Retry` — one schedule, one classifier, one place the
+ * `Failed to <context>` prefix is added.
  */
 abstract class BaseDAO {
   protected constructor(protected readonly database: D1Queryable) {}
 
-  /**
-   * A mutating statement with retry and a guaranteed `DatabaseError` on
-   * failure. Every write in this layer goes through here: hand-rolling
-   * `.run()` plus `if (!result.success) throw` silently produced
-   * `retryable: false` and skipped the retry entirely — which left the most
-   * failure-sensitive writes with no recovery from a transient D1 lock.
-   */
-  protected async run(statement: () => Promise<D1Result>, context: string): Promise<D1Result> {
-    return executeWithRetry(statement, context);
+  /** A prepared statement with its bindings applied. Bindings are always parameters, never interpolation. */
+  protected statement(sql: string, bindings: unknown[] = []): D1PreparedStatement {
+    return bindings.length > 0 ? this.database.prepare(sql).bind(...bindings) : this.database.prepare(sql);
   }
 
   /**
-   * A point read. `first()` resolving to `null` is "no row", a success, not an
-   * error — only a rejected statement is retried and normalized.
+   * Run a statement. D1 reports a constraint violation or a missing table by
+   * returning `success: false` rather than by throwing, so both forms are
+   * normalized to a `DatabaseError` here — ignoring the result form is what
+   * let a `UNIQUE` failure reach a caller as an opaque 500.
    */
-  protected async first<T>(statement: () => Promise<T | null>, context: string): Promise<T | null> {
-    const envelope: StatementEnvelope<T | null> = await executeWithRetry(async (): Promise<StatementEnvelope<T | null>> => {
-      const value: T | null = await statement();
-      return { success: true, value };
-    }, context);
-    return envelope.value;
+  protected async run(sql: string, bindings: unknown[] = []): Promise<D1Result> {
+    return executeWithRetry((): Promise<D1Result> => this.statement(sql, bindings).run(), 'run statement');
   }
 
   /**
-   * A list read. `.all()` returning `[]` is a success like `first()`'s `null`.
-   * Separate from `run` because that one is typed for a write's `D1Result`;
-   * a list read had no retry at all in the drifted copies.
+   * Read one row. `first()` resolving to `null` is "no row", a success, not an
+   * error; only a rejected statement is retried and normalized. Callers get
+   * `undefined` — the shape every repo's row check (`row ? … : …`) already
+   * treats as absent, unlike a null.
    */
-  protected async all<T>(statement: () => Promise<{ results?: T[] }>, context: string): Promise<T[]> {
-    const envelope: StatementEnvelope<T[]> = await executeWithRetry(async (): Promise<StatementEnvelope<T[]>> => {
-      const rows = await statement();
+  protected async first<T>(sql: string, bindings: unknown[] = []): Promise<T | undefined> {
+    const envelope = await executeWithRetry(async (): Promise<StatementEnvelope<T | null>> => {
+      const row: T | null = await this.statement(sql, bindings).first<T>();
+      return { success: true, value: row };
+    }, 'read a row');
+    return envelope.value ?? undefined;
+  }
+
+  /** A list read. `.all()` returning `[]` is a success like `first()`'s null. */
+  protected async all<T>(sql: string, bindings: unknown[] = []): Promise<T[]> {
+    const envelope = await executeWithRetry(async (): Promise<StatementEnvelope<T[]>> => {
+      const rows = await this.statement(sql, bindings).all<T>();
       return { success: true, value: rows.results ?? [] };
-    }, context);
+    }, 'read rows');
     return envelope.value;
   }
 
-  /** A scalar count from a `SELECT count(*) AS count` row; 0 when absent. */
-  protected async count(
-    statement: () => Promise<{ count: number } | null>,
-    context: string,
-  ): Promise<number> {
-    const row: { count: number } | null = await this.first(statement, context);
+  /** A scalar count from a `SELECT count(*)` row; 0 when absent. */
+  protected async count(sql: string, bindings: unknown[] = []): Promise<number> {
+    const row = await this.first<{ count: number }>(sql, bindings);
     return row?.count ?? 0;
   }
 
   /**
-   * A batch of prepared statements, retried as a unit and unwrapped to the
-   * per-statement results D1 returns. A single non-success result inside the
-   * batch is what the engine classifies and retries.
+   * A batch of prepared statements — one transaction and one subrequest,
+   * however many statements it carries. Each result is checked, so a single
+   * failure inside the batch raises rather than passing silently.
    */
-  protected async batch(statements: D1PreparedStatement[], context: string): Promise<D1Result[]> {
+  protected async batch(statements: D1PreparedStatement[]): Promise<D1Result[]> {
+    if (statements.length === 0) return [];
     if (this.database.batch === undefined) {
-      throw new DatabaseError(`Batch is not supported for ${context}: the D1 binding exposes no batch()`);
+      throw new DatabaseError('The D1 binding exposes no batch() — a multi-statement transaction is not available here');
     }
-    const envelope: StatementEnvelope<D1Result[]> = await executeWithRetry(async (): Promise<StatementEnvelope<D1Result[]>> => {
+    const envelope = await executeWithRetry(async (): Promise<StatementEnvelope<D1Result[]>> => {
       const results: D1Result[] = await (this.database.batch as NonNullable<D1Queryable['batch']>)(statements);
       const failed: D1Result | undefined = results.find((result): boolean => !result.success);
-      return {
-        success: failed === undefined,
-        error: failed?.error,
-        value: results,
-      };
-    }, context);
+      return { success: failed === undefined, error: failed?.error, value: results };
+    }, 'run a batch');
     return envelope.value;
   }
 
   /**
    * Generic batched delete of rows older than a cutoff, in ID order, with
    * retry. Mirrors the per-DAO `DELETE ... WHERE id IN (SELECT ... LIMIT ?)`
-   * pattern that every repo re-implemented per table.
-   *
-   * `timeColumn` is compared against `<` — the cutoff is exclusive, so a
-   * delete never touches a row at exactly the boundary timestamp.
+   * pattern that every repo re-implemented per table. The cutoff is exclusive:
+   * a delete never touches a row at exactly the boundary timestamp.
    */
   protected static async deleteOlderThan(
     db: D1Queryable,

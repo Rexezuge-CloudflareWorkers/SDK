@@ -36,6 +36,20 @@ class EnvParser {
     return this.readString(env, key) ?? defaultValue;
   }
 
+  /**
+   * A non-negative integer, zero included.
+   *
+   * Distinct from `positiveInt` because zero is a meaningful configuration for
+   * retention and quota knobs ("keep nothing"), and a parser that rejected it
+   * would silently substitute the default — so setting `0` in the dashboard
+   * would appear to do nothing at all.
+   */
+  public static nonNegativeInt(env: unknown, key: string, defaultValue: string): number {
+    const value = this.readString(env, key);
+    const parsed = Number(value ?? defaultValue);
+    return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : Number(defaultValue);
+  }
+
   public static boolean(env: unknown, key: string, defaultValue: string): boolean {
     return (this.readString(env, key) ?? defaultValue) === 'true';
   }
