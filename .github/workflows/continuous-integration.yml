@@ -15,8 +15,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  checks:
-    name: Kit Checks
+  # One job per gate, rather than one `checks` job running all three in sequence.
+  # A failure names the gate that broke instead of arriving three steps deep in a
+  # log, and a re-run re-runs only that half.
+  #
+  # `typecheck` and `test` consume `build`'s output rather than producing their
+  # own. Cross-package imports resolve through the workspace symlinks in
+  # `node_modules` to `dist/` — `tsconfig.base.json` declares no `paths` and
+  # every package's `exports` points at `./dist/index.js` — so a fresh checkout
+  # with no `dist/` cannot resolve `@rexezuge/errors`, and cannot resolve any
+  # package that depends on it. `build` publishes the eight `dist/` directories
+  # as one artifact and the other two restore it, which is what lets the gates
+  # run in parallel instead of serially.
+  build:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
@@ -27,10 +39,71 @@ jobs:
         uses: ./.github/actions/setup-env
 
       - name: Build
-        run: pnpm -r --if-present build
+        uses: ./.github/actions/retry-step
+        with:
+          command: pnpm -r --if-present build
+          max_attempts: '2'
 
-      - name: Typecheck
-        run: pnpm -r --if-present typecheck
+      - name: Upload Build Output
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          # Roots the archive at the least common ancestor of the matched paths,
+          # which is `packages/`, so entries land as `<package>/dist/...`.
+          # `if-no-files-found: error` turns "the build emitted nothing" into a
+          # failure here rather than an unresolved-import error in `typecheck`.
+          path: |
+            packages/*/dist/
+          if-no-files-found: error
+          retention-days: 7
 
-      - name: Test
-        run: pnpm -r --if-present test
+  typecheck:
+    name: Typecheck
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Download Build Output
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          # Restores each directory to `packages/<package>/dist/` — the layout the
+          # node_modules symlinks and every package's `exports` expect. Downloaded
+          # after `setup-env` so `pnpm install` cannot prune the restored tree.
+          path: packages
+
+      - name: Run Typecheck
+        uses: ./.github/actions/retry-step
+        with:
+          command: pnpm -r --if-present typecheck
+          max_attempts: '2'
+
+  test:
+    name: Test
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Download Build Output
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: packages
+
+      - name: Run Tests
+        uses: ./.github/actions/retry-step
+        with:
+          command: pnpm -r --if-present test
+          max_attempts: '2'
