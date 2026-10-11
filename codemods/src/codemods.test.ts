@@ -3,15 +3,22 @@ import { renameImports } from './rename-imports';
 import { renameSymbols } from './rename-symbols';
 
 describe('renameImports', () => {
-  it('rewrites a mapped package specifier', () => {
+  it('moves the whole backend-errors package', () => {
     const result = renameImports("import { BadRequestError } from '@dav/backend-errors';", '@dav');
     expect(result.output).toBe("import { BadRequestError } from '@rexezuge/errors';");
     expect(result.changes).toStrictEqual([{ from: '@dav/backend-errors', to: '@rexezuge/errors' }]);
   });
 
-  it('collapses the utils barrel to the package root', () => {
-    const result = renameImports("import { UUIDUtil } from '@dav/shared/utils';", '@dav');
-    expect(result.output).toBe("import { UUIDUtil } from '@rexezuge/shared';");
+  it('moves shared utilities but keeps the business subtrees', () => {
+    expect(renameImports("import { UUIDUtil } from '@dav/shared/utils';", '@dav').output).toBe(
+      "import { UUIDUtil } from '@rexezuge/shared';",
+    );
+    for (const local of ['constants', 'model', 'schema']) {
+      const source = `import { X } from '@dav/shared/${local}';`;
+      const result = renameImports(source, '@dav');
+      expect(result.output).toBe(source);
+      expect(result.changes).toStrictEqual([]);
+    }
   });
 
   it('moves the i18n bundle to its own package', () => {
@@ -19,31 +26,61 @@ describe('renameImports', () => {
     expect(result.output).toBe("import { SUPPORTED_LOCALES } from '@rexezuge/i18n';");
   });
 
-  it('maps a utils subpath one-to-one onto dist', () => {
+  it('moves a shared utils subpath onto the kit dist tree', () => {
     const result = renameImports("import { X } from '@dav/shared/utils/X';", '@dav');
     expect(result.output).toBe("import { X } from '@rexezuge/shared/X';");
   });
 
-  it('maps backend-data core modules to the d1 package', () => {
-    const result = renameImports("import { executeWithRetry } from '@dav/backend-data/utils';", '@dav');
-    expect(result.output).toBe("import { executeWithRetry } from '@rexezuge/d1';");
+  it('moves runtime kernel files and keeps ConfigurationManager, http and constants', () => {
+    expect(renameImports("import { AbstractEntrypointWorker } from '@dav/backend-runtime/base/AbstractEntrypointWorker';", '@dav').output).toBe(
+      "import { AbstractEntrypointWorker } from '@rexezuge/runtime';",
+    );
+    expect(renameImports("import { EnvParser } from '@dav/backend-runtime/config/EnvParser';", '@dav').output).toBe(
+      "import { EnvParser } from '@rexezuge/runtime';",
+    );
+    for (const local of ['config/ConfigurationManager', 'http', 'constants']) {
+      const source = `import { X } from '@dav/backend-runtime/${local}';`;
+      const result = renameImports(source, '@dav');
+      expect(result.output).toBe(source);
+      expect(result.changes).toStrictEqual([]);
+      expect(result.unmapped).toStrictEqual([]);
+    }
   });
 
-  it('leaves foreign and unmapped imports untouched', () => {
-    const source = "import { z } from 'zod';\nimport { webdavThing } from '@dav/webdav';";
+  it('moves the backend-data kernel and keeps the business DAOs', () => {
+    expect(renameImports("import { executeD1WithRetry } from '@dav/backend-data/utils';", '@dav').output).toBe(
+      "import { executeD1WithRetry } from '@rexezuge/d1';",
+    );
+    expect(renameImports("import { isD1ErrorRetryable } from '@dav/backend-data/utils/D1ErrorClassifier';", '@dav').output).toBe(
+      "import { isD1ErrorRetryable } from '@rexezuge/d1';",
+    );
+    expect(renameImports("import { encryptSecret } from '@dav/backend-data/crypto/aes-gcm';", '@dav').output).toBe(
+      "import { encryptSecret } from '@rexezuge/d1';",
+    );
+    // The barrel and the business DAOs stay: this repo's backend-data survives.
+    for (const local of ['/dao', '/dao/CalDavCredentialDAO', '/dao/UserDAO', '/crypto', '/utils/D1SessionUtil']) {
+      const source = `import { X } from '@dav/backend-data${local}';`;
+      const result = renameImports(source, '@dav');
+      expect(result.output).toBe(source);
+      expect(result.changes).toStrictEqual([]);
+      expect(result.unmapped).toStrictEqual([]);
+    }
+  });
+
+  it('reports an unruled subpath inside a rules package', () => {
+    // shared has no `default` rule, so an unknown subpath is a decision the
+    // operator has to make, not one the codemod can guess.
+    const result = renameImports("import { X } from '@dav/shared/weird';", '@dav');
+    expect(result.unmapped).toStrictEqual(['@dav/shared/weird']);
+    expect(result.changes).toStrictEqual([]);
+  });
+
+  it('leaves foreign and business-package imports untouched', () => {
+    const source = "import { z } from 'zod';\nimport { CalendarService } from '@dav/backend-services';\nimport { x } from '@dav/webdav';";
     const result = renameImports(source, '@dav');
     expect(result.output).toBe(source);
     expect(result.changes).toStrictEqual([]);
     expect(result.unmapped).toStrictEqual([]);
-  });
-
-  it('maps the user DAOs to the identity package', () => {
-    expect(renameImports("import { UserDAO } from '@dav/backend-data/dao/UserDAO';", '@dav').output).toBe(
-      "import { UserDAO } from '@rexezuge/identity';",
-    );
-    expect(renameImports("import { encryptSecret } from '@dav/backend-data/crypto/aes-gcm';", '@dav').output).toBe(
-      'import { encryptSecret } from \'@rexezuge/d1\';',
-    );
   });
 });
 
@@ -58,8 +95,14 @@ describe('renameSymbols', () => {
   });
 
   it('renames imported names', () => {
-    const source = 'import { AppConfig } from "./config";';
-    expect(renameSymbols(source).output).toBe('import { AppConfiguration } from "./config";');
+    expect(renameSymbols('import { AppConfig } from "./config";').output).toBe('import { AppConfiguration } from "./config";');
+  });
+
+  it('leaves a static-namespace class its callers use untouched', () => {
+    // ConfigurationManager stays in repos that kept it as a static namespace;
+    // only its `new`/import forms are rename candidates, and there are none.
+    const source = 'const minutes = ConfigurationManager.oauth2.getStateExpiryMinutes(env);';
+    expect(renameSymbols(source).output).toBe(source);
   });
 
   it('leaves same-named properties and strings alone', () => {
