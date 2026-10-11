@@ -7,7 +7,7 @@
  * module for what it replaced and which copy won.
  *
  * ```ts
- * import { Button, Card, createApiClient, useCurrentUser, useNotice, useSpaLanguage } from '@rexezuge/web';
+ * import { AppPage, Button, Card, createApiClient, useCurrentUser, useNotice, useSpaLanguage } from '@rexezuge/web';
  * ```
  *
  * ## What a consumer must provide
@@ -22,6 +22,26 @@
  *   Tailwind ships it; a non-Tailwind app defines the keyframes once.
  * - **A dependency on `@rexezuge/errors`**, which `api.ts` imports for
  *   `ServiceError` and the status classes.
+ *
+ * ## Glyphs in, strings out
+ *
+ * Three components (`RefreshButton`, `ReadOnlyField`, `TypeToConfirmModal`) take
+ * their icon from `lucide-react`, which is why it is a peer rather than a
+ * dependency. Everything *sayable* is a prop: no component here calls
+ * `useTranslation`, because the app rendering a dialog knows what it says and a
+ * kit that hard-codes English for it has taken over the app's string catalogue.
+ *
+ * The dividing line is deliberate. `Button` keeps using this package's own
+ * `Spinner` rather than lucide's `Loader2` — chrome is cheap to draw, iconography
+ * is not, and vendoring a glyph's path data freezes it at whatever version was
+ * current when it was copied.
+ *
+ * ## Migrating the copies
+ *
+ * `codemods/` rewrites the family's `../components/…` imports onto this package
+ * for every component converged here, and names the ones it has not. Those
+ * imports are **relative**, so this is a separate transform from the
+ * `@scope/pkg` one — see `codemods/src/web-components.ts`.
  *
  * ## What is deliberately not here
  *
@@ -57,6 +77,31 @@ export type { LoadingButtonProps } from './LoadingButton';
 export { ModalShell } from './ModalShell';
 export type { ModalShellProps } from './ModalShell';
 export { ConfirmDeleteModal, EmptyState, LoadingSpinner } from './PageState';
+
+// The second convergence round: page layout, the notice banner, the access
+// page, the language picker, and the two clipboard-bearing controls. Same rule
+// on labels — the app owns its string catalogue. Three of these need
+// `lucide-react`, which is why it is a peer and not a dependency.
+export { AppPage } from './AppPage';
+export type { AppPageProps, AppPageVariant } from './AppPage';
+export { PageHeaderCard } from './PageHeaderCard';
+export type { PageHeaderCardProps } from './PageHeaderCard';
+export { ContextBar } from './ContextBar';
+export type { ContextBarProps } from './ContextBar';
+export { Unauthorized } from './Unauthorized';
+export type { UnauthorizedProps } from './Unauthorized';
+export { NoticeBar } from './NoticeBar';
+export type { NoticeBarProps, NoticeStatusLabels } from './NoticeBar';
+export { LanguageSelector } from './LanguageSelector';
+export type { LanguageSelectorProps } from './LanguageSelector';
+export { RefreshButton } from './RefreshButton';
+export type { RefreshButtonProps } from './RefreshButton';
+export { ReadOnlyField } from './ReadOnlyField';
+export type { ReadOnlyFieldProps } from './ReadOnlyField';
+export { TypeToConfirmModal } from './TypeToConfirmModal';
+export type { TypeToConfirmModalProps } from './TypeToConfirmModal';
+export { useCopyToClipboard } from './useCopyToClipboard';
+export type { UseCopyToClipboardResult } from './useCopyToClipboard';
 
 export { Pagination, clampPage, pageCountFor, pageWindow } from './Pagination';
 export type { PaginationLabels, PaginationProps } from './Pagination';

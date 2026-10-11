@@ -7,6 +7,23 @@ curated overview.
 
 ## Unreleased
 
+### `@rexezuge/web`
+
+- **Nine more components converged** from the family's copies: `AppPage`,
+  `PageHeaderCard`, `ContextBar`, `Unauthorized`, `NoticeBar`, `LanguageSelector`,
+  `RefreshButton`, `ReadOnlyField`, `TypeToConfirmModal`, plus the
+  `useCopyToClipboard` hook three copies had inlined.
+- **`lucide-react` is a peer.** Three components need glyphs; reimplementing icon
+  path data would fork lucide's artwork. Labels stay props — nothing here calls
+  `useTranslation`.
+- **`codemods/` can migrate them.** A new relative-import transform, because
+  consumers never import their own web app by package name.
+- Two defects fixed from the copies: `ReadOnlyField`'s missing `htmlFor` (the
+  value input had no accessible name) and `Unauthorized`'s untestable hard-coded
+  navigation.
+
+### Earlier in this cycle
+
 Nine packages now, not eight.
 
 - **`@rexezuge/http`** (new) — the family's HTTP layer: `rateLimit`,
