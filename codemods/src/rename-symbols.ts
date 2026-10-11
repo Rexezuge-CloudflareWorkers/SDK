@@ -31,7 +31,10 @@ export function renameSymbols(source: string): SymbolRenameResult {
   // The lookbehind is the whole safety property: without it, `"this.withRetry("`
   // inside a string literal is rewritten. With it, a match preceded by a quote
   // character anywhere in its prefix is left alone.
-  const member = new RegExp(`(?<!["'])(?:${CALL_PREFIXES.map((prefix) => prefix.replace('.', '\\.')).join('|')})\\b(${Object.keys(RENAMES).join('|')})\\b\\(`, 'g');
+  const member = new RegExp(
+    `(?<!["'])(?:${CALL_PREFIXES.map((prefix) => prefix.replace('.', '\\.')).join('|')})\\b(${Object.keys(RENAMES).join('|')})\\b\\(`,
+    'g',
+  );
   const constructed = new RegExp(`\\bnew\\s+(${Object.keys(RENAMES).join('|')})\\b\\(`, 'g');
   const imported = new RegExp(`import\\s+(?:type\\s+)?\\{([^}]*)\\}\\s+from`, 'g');
 

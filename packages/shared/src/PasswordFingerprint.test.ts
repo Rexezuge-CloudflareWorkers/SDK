@@ -5,7 +5,9 @@ import { CryptoUtil } from './CryptoUtil';
 
 describe('passwordFingerprint', () => {
   it('is a deterministic unsalted SHA-256 of the password', async () => {
-    await expect(passwordFingerprint('correct horse battery staple')).resolves.toBe(await CryptoUtil.sha256Hex('correct horse battery staple'));
+    await expect(passwordFingerprint('correct horse battery staple')).resolves.toBe(
+      await CryptoUtil.sha256Hex('correct horse battery staple'),
+    );
   });
 
   it('differs per password (so a memo keyed on it cannot accept a different one)', async () => {

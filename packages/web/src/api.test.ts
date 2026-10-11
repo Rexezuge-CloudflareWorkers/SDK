@@ -109,9 +109,7 @@ describe('createApiClient', () => {
   });
 
   it('normalizes a 500 envelope into the taxonomy class, with the server message', async () => {
-    const fetchMock = vi.fn<FetchFn>(async () =>
-      jsonResponse({ Exception: { Type: 'InternalError', Message: 'D1 exploded.' } }, 500),
-    );
+    const fetchMock = vi.fn<FetchFn>(async () => jsonResponse({ Exception: { Type: 'InternalError', Message: 'D1 exploded.' } }, 500));
     const client = createApiClient(fetchMock);
 
     const error = await client.get<unknown>('/thing').catch((cause: unknown) => cause);
@@ -169,9 +167,7 @@ describe('createApiClient', () => {
     expect(error).toBeInstanceOf(ServiceError);
     expect((error as ServiceError).status).toBe(502);
     // The catalog's 502 default, not the markup.
-    expect((error as ServiceError).message).toBe(
-      'The server received an invalid response from an upstream service.',
-    );
+    expect((error as ServiceError).message).toBe('The server received an invalid response from an upstream service.');
   });
 
   it('surfaces a short plain-text error body', async () => {
@@ -197,9 +193,7 @@ describe('createApiClient', () => {
     const client = createApiClient(fetchMock);
 
     const error = await client.get<unknown>('/thing').catch((cause: unknown) => cause);
-    expect((error as ServiceError).message).toBe(
-      'The server is currently unable to handle the request — retry after a delay.',
-    );
+    expect((error as ServiceError).message).toBe('The server is currently unable to handle the request — retry after a delay.');
   });
 
   it('normalizes a transport failure through ServiceError.from', async () => {

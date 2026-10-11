@@ -161,11 +161,7 @@ export class UserIdentityService {
    * Ops/migration path: attach an address that has already been proven, without
    * making it the sign-in address.
    */
-  public async linkVerifiedEmail(
-    userId: string,
-    email: string,
-    now = TimestampUtil.getCurrentUnixTimestampInSeconds(),
-  ): Promise<void> {
+  public async linkVerifiedEmail(userId: string, email: string, now = TimestampUtil.getCurrentUnixTimestampInSeconds()): Promise<void> {
     const address = email.trim().toLowerCase();
     if (!isValidEmailFormat(address)) throw new BadRequestError('Invalid email address');
     const emailDAO = await this.deps.userEmailDAO();

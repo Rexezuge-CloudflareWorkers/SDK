@@ -25,8 +25,7 @@ function isLogLevel(level: string): level is LogLevel {
 }
 
 function resolveLogLevel(env?: unknown): LogLevel {
-  const fromInjected =
-    env !== null && typeof env === 'object' ? (env as Record<string, string | undefined>)['LOG_LEVEL'] : undefined;
+  const fromInjected = env !== null && typeof env === 'object' ? (env as Record<string, string | undefined>)['LOG_LEVEL'] : undefined;
   const fromEnv = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.LOG_LEVEL;
   const level = fromInjected ?? fromEnv ?? 'info';
   return isLogLevel(level) ? level : 'info';

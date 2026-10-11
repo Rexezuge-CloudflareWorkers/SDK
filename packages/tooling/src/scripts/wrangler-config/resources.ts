@@ -90,9 +90,7 @@ export function ensureKVNamespace(config: WranglerConfig, binding: string): Prov
   if (namespace === undefined) {
     console.log(`Creating KV namespace: ${namespaceName}`);
     runWrangler(['kv', 'namespace', 'create', namespaceName]);
-    namespace = listKVNamespaces().find(
-      (candidate) => candidate.id !== undefined && (candidate.title ?? candidate.name) === namespaceName,
-    );
+    namespace = listKVNamespaces().find((candidate) => candidate.id !== undefined && (candidate.title ?? candidate.name) === namespaceName);
     created = true;
   }
   if (namespace?.id === undefined) {
@@ -278,7 +276,10 @@ function provisionSecretStore(content: string, config: WranglerConfig, created: 
     created.push(`secrets-store:${DEFAULT_SECRET_STORE_NAME}`);
   }
   console.log(`Using Secrets Store: ${storeId}`);
-  return placeholders.reduce((patched, { index }) => writeConfigValue(patched, ['secrets_store_secrets', index, 'store_id'], storeId), content);
+  return placeholders.reduce(
+    (patched, { index }) => writeConfigValue(patched, ['secrets_store_secrets', index, 'store_id'], storeId),
+    content,
+  );
 }
 
 /**

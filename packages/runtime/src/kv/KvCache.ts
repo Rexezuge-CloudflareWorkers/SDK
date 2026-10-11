@@ -216,8 +216,7 @@ class KvCache {
       // write-invalidation that silently under-purges serves pre-write bytes
       // for a whole TTL while reporting success, so this is never silent.
       logger.warn(
-        `KV purge for ${domain} hit the ${PURGE_MAX_PAGES * PURGE_LIST_LIMIT}-key page cap; ` +
-          `at least one key may survive invalidation`,
+        `KV purge for ${domain} hit the ${PURGE_MAX_PAGES * PURGE_LIST_LIMIT}-key page cap; ` + `at least one key may survive invalidation`,
       );
       return deleted;
     } catch (error) {

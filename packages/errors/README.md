@@ -31,23 +31,23 @@ try {
 
 One class per row of `CATALOG`, so a status can never disagree with its code or default message:
 
-| Class | Status | Exposes message |
-| --- | --- | --- |
-| `BadRequestError` | 400 | yes |
-| `UnauthorizedError` | 401 | yes |
-| `ForbiddenError` | 403 | yes |
-| `NotFoundError` | 404 | yes |
-| `MethodNotAllowedError` | 405 | yes |
-| `ConflictError` | 409 | yes |
-| `PreconditionFailedError` | 412 | yes |
-| `PayloadTooLargeError` | 413 | yes |
-| `UnsupportedMediaTypeError` | 415 | yes |
-| `RateLimitedError` | 429 | yes |
-| `InternalServerError` | 500 | no |
-| `NotImplementedError` | 501 | no |
-| `BadGatewayError` | 502 | no |
-| `ServiceUnavailableError` | 503 | yes |
-| `DatabaseError` | 502 | no |
+| Class                       | Status | Exposes message |
+| --------------------------- | ------ | --------------- |
+| `BadRequestError`           | 400    | yes             |
+| `UnauthorizedError`         | 401    | yes             |
+| `ForbiddenError`            | 403    | yes             |
+| `NotFoundError`             | 404    | yes             |
+| `MethodNotAllowedError`     | 405    | yes             |
+| `ConflictError`             | 409    | yes             |
+| `PreconditionFailedError`   | 412    | yes             |
+| `PayloadTooLargeError`      | 413    | yes             |
+| `UnsupportedMediaTypeError` | 415    | yes             |
+| `RateLimitedError`          | 429    | yes             |
+| `InternalServerError`       | 500    | no              |
+| `NotImplementedError`       | 501    | no              |
+| `BadGatewayError`           | 502    | no              |
+| `ServiceUnavailableError`   | 503    | yes             |
+| `DatabaseError`             | 502    | no              |
 
 `HttpServiceError` is the generic carrier when only a catalog entry is needed. `DatabaseError` carries the D1 classifier's verdict in its `retryable` flag.
 

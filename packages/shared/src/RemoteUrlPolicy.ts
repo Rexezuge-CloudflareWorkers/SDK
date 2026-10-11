@@ -257,7 +257,8 @@ function normalizeRemoteUrl(raw: unknown, options: UrlPolicyOptions = {}): strin
   if (typeof raw !== 'string') throw new RemoteUrlRejectedError('remoteUrl must be a string');
   const trimmed = raw.trim();
   if (trimmed === '') throw new RemoteUrlRejectedError('remoteUrl is required');
-  if (trimmed.length > MAX_REMOTE_URL_LENGTH) throw new RemoteUrlRejectedError(`remoteUrl must be at most ${MAX_REMOTE_URL_LENGTH} characters`);
+  if (trimmed.length > MAX_REMOTE_URL_LENGTH)
+    throw new RemoteUrlRejectedError(`remoteUrl must be at most ${MAX_REMOTE_URL_LENGTH} characters`);
 
   let url: URL;
   try {
@@ -267,7 +268,8 @@ function normalizeRemoteUrl(raw: unknown, options: UrlPolicyOptions = {}): strin
   }
 
   if (url.protocol !== 'https:') throw new RemoteUrlRejectedError('remoteUrl must use https');
-  if (url.username !== '' || url.password !== '') throw new RemoteUrlRejectedError('remoteUrl must not embed credentials; use the auth fields instead');
+  if (url.username !== '' || url.password !== '')
+    throw new RemoteUrlRejectedError('remoteUrl must not embed credentials; use the auth fields instead');
   if (url.port !== '' && url.port !== '443') throw new RemoteUrlRejectedError('remoteUrl must use the default https port');
 
   const host = url.hostname.toLowerCase();
@@ -282,7 +284,8 @@ function normalizeRemoteUrl(raw: unknown, options: UrlPolicyOptions = {}): strin
   for (const suffix of BLOCKED_HOST_SUFFIXES) {
     if (host.endsWith(suffix)) throw new RemoteUrlRejectedError(`remoteUrl host ${host} is not a public hostname`);
   }
-  if (looksLikeObfuscatedNumericHost(host)) throw new RemoteUrlRejectedError(`remoteUrl host ${host} is a numeric address in a non-canonical form`);
+  if (looksLikeObfuscatedNumericHost(host))
+    throw new RemoteUrlRejectedError(`remoteUrl host ${host} is a numeric address in a non-canonical form`);
 
   if (isIpv4Literal(host)) {
     const octets = ipv4Octets(host);
@@ -326,10 +329,12 @@ function resolveRedirectUrl(baseUrl: string, location: string, options: UrlPolic
 }
 
 function parseAllowedHosts(raw: unknown): string[] {
-  return typeof raw !== 'string' || raw.trim() === '' ? [] : raw
-    .split(',')
-    .map((entry) => entry.trim())
-    .filter((entry) => entry !== '');
+  return typeof raw !== 'string' || raw.trim() === ''
+    ? []
+    : raw
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter((entry) => entry !== '');
 }
 
 export {

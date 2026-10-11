@@ -143,7 +143,10 @@ export function applyVarsPatch(): void {
   }
   const prepared = readConfig();
   let content = prepared.content;
-  if (prepared.config.vars !== undefined && (prepared.config.vars === null || typeof prepared.config.vars !== 'object' || Array.isArray(prepared.config.vars))) {
+  if (
+    prepared.config.vars !== undefined &&
+    (prepared.config.vars === null || typeof prepared.config.vars !== 'object' || Array.isArray(prepared.config.vars))
+  ) {
     throw new Error('wrangler.jsonc vars must be an object before applying WRANGLER_VARS_PATCH_JSON.');
   }
   if (prepared.config.vars === undefined || prepared.config.vars === null) {

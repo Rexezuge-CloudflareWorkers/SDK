@@ -53,4 +53,6 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log(`SPA shell check passed (${path.join(root, 'apps/api/src/generated/spa-shell.ts')} matches ${path.join(root, 'apps/web/dist')}).`);
+console.log(
+  `SPA shell check passed (${path.join(root, 'apps/api/src/generated/spa-shell.ts')} matches ${path.join(root, 'apps/web/dist')}).`,
+);

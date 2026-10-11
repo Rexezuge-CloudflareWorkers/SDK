@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeRemoteUrl, resolveRedirectUrl, parseAllowedHosts, isPrivateOrInternalHost, RemoteUrlRejectedError } from './RemoteUrlPolicy';
+import {
+  normalizeRemoteUrl,
+  resolveRedirectUrl,
+  parseAllowedHosts,
+  isPrivateOrInternalHost,
+  RemoteUrlRejectedError,
+} from './RemoteUrlPolicy';
 
 // Adapted from Durable-DAV's test/replication-url-policy.test.ts, plus cases for
 // the merged SsrfHosts predicate.
@@ -84,7 +90,9 @@ describe('resolveRedirectUrl', () => {
     expect(() => resolveRedirectUrl('https://dav.example.com/a', 'http://dav.example.com/b')).toThrow(RemoteUrlRejectedError);
   });
   it('permits a cross-host redirect to an allowlisted host', () => {
-    expect(resolveRedirectUrl('https://dav.example.com/a', 'https://nextcloud.lan/b', { allowedHosts: ['nextcloud.lan'] })).toBe('https://nextcloud.lan/b');
+    expect(resolveRedirectUrl('https://dav.example.com/a', 'https://nextcloud.lan/b', { allowedHosts: ['nextcloud.lan'] })).toBe(
+      'https://nextcloud.lan/b',
+    );
   });
 });
 
@@ -101,7 +109,24 @@ describe('parseAllowedHosts', () => {
 
 describe('isPrivateOrInternalHost (merged SsrfHosts predicate)', () => {
   it('refuses loopback, RFC1918, CGNAT, link-local and mapped forms', () => {
-    for (const host of ['127.0.0.1', 'localhost', 'foo.localhost', '0.0.0.0', '10.0.0.1', '172.16.0.1', '192.168.1.1', '100.64.0.1', '169.254.169.254', '::1', 'fe80::1', 'fd00::1', '[::ffff:127.0.0.1]', 'nas.local', 'db.internal', 'router.home.arpa']) {
+    for (const host of [
+      '127.0.0.1',
+      'localhost',
+      'foo.localhost',
+      '0.0.0.0',
+      '10.0.0.1',
+      '172.16.0.1',
+      '192.168.1.1',
+      '100.64.0.1',
+      '169.254.169.254',
+      '::1',
+      'fe80::1',
+      'fd00::1',
+      '[::ffff:127.0.0.1]',
+      'nas.local',
+      'db.internal',
+      'router.home.arpa',
+    ]) {
       expect(isPrivateOrInternalHost(host), host).toBe(true);
     }
   });
@@ -112,7 +137,7 @@ describe('isPrivateOrInternalHost (merged SsrfHosts predicate)', () => {
     }
   });
 
-  it('refuses an empty host and a bare \':\'-bearing host', () => {
+  it("refuses an empty host and a bare ':'-bearing host", () => {
     expect(isPrivateOrInternalHost('')).toBe(true);
   });
 

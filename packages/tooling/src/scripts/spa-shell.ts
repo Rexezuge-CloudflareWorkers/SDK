@@ -68,9 +68,7 @@ function ensureSpaShellStub(options: SpaShellPaths): { created: boolean; path: s
 /** The `SPA_HTML` string literal, decoded from the generated TS module. */
 function readEmbeddedHtml(shell: string, problems: string[]): string | null {
   if (!existsSync(shell)) {
-    problems.push(
-      `${shell} is missing — run the build (only apps/web has a build step).`,
-    );
+    problems.push(`${shell} is missing — run the build (only apps/web has a build step).`);
     return null;
   }
   const source = readFileSync(shell, 'utf8');

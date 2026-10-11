@@ -151,4 +151,3 @@ export function splitPositional(
   }
   return { positional, rest };
 }
-

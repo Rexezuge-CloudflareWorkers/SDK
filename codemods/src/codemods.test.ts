@@ -21,7 +21,7 @@ describe('renameImports', () => {
     }
   });
 
-  it('moves Durable-DAV\'s shared/net URL-policy subtree', () => {
+  it("moves Durable-DAV's shared/net URL-policy subtree", () => {
     // The kit converged DD's RemoteUrlPolicy, so `net` is a kernel subtree:
     // its barrel exports (normalizeRemoteUrl, RemoteUrlRejectedError,
     // MAX_REDIRECTS) all live at the kit's shared root.
@@ -41,9 +41,9 @@ describe('renameImports', () => {
   });
 
   it('moves runtime kernel files and keeps ConfigurationManager, http and constants', () => {
-    expect(renameImports("import { AbstractEntrypointWorker } from '@dav/backend-runtime/base/AbstractEntrypointWorker';", '@dav').output).toBe(
-      "import { AbstractEntrypointWorker } from '@rexezuge/runtime';",
-    );
+    expect(
+      renameImports("import { AbstractEntrypointWorker } from '@dav/backend-runtime/base/AbstractEntrypointWorker';", '@dav').output,
+    ).toBe("import { AbstractEntrypointWorker } from '@rexezuge/runtime';");
     expect(renameImports("import { EnvParser } from '@dav/backend-runtime/config/EnvParser';", '@dav').output).toBe(
       "import { EnvParser } from '@rexezuge/runtime';",
     );
@@ -100,10 +100,9 @@ describe('renameSymbols', () => {
     const source = "import { BACKEND_STRINGS, getBackendStrings } from '@rexezuge/i18n';\nconst strings = getBackendStrings('en');";
     const result = renameSymbols(source);
     expect(result.output).toContain("import { LOCALE_STRINGS, getLocalizedStrings } from '@rexezuge/i18n';");
-    expect(result.output).toContain('getLocalizedStrings(\'en\')');
+    expect(result.output).toContain("getLocalizedStrings('en')");
     expect(result.changes).toBeGreaterThanOrEqual(3);
   });
-
 
   it('renames this-call sites', () => {
     expect(renameSymbols('await this.withRetry(() => run(), "create user");').output).toContain('await this.run(');

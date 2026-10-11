@@ -147,9 +147,7 @@ function splitSql(sql: string): string[] {
  * message quotes.
  */
 function isExecutable(statement: string): boolean {
-  const withoutComments = statement
-    .replaceAll(/--[^\n]*/g, '')
-    .replaceAll(/\/\*[\s\S]*?\*\//g, '');
+  const withoutComments = statement.replaceAll(/--[^\n]*/g, '').replaceAll(/\/\*[\s\S]*?\*\//g, '');
   return withoutComments.trim().length > 0;
 }
 

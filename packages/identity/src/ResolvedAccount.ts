@@ -49,9 +49,7 @@ export interface ResolvedAccount {
 export type AccountSummary = Pick<ResolvedAccount, 'id' | 'email' | 'username'>;
 
 /** Shape every `users` read has, whether or not the identity migration has run. */
-export type UserRowLike =
-  | Pick<UserRow, 'id' | 'email' | 'current_email' | 'username'>
-  | undefined;
+export type UserRowLike = Pick<UserRow, 'id' | 'email' | 'current_email' | 'username'> | undefined;
 
 /** Project a `users` row onto a `ResolvedAccount`. */
 export function summarize(row: UserRowLike): ResolvedAccount | null {

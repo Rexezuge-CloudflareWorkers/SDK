@@ -24,12 +24,12 @@ const account = await resolveAccount(deps, 'user@example.com'); // ResolvedAccou
 
 ## 2. DAOs
 
-| Export | Role |
-| --- | --- |
-| `UserDAO` | `users` table: frozen anchor id, lookup by id/anchor/email |
-| `UserEmailDAO` | `user_emails` registry: claims, verification, revocation |
-| `newAccountId` / `newAnchor` | ID generation for new accounts |
-| `summarize` / `AccountSummary` | safe-to-log account projection |
+| Export                         | Role                                                       |
+| ------------------------------ | ---------------------------------------------------------- |
+| `UserDAO`                      | `users` table: frozen anchor id, lookup by id/anchor/email |
+| `UserEmailDAO`                 | `user_emails` registry: claims, verification, revocation   |
+| `newAccountId` / `newAnchor`   | ID generation for new accounts                             |
+| `summarize` / `AccountSummary` | safe-to-log account projection                             |
 
 ```ts
 import { UserDAO, UserEmailDAO } from '@rexezuge/identity';

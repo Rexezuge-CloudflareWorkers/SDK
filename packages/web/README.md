@@ -14,16 +14,16 @@ pnpm add @rexezuge/web
 
 Class-based primitives over the CSS variables every Tailwind consumer already defines (`--color-accent`, `--color-surface-*`, `--color-text-*`, `--color-{success,error,warning,info,neutral}-{bg,text}`); `Spinner` (and `Button`'s busy state) additionally needs `animate-spin`.
 
-| Export | Notes |
-| --- | --- |
-| `Button` / `LoadingButton` | variants + sizes via `buttonClass`; loading state with spinner |
-| `Badge` | `badgeClass` / `badgeVariantClass` status pills |
-| `Card`, `CardHeader`, `CardTitle` | layout shells |
-| `Input`, `Label`, `Select`, `Textarea`, `FocusInput` | form controls, `fieldClass` shared styling |
-| `Pagination` (+ `pageWindow`, `pageCountFor`, `clampPage`) | windowed page navigation |
-| `Spinner` | standalone busy indicator |
-| `theme` (+ `buttonColors`, `inputStyle`, …) | legacy inline-style escape hatch |
-| `cn` | conditional class join |
+| Export                                                     | Notes                                                          |
+| ---------------------------------------------------------- | -------------------------------------------------------------- |
+| `Button` / `LoadingButton`                                 | variants + sizes via `buttonClass`; loading state with spinner |
+| `Badge`                                                    | `badgeClass` / `badgeVariantClass` status pills                |
+| `Card`, `CardHeader`, `CardTitle`                          | layout shells                                                  |
+| `Input`, `Label`, `Select`, `Textarea`, `FocusInput`       | form controls, `fieldClass` shared styling                     |
+| `Pagination` (+ `pageWindow`, `pageCountFor`, `clampPage`) | windowed page navigation                                       |
+| `Spinner`                                                  | standalone busy indicator                                      |
+| `theme` (+ `buttonColors`, `inputStyle`, …)                | legacy inline-style escape hatch                               |
+| `cn`                                                       | conditional class join                                         |
 
 ```tsx
 import { Button, Card, CardHeader, CardTitle, useNotice } from '@rexezuge/web';
@@ -32,7 +32,9 @@ function Panel() {
   const { notices, showNotice } = useNotice();
   return (
     <Card>
-      <CardHeader><CardTitle>Tokens</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>Tokens</CardTitle>
+      </CardHeader>
       <Button onClick={() => showNotice('Saved', { kind: 'success' })}>Save</Button>
     </Card>
   );

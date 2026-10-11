@@ -19,16 +19,16 @@ repos adapt to it.**
 
 ## Packages
 
-| Package                   | Contents |
-| ------------------------- | -------- |
-| `@rexezuge/errors`        | Catalog-driven HTTP/service error taxonomy, retry markers, `toResponse()` |
-| `@rexezuge/runtime`       | DI `Container`/`Token`/`RequestScope`, `AppConfiguration`, `EnvParser`, base workers, logger, `KvCache` |
-| `@rexezuge/shared`        | Pure utilities (UUID, Timestamp, Crypto, Base64, cursor codec, SSRF policy, …) |
-| `@rexezuge/i18n`          | Backend string bundle + 12-locale table + `getLocalizedStrings` |
-| `@rexezuge/d1`            | D1 retry engine, error classifier, `BaseDAO`, AES-GCM |
-| `@rexezuge/identity`      | `UserIdentityService`, user DAOs, canonical identity migrations + upgrade test |
-| `@rexezuge/web`           | React UI primitives, hooks (`useNotice`, `useSpaLanguage`, `useCurrentUser`), API client |
-| `@rexezuge/tooling`       | ESLint config factory, vitest/vite bases, scripts, GitHub Actions workflow templates |
+| Package              | Contents                                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------------------------- |
+| `@rexezuge/errors`   | Catalog-driven HTTP/service error taxonomy, retry markers, `toResponse()`                               |
+| `@rexezuge/runtime`  | DI `Container`/`Token`/`RequestScope`, `AppConfiguration`, `EnvParser`, base workers, logger, `KvCache` |
+| `@rexezuge/shared`   | Pure utilities (UUID, Timestamp, Crypto, Base64, cursor codec, SSRF policy, …)                          |
+| `@rexezuge/i18n`     | Backend string bundle + 12-locale table + `getLocalizedStrings`                                         |
+| `@rexezuge/d1`       | D1 retry engine, error classifier, `BaseDAO`, AES-GCM                                                   |
+| `@rexezuge/identity` | `UserIdentityService`, user DAOs, canonical identity migrations + upgrade test                          |
+| `@rexezuge/web`      | React UI primitives, hooks (`useNotice`, `useSpaLanguage`, `useCurrentUser`), API client                |
+| `@rexezuge/tooling`  | ESLint config factory, vitest/vite bases, scripts, GitHub Actions workflow templates                    |
 
 Packages are versioned in lockstep via Changesets; a single version covers all
 eight. See `.changeset/README.md` for how to add a changeset.

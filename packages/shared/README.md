@@ -12,18 +12,18 @@ pnpm add @rexezuge/shared
 
 ## 1. What's inside
 
-| Area | Exports |
-| --- | --- |
-| Byte codecs | `bytesToBase64`, `base64ToBytes` |
-| Time | `SystemClock` / `FixedClock` (injectable `Clock`), `TimestampUtil`, `TimeZoneUtil` + `DEFAULT_TIME_ZONE` |
-| Locale | `LocaleUtil` (`DEFAULT_LOCALE`, `SUPPORTED_LOCALES`, display names), `canonicalizeLanguageTag` |
-| Email | `normalizeEmail`, `isValidEmailFormat`, `MAX_EMAIL_LENGTH` |
-| Identifiers | `UUIDUtil`, `CryptoIdGenerator` / `FixedIdGenerator` (injectable `IdGenerator`) |
-| Crypto + secrets | `CryptoUtil`, `TokenHashUtil`, `passwordFingerprint` |
-| Error handling | `ErrorSanitizationUtil` (operator/client message split), `ok` / `err` / `getOrThrow` / `mapResult` + `Result` |
-| Network policy | `normalizeRemoteUrl`, `resolveRedirectUrl`, `parseAllowedHosts`, `isPrivateOrInternalHost` (+ limits and blocklists) |
-| Pagination | `CursorCodec` (opaque cursors, `Page`) |
-| Subrequest accounting | `SubrequestCounter`, `SUBREQUEST_KINDS`, `subrequestSpend` (Cloudflare's 50-subrequest ceiling) |
+| Area                  | Exports                                                                                                              |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Byte codecs           | `bytesToBase64`, `base64ToBytes`                                                                                     |
+| Time                  | `SystemClock` / `FixedClock` (injectable `Clock`), `TimestampUtil`, `TimeZoneUtil` + `DEFAULT_TIME_ZONE`             |
+| Locale                | `LocaleUtil` (`DEFAULT_LOCALE`, `SUPPORTED_LOCALES`, display names), `canonicalizeLanguageTag`                       |
+| Email                 | `normalizeEmail`, `isValidEmailFormat`, `MAX_EMAIL_LENGTH`                                                           |
+| Identifiers           | `UUIDUtil`, `CryptoIdGenerator` / `FixedIdGenerator` (injectable `IdGenerator`)                                      |
+| Crypto + secrets      | `CryptoUtil`, `TokenHashUtil`, `passwordFingerprint`                                                                 |
+| Error handling        | `ErrorSanitizationUtil` (operator/client message split), `ok` / `err` / `getOrThrow` / `mapResult` + `Result`        |
+| Network policy        | `normalizeRemoteUrl`, `resolveRedirectUrl`, `parseAllowedHosts`, `isPrivateOrInternalHost` (+ limits and blocklists) |
+| Pagination            | `CursorCodec` (opaque cursors, `Page`)                                                                               |
+| Subrequest accounting | `SubrequestCounter`, `SUBREQUEST_KINDS`, `subrequestSpend` (Cloudflare's 50-subrequest ceiling)                      |
 
 ## 2. Usage
 

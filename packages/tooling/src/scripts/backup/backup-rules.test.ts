@@ -47,9 +47,9 @@ describe('evaluateConfig', () => {
   });
 
   it('fails a destination with no Cloudflare credentials', () => {
-    expect(evaluateConfig({ BACKUP_ENCRYPTION_KEY: 'k', WEBDAV_URL: 'https://dav.example.com', WEBDAV_USER: 'u', WEBDAV_PASSWORD: 'p' }).errors).toStrictEqual(
-      ['A backup destination is configured but CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID are missing.'],
-    );
+    expect(
+      evaluateConfig({ BACKUP_ENCRYPTION_KEY: 'k', WEBDAV_URL: 'https://dav.example.com', WEBDAV_USER: 'u', WEBDAV_PASSWORD: 'p' }).errors,
+    ).toStrictEqual(['A backup destination is configured but CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID are missing.']);
   });
 
   it('passes when both a destination and the key are present', () => {
