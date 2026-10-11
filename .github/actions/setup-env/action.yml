@@ -1,19 +1,11 @@
 name: Setup Environment
 description: Install pnpm, set up Node.js with pnpm store cache, and install workspace dependencies
 
-inputs:
-  working-directory:
-    description: The workspace to set up (default: repo root)
-    required: false
-    default: '.'
-
 runs:
   using: composite
   steps:
     - name: Install pnpm
       uses: pnpm/action-setup@v4
-      with:
-        working-directory: ${{ inputs.working-directory }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -25,4 +17,4 @@ runs:
       uses: ./.github/actions/retry-step
       with:
         command: pnpm install --no-frozen-lockfile
-        working-directory: ${{ inputs.working-directory }}
+        max_attempts: '3'
