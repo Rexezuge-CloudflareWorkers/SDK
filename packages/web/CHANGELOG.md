@@ -1,5 +1,12 @@
 # @rexezuge/web
 
+## 1.0.5
+
+### Patch Changes
+
+- @rexezuge/errors@1.0.5
+  - @rexezuge/shared@1.0.5
+
 ## 1.0.4
 
 ### Patch Changes

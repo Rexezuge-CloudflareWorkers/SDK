@@ -1,5 +1,13 @@
 # @rexezuge/tooling
 
+## 1.0.5
+
+### Patch Changes
+
+- 55bef94: Fix script injection in retry-step action: pass max_attempts and delay via env instead of interpolating expressions into run.
+- e757e96: Pin setup-env template pnpm/action-setup to immutable commit SHA to resolve CodeQL unpinned tag alert.
+- @rexezuge/d1@1.0.5
+
 ## 1.0.4
 
 ### Patch Changes
