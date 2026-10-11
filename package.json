@@ -4,6 +4,10 @@
   "private": true,
   "description": "Shared foundation packages for the Rexezuge-CloudflareWorkers family of Cloudflare Workers monorepos.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rexezuge-CloudflareWorkers/SDK.git"
+  },
   "type": "module",
   "packageManager": "pnpm@11.2.2",
   "scripts": {
