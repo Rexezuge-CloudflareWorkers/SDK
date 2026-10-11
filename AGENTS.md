@@ -29,10 +29,7 @@ pnpm workspace (`pnpm@11.2.2`, Node 24 per CI). Eight public packages in
 ## Compatibility rules (load-bearing)
 
 - Direction is one-way: **the kit follows the best design; consumer repos adapt
-  to it.** Eleven consumer repos are typechecked/linted/tested against every kit
-  PR by the `consumer-matrix` CI job (deps re-pointed at HEAD via
-  `scripts/relink-consumer.mjs`). A rename that breaks consumers without a
-  migration path fails that matrix.
+  to it.** A rename that breaks consumers must still ship a migration path.
 - Renames ship as codemod rows: add the mapping to `codemods/src/mapping.ts`
   **and** a case to `codemods.test.ts` (the suite is the contract; `adopt.ts`
   never edits `package.json` — dependency changes go through a human
