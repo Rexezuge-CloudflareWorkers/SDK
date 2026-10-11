@@ -276,7 +276,14 @@ function verifyMigrations(migrationsDir: string, options: { write?: boolean } = 
     const updated = buildUpdatedLock(migrationsDir, report.files, report.lock, baseline);
     const next = `${JSON.stringify(updated, null, 2)}\n`;
     const path = join(migrationsDir, LOCK_NAME);
-    const before = existsSync(path) ? readFileSync(path, 'utf8') : null;
+    let before: string | null = null;
+    try {
+      before = readFileSync(path, 'utf8');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code !== 'ENOENT') {
+        throw error;
+      }
+    }
     if (before !== next) {
       writeFileSync(path, next, 'utf8');
     }
