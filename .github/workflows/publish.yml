@@ -2,7 +2,7 @@ name: Publish
 
 permissions:
   contents: read
-  id-token: write # OIDC trusted publishing — the npm CLI mints a short-lived token, no stored secret needed
+  id-token: write
 
 on:
   release:
@@ -12,7 +12,7 @@ on:
 
 jobs:
   publish:
-    name: Publish @rexezuge/* To npm
+    name: Publish
     runs-on: ubuntu-latest
 
     steps:
