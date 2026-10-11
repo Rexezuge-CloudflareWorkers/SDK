@@ -1,5 +1,11 @@
 # @rexezuge/runtime
 
+## 1.0.7
+
+### Patch Changes
+
+- ec1f306: Adopt the family's Prettier configuration (`.prettierrc`, `.prettierignore`, `.editorconfig`) and reformat the repository to match. `pnpm run format` rewrites in place; `pnpm run format:check` is the CI gate and the only one of the two that fails rather than repairing. The published `dist/` output is byte-identical — this is formatting and tooling only.
+
 ## 1.0.6
 
 No changes in this release.
