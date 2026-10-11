@@ -1,0 +1,259 @@
+# Continuous Integration — the converged gate for the family's worker repos.
+#
+# The most-common superset of the nine repos' CI workflows. Each job exists because
+# its failure is invisible to every other job: a locale defect still typechecks, a
+# god file still lints, an edited migration still deploys. A job per gate means the
+# run log names the tool that broke rather than burying it in a `checks` job.
+#
+# PLACEHOLDERS — the things a consumer must change for this to run at all:
+#   * REPLACE_ME_SCOPE       the npm scope, in the `pnpm --filter @REPLACE_ME_SCOPE/web build`
+#                           invocations below.
+#   * REPLACE_ME_WEB_FILTER  the workspace filter for the SPA (usually @REPLACE_ME_SCOPE/web).
+#   * REPLACE_ME_MIGRATIONS  the D1 binding `wrangler d1 migrations apply` targets.
+#
+# The script names in the `run:` steps are the ones this package's scripts suggest;
+# see README.md for the package.json wiring.
+
+name: Continuous Integration
+
+permissions:
+  contents: read
+
+on:
+  repository_dispatch:
+    types:
+      - Upstream Sync Integration
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: continuous-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Typecheck and lint are separate from the gates that follow, because they need
+  # nothing but a checkout while the gates are read-only consumers of the tree.
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      # `pnpm -r typecheck` reaches every workspace package, `test/` among them.
+      - name: Run Type Check and Lint
+        run: pnpm -r typecheck && pnpm run lint
+
+      # Its own step, and read-only, because the `lint` job cannot catch this:
+      # `pnpm run lint` is `eslint --fix --quiet`, and `--fix` repairs what it can
+      # while `--quiet` suppresses the rest — so CI exits 0 on a tree Prettier
+      # rejects, the repairs land in the runner's checkout, and they are thrown
+      # away. `prettier --check` is the one command that fails instead of
+      # repairing. Edge-Sonic had 242 files in exactly that state.
+      - name: Check Formatting
+        run: pnpm run format:check
+
+      - name: Check God-Files
+        uses: ./.github/actions/retry-step
+        with:
+          command: pnpm run check:god-files
+          max_attempts: '2'
+
+      # A locale defect is invisible to the unit tests: the catalogs are data, and
+      # a key missing from every bundle still typechecks and still builds.
+      - name: Validate Locale Bundles
+        uses: ./.github/actions/retry-step
+        with:
+          command: pnpm run validate:locales
+          max_attempts: '2'
+
+      # Editing an already-applied migration is invisible to every other check:
+      # the deploy succeeds, fresh databases pick up the edited statements, and
+      # production keeps the schema it had. The lock is what turns that into a
+      # failure, and this job is read-only — `migrations-lock` is the operator's
+      # command, deliberately not CI's.
+      - name: Verify Migration Lock
+        uses: ./.github/actions/retry-step
+        with:
+          command: pnpm run validate:migrations
+          max_attempts: '2'
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Run Tests with Coverage
+        uses: ./.github/actions/retry-step
+        with:
+          command: pnpm run test:coverage
+          max_attempts: '2'
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+
+  # The SPA's own suite. Only repositories with a Vite SPA keep this job; the two
+  # configs partition the suite rather than each running all of it, so a jsdom
+  # suite under `node` cannot pass while failing.
+  web-tests:
+    name: Web Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Run SPA Unit Tests
+        run: pnpm run test:web
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Run Integration Tests
+        run: pnpm run test:integration
+
+  # Only the SPA build. The API worker is typechecked by `pnpm -r typecheck` above,
+  # so repeating it here would run the same `tsc --noEmit` against the same
+  # tsconfig a second time.
+  build:
+    name: Build Web App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      # PLACEHOLDER: the workspace filter for the SPA.
+      - name: Build Web App
+        run: pnpm --filter @REPLACE_ME_SCOPE/web build
+
+  # Verifies the shell the API worker *serves*, which is a different artifact from
+  # `apps/web/dist/` — it is embedded into `apps/api/src/generated/spa-shell.ts` by
+  # the Vite plugin, and both are gitignored. A stale-but-present shell is a deploy
+  # that serves yesterday's operator UI.
+  #
+  # It builds first rather than depending on `build`, so the failure says "the
+  # served shell is wrong" instead of arriving inside a build log. That costs a
+  # second Vite build per run; the alternative — verifying inside `build` — is free
+  # and is the trade being made here.
+  spa-shell:
+    name: Verify SPA Shell
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      # PLACEHOLDER: the workspace filter for the SPA.
+      - name: Build Web App
+        run: pnpm --filter @REPLACE_ME_SCOPE/web build
+
+      # The build is a **precondition**, not a convenience: a fresh checkout has
+      # neither `apps/web/dist/` nor `apps/api/src/generated/`, and postinstall
+      # writes a deliberately empty stub so `tsc` can resolve `SPA_HTML` before
+      # anyone has built. Verifying without building cannot pass, and it fails
+      # with precisely the message the check exists to give.
+      - name: Verify The SPA Shell
+        uses: ./.github/actions/retry-step
+        with:
+          command: pnpm run verify:spa-shell
+          max_attempts: '2'
+
+  dependabot-auto-merge:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]' && github.event.pull_request.state == 'open' && !github.event.repository.fork }}
+    name: Auto-Merge Dependabot PR
+    needs:
+      - checks
+      - unit-tests
+      - web-tests
+      - integration-tests
+      - build
+      - spa-shell
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      # Auto-merge only after every gate above is green, which is what makes it
+      # safe: a dependency bump that breaks the suite waits for a human instead of
+      # merging itself.
+      - name: Enable Auto-Merge
+        uses: ./.github/actions/retry-step
+        with:
+          command: gh pr merge --auto --merge "$PR_URL"
+          max_attempts: '5'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+
+  dispatch-upstream-sync-deployment:
+    if: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'Upstream Sync Integration' }}
+    name: Dispatch Upstream Sync Deployment
+    needs:
+      - checks
+      - unit-tests
+      - web-tests
+      - integration-tests
+      - build
+      - spa-shell
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      # The second half of the upstream-sync contract: a fork's sync runs CI, and
+      # CI — not the sync workflow — is what authorises the deploy.
+      - name: Dispatch Deployment
+        uses: ./.github/actions/retry-step
+        with:
+          command: >
+            printf '{"event_type":"Upstream Sync Deployment","client_payload":{"branch":"%s","sha":"%s"}}\n'
+            "$PAYLOAD_BRANCH" "$PAYLOAD_SHA"
+            | gh api repos/${{ github.repository }}/dispatches --method POST --input -
+          max_attempts: '2'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAYLOAD_BRANCH: ${{ github.event.client_payload.branch || 'main' }}
+          PAYLOAD_SHA: ${{ github.event.client_payload.sha || github.sha }}

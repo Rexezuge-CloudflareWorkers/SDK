@@ -30,8 +30,8 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { defineConfig, type Plugin } from 'vitest/config';
 
 /**
@@ -48,12 +48,30 @@ export interface ProxyEntry {
  */
 export interface SpaShellTarget {
   /**
-   * Path of the generated module, relative to the repo root.
+   * Path of the generated module, relative to the repository root.
    *
    * `apps/api/src/generated/spa-shell.ts` in every repo that embeds a shell; the
    * parameter exists because the path is the one thing that genuinely differs.
    */
   readonly path: string;
+  /**
+   * The repository root the path is resolved against, as a file URL or a path.
+   *
+   * Defaults to the directory the build runs in (`process.cwd()`), which is the
+   * repo root when the build is `pnpm --filter @scope/web build`. Passed in by the
+   * Vite config, not derived from `import.meta.url`: this plugin object is created
+   * inside the kit's own module, so a URL relative to it points into
+   * `node_modules/@rexezuge/tooling` and writes the shell somewhere no compiler
+   * will ever look.
+   */
+  readonly root?: string | URL;
+  /**
+   * The built `index.html`, as a path or file URL.
+   *
+   * Defaults to `dist/index.html` under the same root. Vite's `closeBundle` runs
+   * after the bundle is written, so this is the file the build just produced.
+   */
+  readonly distIndex?: string | URL;
 }
 
 /**
@@ -100,16 +118,43 @@ export interface WebViteConfigOptions {
  * `dist/index.html` was never produced, and a plugin that throws there fails
  * builds that legitimately emit nothing.
  */
+/**
+ * Normalise a path-or-URL option to a URL, so `new URL(...)` can be used on it.
+ *
+ * Small, and here because two options accept either form: a path is what a consumer
+ * naturally writes in a config, and a URL is what `import.meta.url` hands them.
+ * Accepting both is one line and saves a `fileURLToPath` at every call site.
+ */
+function toUrl(value: string | URL): URL {
+  return typeof value === 'string' ? pathToFileURL(value) : value;
+}
+
+/**
+ * The same, as a **directory** URL — with the trailing separator `new URL(rel, base)`
+ * needs.
+ *
+ * `new URL('apps/api/x.ts', 'file:///repo')` resolves to `/apps/api/x.ts`, silently
+ * dropping the base. The base has to end in a separator, and a path from
+ * `process.cwd()` never does, so this is where the plugin would otherwise write the
+ * shell into the filesystem root.
+ */
+function toDirUrl(value: string | URL): URL {
+  const url = toUrl(value);
+  return url.href.endsWith('/') ? url : new URL(`${url.href}/`);
+}
+
 export function spaShellEmbedPlugin(target: SpaShellTarget): Plugin {
   return {
     name: 'spa-shell-embed',
     closeBundle() {
-      // Resolved lazily, from the config's own directory, because the plugin
-      // object is built before Vite knows the root — and `__dirname` is not
-      // defined in an ESM config.
-      const here = new URL('.', import.meta.url);
-      const outputPath = fileURLToPath(new URL(target.path, here));
-      const indexPath = fileURLToPath(new URL('dist/index.html', here));
+      // Resolved from the directory the build runs in, never from this module's own
+      // URL: the plugin object is created here but executes in the consumer's Vite
+      // process, and `new URL(path, import.meta.url)` would resolve against
+      // `node_modules/@rexezuge/tooling`. `process.cwd()` is the repo root for
+      // `pnpm --filter @scope/web build`, which is how every consumer runs it.
+      const root = toDirUrl(target.root ?? process.cwd());
+      const outputPath = fileURLToPath(new URL(target.path, root));
+      const indexPath = target.distIndex === undefined ? fileURLToPath(new URL('dist/index.html', root)) : fileURLToPath(toUrl(target.distIndex));
 
       if (!existsSync(indexPath)) {
         console.warn('spa-shell-embed: dist/index.html not found, skipping');

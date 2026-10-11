@@ -12,8 +12,17 @@
  *   complying would make the code worse for what the project is, and each is
  *   listed rather than dropped so the decision stays reviewable.
  * - **Mail-Meow** — `prettier/prettier` is an **error**, not a warning.
+ * - **Mail-Meow** — `prettier/prettier` is an **error**, not a warning.
  * - **AWS-AccessBridge** — the `apps/api` DAO/service boundary uses
- *   `allowTypeImports` where the source repos do.
+ *   `allowTypeImports` where the source repos do. It is also the source for the
+ *   anchored skip patterns and the symlink-safe walk that came out of its own backlog.
+ * - **Edge-Sonic** — `test/**` is *not* ignored (it is linted like everything else,
+ *   with a narrow override block for Vitest idioms), `unicorn/prefer-ternary` is off
+ *   with a documented reason, and the `import()` hole in `no-restricted-imports` is
+ *   covered by a matching `no-restricted-syntax` rule. Edge-Sonic's per-rule
+ *   "deliberately does not follow" block is carried over verbatim in spirit: each
+ *   entry is off because complying would make the code worse for what the project
+ *   is, and each is listed rather than dropped so the decision stays reviewable.
  *
  * Canonical decisions, and why each one:
  *
@@ -26,12 +35,21 @@
  * 3. **`test/**` is linted, not ignored.** Durable-DAV/AWS/Mail-Meow ignored it;
  *    Edge-Sonic does not, and records why: ~200 KB of test code had accumulated
  *    violations that nothing reported.
- * 4. **jsdom + node globals for web files.** The sources ran `globals.node` only;
+ * 4. **`apps/web` is a layer in its own right**, banned from every `@scope/*`
+ *    package. Edge-Sonic is the only source with that block; the others had none,
+ *    which is how their layer table's "may import: the browser" was a convention
+ *    rather than a gate. A backend package imported by the SPA compiles and then
+ *    fails at bundle time, with the error pointing at the bundler.
+ * 5. **jsdom + node globals for web files.** The sources ran `globals.node` only;
  *    `apps/web` needs browser globals as well, and the vitest config for the SPA
  *    runs under jsdom, so the lint environment matches the test environment.
+ * 6. **`eslint-plugin-react-hooks` is NOT imported here.** The kit stays
+ *    zero-dependency, and the plugin belongs to the app that has JSX. A consumer
+ *    appends it — the README shows the four lines.
  *
- * The consumer's repo-level `eslint.config.mjs` becomes three lines — see the
- * README.
+ * The consumer's repo-level `eslint.config.mjs` becomes four lines, and a repo that
+ * needs a boundary the canonical table does not name passes `extraLayers` — see
+ * {@link RepoLintConfigOptions}.
  */
 
 import globals from 'globals';
@@ -67,6 +85,16 @@ export interface RepoLintConfigOptions {
    * ESLint is invoked in, which is the repo root in every CI job.
    */
   readonly tsconfigRootDir?: string;
+  /**
+   * Extra boundary layers, appended to the canonical table.
+   *
+   * The escape valve for a repo whose layout has a boundary the canonical table
+   * does not name — AWS-AccessBridge's `apps/api/src/endpoints/**` rule ("route
+   * classes must not import DAOs directly") and its `aws4fetch` ban are the shape.
+   * Same {@link LayerBan} form, so `extraLayers` flows through the
+   * `no-restricted-imports` and the `no-restricted-syntax` guard alike.
+   */
+  readonly extraLayers?: readonly LayerBan[];
 }
 
 /**
@@ -100,6 +128,9 @@ const DEFAULT_PROJECT_DIRS: readonly string[] = [
   'packages/backend-runtime',
   'packages/backend-data',
   'packages/backend-services',
+  'apps/api',
+  'apps/background',
+  'apps/web',
 ];
 
 /**
@@ -110,7 +141,7 @@ const DEFAULT_PROJECT_DIRS: readonly string[] = [
  * is Mail-Meow's and AWS's. A layer only bans what exists in its repo, so the
  * union is safe: a repo without `provider-clients` simply never imports it.
  */
-interface LayerBan {
+export interface LayerBan {
   /** Directory the rule is scoped to. */
   readonly dir: string;
   /** Package suffixes (relative to `scope`) that may not be imported from here. */
@@ -169,6 +200,17 @@ function layerBans(scope: string): readonly LayerBan[] {
       dir: 'apps/background',
       ban: [at('api')],
       message: 'apps/background must not import from apps/api',
+    },
+    // The browser half, and the only layer that bans the namespace wholesale
+    // rather than a list of siblings: a backend package imported by the SPA
+    // typechecks and then fails at bundle time, with the error pointing at the
+    // bundler rather than at the boundary. Edge-Sonic is the source; the others had
+    // no block for it at all, which is how their layer table's "may import: the
+    // browser" was a convention instead of a gate.
+    {
+      dir: 'apps/web',
+      ban: [at('*')],
+      message: `${at('apps/web')} ships zero backend dependencies — this module is the SPA's own copy`,
     },
   ];
 }
@@ -243,7 +285,9 @@ function restrictedDynamicImports(bans: readonly LayerBan[]): FlatConfig.Config[
 export function defineRepoLintConfig(options: RepoLintConfigOptions): FlatConfig.ConfigArray {
   const { scope } = options;
   const projectDirs = options.projectDirs ?? DEFAULT_PROJECT_DIRS;
-  const bans = layerBans(scope).filter((layer) => projectDirs.some((dir) => layer.dir.startsWith(dir)));
+  const canonical = layerBans(scope).filter((layer) => projectDirs.some((dir) => layer.dir.startsWith(dir)));
+  const extra = options.extraLayers ?? [];
+  const bans = [...canonical, ...extra];
 
   return tseslint.config(
     {
