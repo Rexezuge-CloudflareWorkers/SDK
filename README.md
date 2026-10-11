@@ -62,7 +62,8 @@ pnpm changeset            # PRs touching packages/* add one changeset file
 ```
 
 Merging those PRs lets the `Version Packages` workflow open a
-`CHORE: Version Packages` PR that bumps every `@rexezuge/*` version together.
+`CHORE: Version Packages vX.Y.Z` PR that bumps every `@rexezuge/*` version together
+(the workflow stamps the new version into the title and closes superseded version PRs).
 Merge it, cut a GitHub Release, and the `Publish` workflow runs
 `pnpm changeset publish`.
 

@@ -30,8 +30,9 @@ pnpm changeset
 ## How releases work
 
 1. Merge PRs with changeset files into `main`.
-2. The `Version Packages` workflow opens/updates a `CHORE: Version Packages` PR
-   that bumps versions and changelogs (`pnpm changeset version`).
+2. The `Version Packages` workflow opens/updates a `CHORE: Version Packages vX.Y.Z` PR
+   that bumps versions and changelogs (`pnpm changeset version`). The workflow
+   stamps the new lockstep version into the title and closes superseded version PRs.
 3. Merge that PR, then cut a GitHub Release. The `Publish` workflow runs
    `pnpm changeset publish`, which publishes every package whose version is not
    yet on the registry.

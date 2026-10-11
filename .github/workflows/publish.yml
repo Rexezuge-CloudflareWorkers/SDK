@@ -52,7 +52,7 @@ jobs:
       # Rexezuge-CloudflareWorkers, repository SDK, workflow publish.yml) on
       # each @rexezuge/* package at npmjs.com.
       # Versions must be bumped first: merge PRs carrying changeset files, then
-      # merge the automated CHORE: Version Packages PR. Publishing the same
+      # merge the automated CHORE: Version Packages vX.Y.Z PR. Publishing the same
       # version twice is a no-op — npm already has it.
       - name: Show Trusted Publisher Claims
         # npm matches the OIDC job_workflow_ref claim against the Trusted
