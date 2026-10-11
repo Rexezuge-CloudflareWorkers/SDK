@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Container } from './di/Container';
 import type { Token } from './di/Container';
 import { asScopedContext, getRequestScope, setRequestScope } from './di/RequestScope';
