@@ -54,5 +54,14 @@ jobs:
       # Versions must be bumped first: merge PRs carrying changeset files, then
       # merge the automated CHORE: Version Packages PR. Publishing the same
       # version twice is a no-op — npm already has it.
+      - name: Show Trusted Publisher Claims
+        # npm matches the OIDC job_workflow_ref claim against the Trusted
+        # Publisher entry on each package. If publish fails with E403 OIDC
+        # permission denied, compare these exact values against npmjs.com ->
+        # package Settings -> Trusted Publisher (case-sensitive, no
+        # environment).
+        run: |
+          echo "repository=${{ github.repository }}"
+          echo "workflow_ref=${{ github.workflow_ref }}"
       - name: Publish
         run: pnpm changeset publish
