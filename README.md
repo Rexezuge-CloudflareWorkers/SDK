@@ -51,10 +51,6 @@ pnpm run test        # vitest per package
 pnpm run checks      # all of the above
 ```
 
-Every published version must pass the CI matrix: all eight consumer repos are
-typechecked, linted, and tested against the kit HEAD. No green matrix, no
-version.
-
 ## Releasing
 
 ```bash
