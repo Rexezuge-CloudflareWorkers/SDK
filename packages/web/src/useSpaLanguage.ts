@@ -157,10 +157,7 @@ function useSpaLanguage({
   // Serialized so an inline `supported` array literal does not change identity
   // on every render and re-run the effects below. Tags never contain spaces.
   const supportedKey = supported.join(' ');
-  const supportedLanguages = useMemo<readonly LanguageTag[]>(
-    () => (supportedKey === '' ? [] : supportedKey.split(' ')),
-    [supportedKey],
-  );
+  const supportedLanguages = useMemo<readonly LanguageTag[]>(() => (supportedKey === '' ? [] : supportedKey.split(' ')), [supportedKey]);
 
   const [language, setLanguageState] = useState<LanguageTag>(() =>
     // Precedence: backend > stored > navigator > fallback. The backend value is

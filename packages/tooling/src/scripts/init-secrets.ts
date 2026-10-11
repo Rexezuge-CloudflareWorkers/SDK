@@ -239,9 +239,7 @@ async function main(): Promise<void> {
     if (existing === undefined) {
       // Refuse to guess: creating a secret we could not read back risks overwriting
       // a live value with a freshly generated one.
-      throw new Error(
-        `Could not list secrets in store ${storeId}; refusing to create ${secretName} without confirming it is absent.`,
-      );
+      throw new Error(`Could not list secrets in store ${storeId}; refusing to create ${secretName} without confirming it is absent.`);
     }
     if (existing.has(secretName)) {
       console.log(`Secret ${secretName} already exists; leaving it untouched.`);

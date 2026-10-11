@@ -5,12 +5,12 @@ your repo adapts, and these scripts do the adapting.**
 
 ## What ships
 
-| Module | Job |
-|---|---|
-| `rename-imports.ts` | `@your-scope/backend-errors` → `@rexezuge/errors`, `shared/utils` → `@rexezuge/shared`, `shared/i18n` → `@rexezuge/i18n`, `backend-data/utils` → `@rexezuge/d1`, `backend-data/dao/UserDAO` → `@rexezuge/identity`, … |
+| Module              | Job                                                                                                                                                                                                                                                                        |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rename-imports.ts` | `@your-scope/backend-errors` → `@rexezuge/errors`, `shared/utils` → `@rexezuge/shared`, `shared/i18n` → `@rexezuge/i18n`, `backend-data/utils` → `@rexezuge/d1`, `backend-data/dao/UserDAO` → `@rexezuge/identity`, …                                                      |
 | `rename-symbols.ts` | Call/construction/import sites of the drifted names → the kit's canonical ones (`withRetry`→`run`, `firstWithRetry`→`first`, `AppConfig`/`ConfigurationManager`→`AppConfiguration`, `Provider`/`ServiceContext`→`RequestScope`, `resolveUserById`→`resolveAccountById`, …) |
-| `mapping.ts` | Both tables, in one place. A rename absent from here is deliberate — the kit kept the source spelling. |
-| `adopt.ts` | The orchestrator: walks the repo, applies both transforms, reports. |
+| `mapping.ts`        | Both tables, in one place. A rename absent from here is deliberate — the kit kept the source spelling.                                                                                                                                                                     |
+| `adopt.ts`          | The orchestrator: walks the repo, applies both transforms, reports.                                                                                                                                                                                                        |
 
 ## Usage
 
@@ -35,7 +35,7 @@ wants the human's `pnpm install` (and lockfile) in the loop.
 - A mapped-but-unknown subpath is **reported**, never silently skipped or
   guessed past the table (that is how a half-migrated repo typechecks green
   with one stale path left).
-- Symbol renames touch *callees* only: `this.withRetry(`, `new AppConfig(`,
+- Symbol renames touch _callees_ only: `this.withRetry(`, `new AppConfig(`,
   `import { AppConfig }`. A same-named object property, a string literal
   containing `this.withRetry(`, or an unrelated identifier is left alone
   (negative lookbehind on the quote character).

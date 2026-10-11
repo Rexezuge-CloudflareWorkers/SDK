@@ -39,4 +39,11 @@ export { DurableObject, RpcTarget, WorkflowEntrypoint } from './test/mocks/cloud
 export type { DurableObjectState, ExecutionContext } from './test/mocks/cloudflare-workers';
 
 export { createMigrationHelper, readMigrationFiles, splitSql } from './test/integration-migrations';
-export type { D1DatabaseLike, D1PreparedStatementLike, MigrationFile, MigrationHelper, MigrationHelperOptions, MigrationRange } from './test/integration-migrations';
+export type {
+  D1DatabaseLike,
+  D1PreparedStatementLike,
+  MigrationFile,
+  MigrationHelper,
+  MigrationHelperOptions,
+  MigrationRange,
+} from './test/integration-migrations';

@@ -29,13 +29,7 @@ interface SpinnerProps {
   style?: CSSProperties;
 }
 
-function Spinner({
-  size = 24,
-  color = theme.spinnerBlue,
-  label,
-  padding = '16px 0',
-  style,
-}: Readonly<SpinnerProps>): React.JSX.Element {
+function Spinner({ size = 24, color = theme.spinnerBlue, label, padding = '16px 0', style }: Readonly<SpinnerProps>): React.JSX.Element {
   return (
     <div style={{ textAlign: 'center', padding, ...style }}>
       <div

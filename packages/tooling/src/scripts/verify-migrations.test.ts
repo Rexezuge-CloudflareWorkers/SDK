@@ -40,10 +40,18 @@ describe('verifyMigrations', () => {
 
   it('fails on a bad name or a gap in numbering', () => {
     const bad = tempMigrations({ 'users.sql': ONE });
-    expect(verifyMigrations(bad).problems.map((problem) => problem.problem).join('\n')).toContain('does not match');
+    expect(
+      verifyMigrations(bad)
+        .problems.map((problem) => problem.problem)
+        .join('\n'),
+    ).toContain('does not match');
 
     const gap = tempMigrations({ '0001_init.sql': ONE, '0003_skipped.sql': TWO });
-    expect(verifyMigrations(gap).problems.map((problem) => problem.problem).join('\n')).toContain('not contiguous');
+    expect(
+      verifyMigrations(gap)
+        .problems.map((problem) => problem.problem)
+        .join('\n'),
+    ).toContain('not contiguous');
   });
 
   it('fails when a locked migration no longer exists', async () => {
@@ -51,7 +59,11 @@ describe('verifyMigrations', () => {
     verifyMigrations(root, { write: true });
     const { rmSync } = await import('node:fs');
     rmSync(join(root, '0002_more.sql'));
-    expect(verifyMigrations(root).problems.map((problem) => problem.problem).join('\n')).toContain('no longer exists');
+    expect(
+      verifyMigrations(root)
+        .problems.map((problem) => problem.problem)
+        .join('\n'),
+    ).toContain('no longer exists');
   });
 
   it('writes a lock with per-file sha256 entries', () => {

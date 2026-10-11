@@ -10,8 +10,8 @@ Every PR that touches `packages/*` must add one markdown file in this directory:
 
 ```md
 ---
-"@rexezuge/errors": patch
-"@rexezuge/d1": patch
+'@rexezuge/errors': patch
+'@rexezuge/d1': patch
 ---
 
 Short description of the change.

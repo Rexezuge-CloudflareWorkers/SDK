@@ -189,7 +189,7 @@ beforeAll(async () => {
 
 it('upgrades a pre-0004 database', async () => {
   await migrations.applyMigrations(env.DB, { to: '0003_href_prefix_mode.sql' }); // seed the old shape
-  await migrations.applyMigrations(env.DB, { from: '0004_user_identity.sql' });   // then the one under test
+  await migrations.applyMigrations(env.DB, { from: '0004_user_identity.sql' }); // then the one under test
 });
 ```
 
@@ -211,17 +211,17 @@ run in), or run it straight out of the installed package:
 pnpm exec tsx node_modules/@rexezuge/tooling/src/scripts/<name>.ts [args]
 ```
 
-| Script | What it does | Usage |
-| --- | --- | --- |
-| `check-god-files.ts` | 300-line warn / 400-line critical guard, warn-only by default, with an allowlist | `--root <dir>` `--allowlist <file>` `--soft 300` `--hard 400` `--fail-on-hard` |
-| `ensure-spa-shell-stub.ts` | writes the empty `spa-shell.ts` stub when absent; never overwrites | `[repo-root]` |
-| `verify-spa-shell.ts` | rejects a missing, stubbed, or half-refreshed SPA shell | `[repo-root]` |
-| `validate-locales.ts` | two-way key parity, empty values, `{{placeholder}}` parity, base-locale bundle | `[locales-dir]` |
-| `verify-migrations.ts` | migration names, numbering, digests against the lock; read-only | `[migrations-dir]` |
-| `migrations-lock.ts` | `--write` for the above: add-only lock update | `[migrations-dir]` |
-| `prepare-wrangler-config.ts` | materializes `wrangler.jsonc` and provisions the resources it names | env-driven |
-| `init-secrets.ts` | creates the declared Secrets Store entries, generate-if-absent | env-driven |
-| `backup/encrypt-backup.ts` | compresses and AES-GCM-encrypts an exported dump | `BACKUP_ENCRYPTION_KEY` |
+| Script                       | What it does                                                                     | Usage                                                                          |
+| ---------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `check-god-files.ts`         | 300-line warn / 400-line critical guard, warn-only by default, with an allowlist | `--root <dir>` `--allowlist <file>` `--soft 300` `--hard 400` `--fail-on-hard` |
+| `ensure-spa-shell-stub.ts`   | writes the empty `spa-shell.ts` stub when absent; never overwrites               | `[repo-root]`                                                                  |
+| `verify-spa-shell.ts`        | rejects a missing, stubbed, or half-refreshed SPA shell                          | `[repo-root]`                                                                  |
+| `validate-locales.ts`        | two-way key parity, empty values, `{{placeholder}}` parity, base-locale bundle   | `[locales-dir]`                                                                |
+| `verify-migrations.ts`       | migration names, numbering, digests against the lock; read-only                  | `[migrations-dir]`                                                             |
+| `migrations-lock.ts`         | `--write` for the above: add-only lock update                                    | `[migrations-dir]`                                                             |
+| `prepare-wrangler-config.ts` | materializes `wrangler.jsonc` and provisions the resources it names              | env-driven                                                                     |
+| `init-secrets.ts`            | creates the declared Secrets Store entries, generate-if-absent                   | env-driven                                                                     |
+| `backup/encrypt-backup.ts`   | compresses and AES-GCM-encrypts an exported dump                                 | `BACKUP_ENCRYPTION_KEY`                                                        |
 
 The rules each script enforces live in a module beside it, so the gates are unit
 tested here: `god-files` rules in `check-god-files.ts`, `spa-shell` rules in
@@ -247,7 +247,7 @@ set a squash rewrites or absorbs.
 **`verify-spa-shell.ts`** is the only thing standing between a fresh clone and a
 deploy that serves a blank page: both `apps/web/dist/` and the generated
 `spa-shell.ts` are gitignored, and `postinstall` writes a deliberately empty stub.
-Known limit, stated in the module: a *stale but self-consistent* pair passes.
+Known limit, stated in the module: a _stale but self-consistent_ pair passes.
 
 ### The backup helpers
 

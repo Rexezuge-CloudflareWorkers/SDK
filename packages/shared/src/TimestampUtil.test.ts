@@ -11,12 +11,8 @@ describe('TimestampUtil', () => {
     // clock granularity.
     const before = Date.now();
     expect(TimestampUtil.getCurrentUnixTimestampInMilliseconds()).toBeGreaterThanOrEqual(before);
-    expect(TimestampUtil.getCurrentUnixTimestampInSeconds()).toBeGreaterThanOrEqual(
-      Math.floor(before / 1000),
-    );
-    expect(TimestampUtil.getCurrentUnixTimestampInSeconds()).toBeLessThanOrEqual(
-      Math.floor(Date.now() / 1000),
-    );
+    expect(TimestampUtil.getCurrentUnixTimestampInSeconds()).toBeGreaterThanOrEqual(Math.floor(before / 1000));
+    expect(TimestampUtil.getCurrentUnixTimestampInSeconds()).toBeLessThanOrEqual(Math.floor(Date.now() / 1000));
   });
 
   it('honors an injected clock for both readers', () => {

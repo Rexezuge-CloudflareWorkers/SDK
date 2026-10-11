@@ -28,11 +28,7 @@ function setRequestScope(c: ScopedContext, scope: Container): void {
  * so call sites used `c as never`. Centralize that single unsafe cast here —
  * one audited location instead of many scattered ones.
  */
-function asScopedContext(c: {
-  get(key: string): unknown;
-  set?(key: string, value: unknown): void;
-  readonly env: unknown;
-}): ScopedContext {
+function asScopedContext(c: { get(key: string): unknown; set?(key: string, value: unknown): void; readonly env: unknown }): ScopedContext {
   return c as unknown as ScopedContext;
 }
 

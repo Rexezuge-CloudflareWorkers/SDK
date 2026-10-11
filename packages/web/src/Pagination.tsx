@@ -91,8 +91,7 @@ function Pagination({
   variant = 'full',
   labels = {},
 }: Readonly<PaginationProps>): ReactElement | null {
-  const derivedPageCount =
-    pageCount ?? (total !== undefined && pageSize !== undefined ? pageCountFor(total, pageSize) : 1);
+  const derivedPageCount = pageCount ?? (total !== undefined && pageSize !== undefined ? pageCountFor(total, pageSize) : 1);
   const pages = Math.max(1, Math.trunc(Number.isFinite(derivedPageCount) ? derivedPageCount : 1));
   const current = clampPage(page, pages);
   const previousLabel = labels.previous ?? 'Previous';
@@ -111,9 +110,7 @@ function Pagination({
     }
   };
 
-  const summary = (
-    <span className="text-xs text-[var(--color-text-muted)] tabular-nums">{summaryLabel(current, pages)}</span>
-  );
+  const summary = <span className="text-xs text-[var(--color-text-muted)] tabular-nums">{summaryLabel(current, pages)}</span>;
 
   return (
     <nav className="flex flex-wrap items-center gap-2" aria-label={summaryLabel(current, pages)}>

@@ -62,8 +62,16 @@ describe('validateLocales', () => {
     // `@rexezuge/i18n` ships `const enStrings: BackendStrings = { … }` per file, so
     // the same gate covers the backend catalogs and the SPA JSON bundles.
     const root = mkdtempSync(join(tmpdir(), 'locales-'));
-    writeFileSync(join(root, 'en.ts'), "import type { BackendStrings } from '../BackendStrings';\n\nconst enStrings: BackendStrings = {\n  common: {\n    unauthorized: 'Authentication Required.',\n    forbidden: 'Access Denied.',\n  },\n};\n\nexport { enStrings };\n", 'utf8');
-    writeFileSync(join(root, 'de.ts'), "const deStrings = {\n  common: {\n    unauthorized: 'Authentifizierung Erforderlich.',\n    forbidden: 'Zugriff Verweigert.',\n  },\n};\n", 'utf8');
+    writeFileSync(
+      join(root, 'en.ts'),
+      "import type { BackendStrings } from '../BackendStrings';\n\nconst enStrings: BackendStrings = {\n  common: {\n    unauthorized: 'Authentication Required.',\n    forbidden: 'Access Denied.',\n  },\n};\n\nexport { enStrings };\n",
+      'utf8',
+    );
+    writeFileSync(
+      join(root, 'de.ts'),
+      "const deStrings = {\n  common: {\n    unauthorized: 'Authentifizierung Erforderlich.',\n    forbidden: 'Zugriff Verweigert.',\n  },\n};\n",
+      'utf8',
+    );
     expect(validateLocales(root).problems).toStrictEqual([]);
   });
 

@@ -154,7 +154,8 @@ export function spaShellEmbedPlugin(target: SpaShellTarget): Plugin {
       // `pnpm --filter @scope/web build`, which is how every consumer runs it.
       const root = toDirUrl(target.root ?? process.cwd());
       const outputPath = fileURLToPath(new URL(target.path, root));
-      const indexPath = target.distIndex === undefined ? fileURLToPath(new URL('dist/index.html', root)) : fileURLToPath(toUrl(target.distIndex));
+      const indexPath =
+        target.distIndex === undefined ? fileURLToPath(new URL('dist/index.html', root)) : fileURLToPath(toUrl(target.distIndex));
 
       if (!existsSync(indexPath)) {
         console.warn('spa-shell-embed: dist/index.html not found, skipping');

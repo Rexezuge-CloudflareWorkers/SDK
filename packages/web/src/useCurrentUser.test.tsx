@@ -48,9 +48,7 @@ describe('useCurrentUser', () => {
   });
 
   it('reports a failure as a ServiceError and leaves the user null', async () => {
-    const fetchMock = vi.fn<FetchFn>(
-      async () => new Response(JSON.stringify({ Exception: { Message: 'D1 is down.' } }), { status: 500 }),
-    );
+    const fetchMock = vi.fn<FetchFn>(async () => new Response(JSON.stringify({ Exception: { Message: 'D1 is down.' } }), { status: 500 }));
     const client = createApiClient(fetchMock);
     const { result } = renderHook(() => useCurrentUser<Account>(client));
 

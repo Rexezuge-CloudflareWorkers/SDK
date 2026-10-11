@@ -88,7 +88,10 @@ class CryptoUtil {
    * `Uint8Array#toBase64` is not guaranteed across Workers runtimes.
    */
   public static toBase64Url(bytes: Uint8Array): string {
-    return bytesToBase64(bytes).replaceAll('+', '-').replaceAll('/', '_').replace(/={0,2}$/, '');
+    return bytesToBase64(bytes)
+      .replaceAll('+', '-')
+      .replaceAll('/', '_')
+      .replace(/={0,2}$/, '');
   }
 
   /**

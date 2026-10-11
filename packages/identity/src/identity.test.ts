@@ -67,7 +67,8 @@ class FakeDb {
     if (normalized.startsWith('INSERT INTO users')) return [this.insertUser(params)];
     if (normalized.startsWith('INSERT INTO user_emails')) return [this.insertUserEmail(params)];
     if (normalized === 'SELECT * FROM users WHERE email = ? LIMIT 1') return [rowOf(this.users.get(params[0] as string))];
-    if (normalized === 'SELECT * FROM users WHERE id = ? LIMIT 1') return [rowOf([...this.users.values()].find((row) => row.id === params[0]))];
+    if (normalized === 'SELECT * FROM users WHERE id = ? LIMIT 1')
+      return [rowOf([...this.users.values()].find((row) => row.id === params[0]))];
     if (normalized === 'SELECT * FROM users WHERE current_email = ? LIMIT 1')
       return [rowOf([...this.users.values()].find((row) => (row.current_email ?? row.email) === params[0]))];
     if (normalized === 'SELECT * FROM users WHERE username = ? LIMIT 1')
@@ -107,7 +108,14 @@ class FakeDb {
     const key = params[0] as string;
     if (this.failsOn.has('users')) throw new Error('D1_ERROR: database is locked');
     if (this.users.has(key)) return { success: true }; // ON CONFLICT DO NOTHING
-    this.users.set(key, { id: params[2] as string, email: key, current_email: params[3] as string, created_at: params[1] as number, username: null, updated_at: null });
+    this.users.set(key, {
+      id: params[2] as string,
+      email: key,
+      current_email: params[3] as string,
+      created_at: params[1] as number,
+      username: null,
+      updated_at: null,
+    });
     return { success: true };
   }
 
@@ -204,7 +212,14 @@ describe('registerAccount / resolveAccount', () => {
 
   it('detects a taken anchor and reports null so the opaque-anchor retry runs', async () => {
     const db = new FakeDb();
-    db.users.set('taken@x.com', { id: 'usr_existing', email: 'taken@x.com', current_email: 'taken@x.com', created_at: NOW, username: null, updated_at: null });
+    db.users.set('taken@x.com', {
+      id: 'usr_existing',
+      email: 'taken@x.com',
+      current_email: 'taken@x.com',
+      created_at: NOW,
+      username: null,
+      updated_at: null,
+    });
     const first = await registerAccount(depsFor(db), 'taken@x.com', 'taken@x.com', NOW);
     expect(first).toBeNull();
     const account = await registerAccount(depsFor(db), 'taken@x.com', 'anchor-abc@users.invalid', NOW);
@@ -226,7 +241,14 @@ describe('registerAccount / resolveAccount', () => {
     const missing = new FakeDb();
     missing.userEmails.clear();
     // A missing registry row falls through to the legacy lookups…
-    missing.users.set('legacy@x.com', { id: 'usr_l', email: 'legacy@x.com', current_email: undefined as never, created_at: NOW, username: null, updated_at: null });
+    missing.users.set('legacy@x.com', {
+      id: 'usr_l',
+      email: 'legacy@x.com',
+      current_email: undefined as never,
+      created_at: NOW,
+      username: null,
+      updated_at: null,
+    });
     await expect(resolveAccount(depsFor(missing), 'legacy@x.com')).resolves.toMatchObject({ id: 'usr_l' });
 
     // …but a *failed* registry read is an outage and must surface.

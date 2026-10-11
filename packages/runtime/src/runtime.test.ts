@@ -179,7 +179,9 @@ describe('AbstractEntrypointWorker', () => {
 
   it('contains a scheduled failure without rethrowing', async () => {
     const worker = new BoomWorker();
-    await expect(worker.scheduled({ cron: '* * * * *', scheduledTime: 0, noRetry: (): void => undefined }, {}, ctx)).resolves.toBeUndefined();
+    await expect(
+      worker.scheduled({ cron: '* * * * *', scheduledTime: 0, noRetry: (): void => undefined }, {}, ctx),
+    ).resolves.toBeUndefined();
   });
 
   it('routes a good scheduled call to onScheduled', async () => {
@@ -245,7 +247,10 @@ class FakeNamespace {
     return undefined;
   }
 
-  public async list(options: { prefix: string; limit?: number }): Promise<{ keys: Array<{ name: string }>; list_complete: boolean; cursor?: string }> {
+  public async list(options: {
+    prefix: string;
+    limit?: number;
+  }): Promise<{ keys: Array<{ name: string }>; list_complete: boolean; cursor?: string }> {
     const keys = [...this.store.keys()].filter((key) => key.startsWith(options.prefix)).map((name) => ({ name }));
     return { keys, list_complete: true };
   }

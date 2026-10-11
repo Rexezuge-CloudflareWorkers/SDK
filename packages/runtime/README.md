@@ -17,7 +17,9 @@ Minimal by design: factory + singleton scopes, branded tokens for inference, not
 ```ts
 import { Container, type Token } from '@rexezuge/runtime';
 
-interface Mailer { send(to: string): Promise<void> }
+interface Mailer {
+  send(to: string): Promise<void>;
+}
 const MailerToken: Token<Mailer> = 'Mailer';
 
 const root = new Container().bindValue(MailerToken, new SmtpMailer());
@@ -47,12 +49,12 @@ for (const warning of config.validate()) console.warn(warning); // warnings, nev
 
 ## 3. Worker bases
 
-| Base | Extends for |
-| --- | --- |
-| `AbstractEntrypointWorker` | HTTP + cron entrypoints (`onRequest` / `onScheduled`) |
-| `AbstractDurableObjectWorker` | Durable Object workers |
-| `AbstractQueueWorker` | Queue consumers |
-| `AbstractWorkflowWorker` | Workflows |
+| Base                          | Extends for                                           |
+| ----------------------------- | ----------------------------------------------------- |
+| `AbstractEntrypointWorker`    | HTTP + cron entrypoints (`onRequest` / `onScheduled`) |
+| `AbstractDurableObjectWorker` | Durable Object workers                                |
+| `AbstractQueueWorker`         | Queue consumers                                       |
+| `AbstractWorkflowWorker`      | Workflows                                             |
 
 `fetch()` / `scheduled()` log-and-contain: an unhandled throw is a 500 response or a logged cron failure, never a platform crash. There is deliberately no `/__scheduled` HTTP branch — cron runs through the wrangler `triggers.crons` binding. The structural `WorkerExecutionContext` / `WorkerScheduledController` types mean this package typechecks without `@cloudflare/workers-types`.
 

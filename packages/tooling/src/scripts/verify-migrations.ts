@@ -225,7 +225,11 @@ function buildUpdatedLock(
   const digestOf = (name: string): string => sha256Hex(readFileSync(join(migrationsDir, name), 'utf8'));
 
   if (existing === null) {
-    return { version: LOCK_VERSION, ...(baseline !== undefined && { baseline }), migrations: files.map((name) => ({ name, sha256: digestOf(name) })) };
+    return {
+      version: LOCK_VERSION,
+      ...(baseline !== undefined && { baseline }),
+      migrations: files.map((name) => ({ name, sha256: digestOf(name) })),
+    };
   }
 
   const kept = new Map<string, string>();
@@ -255,9 +259,7 @@ function buildUpdatedLock(
   return {
     version: LOCK_VERSION,
     ...(baseline !== undefined && { baseline }),
-    migrations: [...kept]
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([name, sha256]) => ({ name, sha256 })),
+    migrations: [...kept].sort(([left], [right]) => left.localeCompare(right)).map(([name, sha256]) => ({ name, sha256 })),
   };
 }
 

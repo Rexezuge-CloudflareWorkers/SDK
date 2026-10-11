@@ -60,11 +60,7 @@ function toDatabaseError(errorMessage: string, context: string): DatabaseError {
  * on the retry attempt, so it must be recognised and re-thrown rather than
  * re-wrapped into a second layer of `Failed to …`.
  */
-async function executeWithRetry<T extends D1Result>(
-  operation: () => Promise<T>,
-  context: string,
-  options?: D1RetryOptions,
-): Promise<T> {
+async function executeWithRetry<T extends D1Result>(operation: () => Promise<T>, context: string, options?: D1RetryOptions): Promise<T> {
   const maxRetries: number = options?.maxRetries ?? DEFAULT_MAX_RETRIES;
   const baseDelayMs: number = options?.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
 

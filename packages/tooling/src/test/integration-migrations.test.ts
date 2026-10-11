@@ -2,7 +2,15 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { createMigrationHelper, executableStatements, readMigrationFiles, splitSql, type D1DatabaseLike, type D1PreparedStatementLike, type MigrationFile } from './integration-migrations';
+import {
+  createMigrationHelper,
+  executableStatements,
+  readMigrationFiles,
+  splitSql,
+  type D1DatabaseLike,
+  type D1PreparedStatementLike,
+  type MigrationFile,
+} from './integration-migrations';
 
 const created: string[] = [];
 
@@ -148,10 +156,12 @@ describe('createMigrationHelper', () => {
   it('refuses an unknown range endpoint, naming what is available', async () => {
     const dir = tempTree({ '0001_init.sql': 'SELECT 1;' });
     const helper = createMigrationHelper({ migrationsDir: dir });
-    await expect(helper.applyMigrations(fakeD1(), { from: '0009_missing.sql' })).rejects.toThrow(/Unknown migration file: 0009_missing\.sql/);
+    await expect(helper.applyMigrations(fakeD1(), { from: '0009_missing.sql' })).rejects.toThrow(
+      /Unknown migration file: 0009_missing\.sql/,
+    );
   });
 
-  it('reports one file\'s SQL without reading the others', () => {
+  it("reports one file's SQL without reading the others", () => {
     const dir = tempTree({ '0001_init.sql': 'SELECT 1;', '0002_more.sql': 'SELECT 2;' });
     const helper = createMigrationHelper({ migrationsDir: dir });
     expect(helper.migrationSqlOf('0002_more.sql')).toBe('SELECT 2;');
