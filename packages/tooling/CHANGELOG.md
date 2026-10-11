@@ -1,5 +1,12 @@
 # @rexezuge/tooling
 
+## 1.1.0
+
+### Patch Changes
+
+- Updated dependencies [b5f52a8]
+  - @rexezuge/d1@1.1.0
+
 ## 1.0.9
 
 ### Patch Changes
