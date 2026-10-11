@@ -1,5 +1,13 @@
 # @rexezuge/d1
 
+## 1.0.8
+
+### Patch Changes
+
+- fb7f5b2: `decryptSecret` now throws `AesGcmKeyError` — the error its own contract documents — on a wrong key or tampered ciphertext. A bare `rejects.toThrow()` in the suite let the platform's raw `OperationError: The operation failed for an operation-specific reason` escape as the behavior, so a consumer catching the documented type missed it and the one place it surfaced was a run's error message with nothing an owner could act on.
+- @rexezuge/errors@1.0.8
+  - @rexezuge/shared@1.0.8
+
 ## 1.0.7
 
 ### Patch Changes
