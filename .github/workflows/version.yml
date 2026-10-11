@@ -1,0 +1,40 @@
+name: Version Packages
+
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  version:
+    name: Version Packages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm And Node
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Create Version Pull Request
+        uses: changesets/action@v1
+        with:
+          version: pnpm version-packages
+          commit: 'CHORE: Version Packages'
+          title: 'CHORE: Version Packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
