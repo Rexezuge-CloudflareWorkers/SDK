@@ -56,6 +56,9 @@ importers:
       '@rexezuge/errors':
         specifier: workspace:*
         version: link:../errors
+      '@rexezuge/shared':
+        specifier: workspace:*
+        version: link:../shared
     devDependencies:
       '@types/node':
         specifier: 26.6.4
