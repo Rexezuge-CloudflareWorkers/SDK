@@ -20,7 +20,7 @@ import { readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node
 import { join, relative } from 'node:path';
 import { renameImports } from './rename-imports';
 import { renameSymbols } from './rename-symbols';
-import { PACKAGE_MAP } from './mapping';
+import { SUBPATH_RULES, WHOLE_PACKAGE_MAP } from './mapping';
 
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts'];
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'coverage', 'coverage-spa', '.wrangler', '.git', 'local']);
@@ -97,7 +97,4 @@ function flagValue(argv: readonly string[], flag: string): string | undefined {
   return argv[argv.indexOf(flag) + 1];
 }
 
-void relative;
-void rmSync;
-void PACKAGE_MAP;
 main();
