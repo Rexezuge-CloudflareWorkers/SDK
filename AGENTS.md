@@ -46,8 +46,8 @@ pnpm workspace (`pnpm@11.2.2`, Node 24 per CI). Eight public packages in
   together.
 - Flow: merge PRs with changesets → merge the automated `CHORE: Version Packages vX.Y.Z`
   PR (opened by `version.yml` running `pnpm version-packages`, which stamps the
-  new lockstep version into the title and closes superseded version PRs) → cut a GitHub
-  Release → `Publish` workflow runs `pnpm changeset publish` (`pnpm release`).
+  new lockstep version into the title and closes superseded version PRs) → `Publish`
+  workflow runs on `main` push and executes `pnpm changeset publish` (`pnpm release`).
   Never `pnpm -r publish`: without a version bump the registry already holds the
   local version and pnpm no-ops with `There are no new packages that should be
   published`.

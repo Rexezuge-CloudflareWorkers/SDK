@@ -5,10 +5,9 @@ permissions:
   id-token: write
 
 on:
-  release:
-    types:
-      - published
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   publish:
