@@ -1,5 +1,11 @@
 # @rexezuge/tooling
 
+## 1.5.0
+
+### Patch Changes
+
+- @rexezuge/d1@1.5.0
+
 ## 1.4.0
 
 ### Minor Changes
