@@ -1,5 +1,9 @@
 # @rexezuge/runtime
 
+## 1.5.2
+
+No changes in this release.
+
 ## 1.5.1
 
 No changes in this release.
