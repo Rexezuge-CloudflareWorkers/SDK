@@ -202,14 +202,24 @@ export function defineRepoLintConfig(options: RepoLintConfigOptions): FlatConfig
       rules: asRules(TYPESCRIPT_RULES),
     },
 
-    // --- Unicorn: modern JS/TS quality rules ---
+    // --- Unicorn + SonarJS presets, then the family's off-block ---
+    //
+    // Both presets come first on purpose: UNICORN_RULES carries `sonarjs/*`
+    // offs as well as `unicorn/*` ones (it is the family's single
+    // "deliberately does not follow" block), and a preset applied after it
+    // would re-enable them. That is exactly what shipped — the sonarjs preset
+    // sat between the block and the rules it relaxed, so `void-use`,
+    // `different-types-comparison`, `use-type-alias`, `redundant-type-aliases`,
+    // `no-nested-assignment` and `no-all-duplicated-branches` linted as errors
+    // in every consumer. The two presets do not share rule names, so their
+    // relative order decides nothing.
     asConfig(unicorn.configs['flat/recommended']),
+    asConfig(sonarjsConfigs.recommended),
     {
       rules: asRules(UNICORN_RULES),
     },
 
-    // --- SonarJS: code smell and bug detection ---
-    asConfig(sonarjsConfigs.recommended),
+    // --- SonarJS advisories ---
     {
       rules: asRules(SONARJS_RULES),
     },
