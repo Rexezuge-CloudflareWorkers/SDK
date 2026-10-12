@@ -11,6 +11,7 @@ export { MethodNotAllowedError } from './MethodNotAllowedError.ts';
 export { ConflictError } from './ConflictError.ts';
 export { PreconditionFailedError } from './PreconditionFailedError.ts';
 export { PayloadTooLargeError } from './PayloadTooLargeError.ts';
+export { SubrequestBudgetExhaustedError } from './SubrequestBudgetExhaustedError.ts';
 export { UnsupportedMediaTypeError } from './UnsupportedMediaTypeError.ts';
 export { RateLimitedError } from './RateLimitedError.ts';
 export { InternalServerError, DefaultInternalServerError } from './InternalServerError.ts';
