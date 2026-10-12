@@ -1,4 +1,4 @@
-import { HttpServiceError } from './HttpServiceError';
+import { HttpServiceError } from './HttpServiceError.ts';
 
 /**
  * 429 — the caller exceeded its rate budget. Retrying is not just futile but

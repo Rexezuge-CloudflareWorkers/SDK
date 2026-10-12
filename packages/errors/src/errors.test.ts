@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { CATALOG } from './CATALOG';
-import { BadRequestError } from './BadRequestError';
-import { ConflictError } from './ConflictError';
-import { DatabaseError } from './DatabaseError';
-import { InternalServerError } from './InternalServerError';
-import { NotFoundError } from './NotFoundError';
-import { RetryableError } from './OutcomeError';
-import { ServiceError } from './ServiceError';
-import { UnauthorizedError } from './UnauthorizedError';
+import { CATALOG } from './CATALOG.ts';
+import { BadRequestError } from './BadRequestError.ts';
+import { ConflictError } from './ConflictError.ts';
+import { DatabaseError } from './DatabaseError.ts';
+import { InternalServerError } from './InternalServerError.ts';
+import { NotFoundError } from './NotFoundError.ts';
+import { RetryableError } from './OutcomeError.ts';
+import { ServiceError } from './ServiceError.ts';
+import { UnauthorizedError } from './UnauthorizedError.ts';
 
 describe('CATALOG', () => {
   it('assigns each key a unique status and code', () => {

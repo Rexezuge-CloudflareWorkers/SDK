@@ -47,9 +47,9 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { parse } from 'jsonc-parser';
-import { fail } from './lib/github-actions';
-import { isEmptySecretsStoreListing, parseWranglerNames } from './lib/wrangler-table';
-import { CONFIG_PATH, type WranglerConfig } from './wrangler-config/types';
+import { fail } from './lib/github-actions.ts';
+import { isEmptySecretsStoreListing, parseWranglerNames } from './lib/wrangler-table.ts';
+import { CONFIG_PATH, type WranglerConfig } from './wrangler-config/types.ts';
 
 /**
  * The secret names the AES-GCM key generator produces, matched by **shape**.

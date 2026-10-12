@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, MouseEvent, ReactElement } from 'react';
-import { cn } from './utils';
-import { Spinner } from './Spinner';
+import { cn } from './utils.ts';
+import { Spinner } from './Spinner.tsx';
 
 /**
  * The one button.

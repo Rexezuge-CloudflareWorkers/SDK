@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Container } from './di/Container';
-import type { Token } from './di/Container';
-import { asScopedContext, getRequestScope, setRequestScope } from './di/RequestScope';
-import { AppConfiguration } from './config/AppConfiguration';
-import { EnvParser } from './config/EnvParser';
-import { createLogger } from './logger';
-import { KvCache } from './kv/KvCache';
-import { buildKvKey, digest128 } from './kv/KvDomains';
-import { AbstractEntrypointWorker } from './base/AbstractEntrypointWorker';
-import type { WorkerExecutionContext } from './base/AbstractEntrypointWorker';
+import { Container } from './di/Container.ts';
+import type { Token } from './di/Container.ts';
+import { asScopedContext, getRequestScope, setRequestScope } from './di/RequestScope.ts';
+import { AppConfiguration } from './config/AppConfiguration.ts';
+import { EnvParser } from './config/EnvParser.ts';
+import { createLogger } from './logger.ts';
+import { KvCache } from './kv/KvCache.ts';
+import { buildKvKey, digest128 } from './kv/KvDomains.ts';
+import { AbstractEntrypointWorker } from './base/AbstractEntrypointWorker.ts';
+import type { WorkerExecutionContext } from './base/AbstractEntrypointWorker.ts';
 
 // ---------- DI container ----------
 

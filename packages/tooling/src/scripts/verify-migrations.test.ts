@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { verifyMigrations, verifyMigrationsCli, LOCK_NAME } from './verify-migrations';
+import { verifyMigrations, verifyMigrationsCli, LOCK_NAME } from './verify-migrations.ts';
 
 function tempMigrations(files: Record<string, string>): string {
   const root = mkdtempSync(join(tmpdir(), 'migrations-'));

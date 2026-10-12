@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import { Badge } from './Badge';
+import { Badge } from './Badge.tsx';
 
 afterEach(cleanup);
 

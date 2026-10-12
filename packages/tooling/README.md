@@ -18,7 +18,15 @@ convergence made — those headers are the documentation.
 
 ## 1. Config factories
 
-Four factories, four lines of consumer wiring each.
+Four factories, four lines of consumer wiring each. The lint factory needs its
+plugin set as peers — install them alongside the kit:
+
+```bash
+pnpm add -D @rexezuge/tooling eslint typescript typescript-eslint vitest \
+  globals eslint-config-prettier eslint-plugin-prettier \
+  eslint-plugin-regexp eslint-plugin-sonarjs eslint-plugin-unicorn \
+  prettier jsonc-parser
+```
 
 ### ESLint
 
@@ -73,18 +81,21 @@ export default [
 import { defineUnitVitestConfig } from '@rexezuge/tooling/vitest';
 
 export default defineUnitVitestConfig({
-  coverageInclude: ['apps/api/src/**/*.ts', 'apps/background/src/**/*.ts', 'packages/**/src/**/*.ts'],
+  scope: '@my-app',
   thresholds: { statements: 60, branches: 55, functions: 65, lines: 60 },
 });
 ```
 
 v8 coverage with the converged include/exclude patterns (scripts, tests, barrels,
-generated files, type-only modules), `cloudflare:workers` / `cloudflare:sockets`
-aliased to the bundled Node stand-ins, and `test/integration/**` plus every
-`web-*` suite excluded so this config and the next one partition the suite rather
-than each running all of it. Vitest 4 removed `coverage.all`; an explicit
-`include` now reports files no test imported, which is the behaviour it was there
-to get.
+generated files, type-only modules), the `@scope/* → src` workspace table (the
+family superset — a repo without a domain package keeps the default harmlessly),
+`cloudflare:workers` / `cloudflare:sockets` / `cloudflare:workflows` aliased to
+the bundled Node stand-ins, `@rexezuge/*` kept inside Vite's pipeline
+(`noExternal` — the kit ships bundler-style extensionless imports that Node's
+resolver refuses), and `test/integration/**` plus every SPA shape excluded so
+this config and the next one partition the suite rather than each running all
+of it. Vitest 4 removed `coverage.all`; an explicit `include` now reports files
+no test imported, which is the behaviour it was there to get.
 
 **Thresholds are a consumer argument, not a kit default.** A floor is a per-repo
 ratchet measured against that repo's suite; the kit cannot know a number, and
@@ -97,6 +108,7 @@ guessing one is how floors get lowered.
 import { defineWebVitestConfig } from '@rexezuge/tooling/vitest-web';
 
 export default defineWebVitestConfig({
+  scope: '@my-app',
   plugins: [react()],
   thresholds: { statements: 55, branches: 52, functions: 54, lines: 56 },
 });
@@ -105,8 +117,52 @@ export default defineWebVitestConfig({
 Converged from Durable-DAV-Router's and Mail-Otter's `vitest.web.config.mts`:
 jsdom for every file, `pool: 'threads'` bounded rather than a fork per file (a
 jsdom document per fork is what exhausts memory and dies with a bare "Worker
-exited unexpectedly"), and both suite-naming conventions collected
-(`test/**/web-*.test.{ts,tsx}` and `apps/web/**/*.test.{ts,tsx}`).
+exited unexpectedly"), and every suite shape the family uses collected
+(`test/web/**`, `test/**/web-*`, `apps/web/**`). `@/` and `~/` both mean the
+SPA here (Mail-Otter's source imports through `@/`, Mail-Meow's and
+CalDAV-Bridge's tests through `~/`); pass `environment: 'happy-dom'` for
+CalDAV-Bridge's lighter DOM.
+
+### Vitest — the single-file `projects` composition
+
+```ts
+// vitest.config.mts
+import { defineRepoVitestConfig } from '@rexezuge/tooling/vitest-repo';
+
+export default defineRepoVitestConfig({
+  scope: '@my-app',
+  web: { environment: 'happy-dom', plugins: [react()] },
+  thresholds: { statements: 87, branches: 77, functions: 88, lines: 90 },
+});
+```
+
+The same two halves as `projects` entries in one file (AWS-AccessBridge,
+Mail-Meow, CalDAV-Bridge) with one root coverage gate. Each project repeats
+the alias table — projects do not inherit the root `resolve` — with `@/` → API
+on backend and `@/` + `~/` → SPA on web. Two-file repos keep the two factories
+above; this one delegates to the same core.
+
+### Vitest — the integration suite
+
+```ts
+// test/integration/vitest.config.mts
+import { defineIntegrationVitestConfig } from '@rexezuge/tooling/vitest-integration';
+
+export default defineIntegrationVitestConfig({
+  scope: '@my-app',
+  define: { __INTEGRATION_MIGRATION_SQL__: JSON.stringify(migrationSql) },
+  plugins: [cloudflareTest({ wrangler: { configPath: './test/integration/wrangler.test.jsonc' } })],
+  pool: cloudflarePool({ wrangler: { configPath: './test/integration/wrangler.test.jsonc' } }),
+  ssrNoExternal: ['hono', 'chanfana', '@my-app'],
+});
+```
+
+The workspace table without `cloudflare:*` mocks (the real runtime provides
+them), defaulting to `test/integration/**/*.int.test.ts`. The workerd plugin,
+pool and migration defines pass through untouched — importing them here would
+make the tooling package undownloadable without workerd. CalDAV-Bridge's
+`node:sqlite` suite passes `include: ['test/integration/**/*.test.ts']` and no
+harness wiring.
 
 ### Vite — the SPA build
 

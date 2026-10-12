@@ -5,7 +5,7 @@ import {
   parseAllowedHosts,
   isPrivateOrInternalHost,
   RemoteUrlRejectedError,
-} from './RemoteUrlPolicy';
+} from './RemoteUrlPolicy.ts';
 
 // Adapted from Durable-DAV's test/replication-url-policy.test.ts, plus cases for
 // the merged SsrfHosts predicate.

@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import { Card, CardHeader, CardTitle } from './Card';
+import { Card, CardHeader, CardTitle } from './Card.tsx';
 
 afterEach(cleanup);
 

@@ -1,4 +1,4 @@
-import { HttpServiceError } from './HttpServiceError';
+import { HttpServiceError } from './HttpServiceError.ts';
 
 /**
  * 412 — a precondition the caller supplied (e.g. `If-Match`, expected state)

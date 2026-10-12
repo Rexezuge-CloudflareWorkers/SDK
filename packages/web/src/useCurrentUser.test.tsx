@@ -3,9 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { cleanup } from '@testing-library/react';
 import { ServiceError } from '@rexezuge/errors';
-import { createApiClient } from './api';
-import type { ApiClient, FetchFn } from './api';
-import { useCurrentUser } from './useCurrentUser';
+import { createApiClient } from './api.ts';
+import type { ApiClient, FetchFn } from './api.ts';
+import { useCurrentUser } from './useCurrentUser.ts';
 
 interface Account {
   email: string;

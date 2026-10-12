@@ -1,4 +1,4 @@
-import { bytesToBase64 } from './Base64';
+import { bytesToBase64 } from './Base64.ts';
 
 /**
  * Hashing and key generation.

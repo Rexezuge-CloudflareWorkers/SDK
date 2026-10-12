@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import { Input, Label } from './Input';
+import { Input, Label } from './Input.tsx';
 
 afterEach(cleanup);
 

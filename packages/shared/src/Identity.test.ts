@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { isValidEmailFormat, MAX_EMAIL_LENGTH } from './Identity';
-import { normalizeEmail } from './EmailUtil';
+import { isValidEmailFormat, MAX_EMAIL_LENGTH } from './Identity.ts';
+import { normalizeEmail } from './EmailUtil.ts';
 
 describe('isValidEmailFormat', () => {
   it('accepts well-formed addresses', () => {

@@ -1,4 +1,4 @@
-import { CryptoUtil } from './CryptoUtil';
+import { CryptoUtil } from './CryptoUtil.ts';
 
 /**
  * A cheap, deterministic tag for a presented password.

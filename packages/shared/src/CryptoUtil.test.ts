@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CryptoUtil } from './CryptoUtil';
-import { bytesToBase64, base64ToBytes } from './Base64';
+import { CryptoUtil } from './CryptoUtil.ts';
+import { bytesToBase64, base64ToBytes } from './Base64.ts';
 
 // Adapted from Durable-DAV's test/shared-crypto.test.ts plus the hmac/base64url
 // cases from ChordDHT's sharedUtils.test.ts.

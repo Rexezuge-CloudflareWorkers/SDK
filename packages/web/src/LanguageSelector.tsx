@@ -1,5 +1,5 @@
 import { LocaleUtil, SUPPORTED_LOCALES } from '@rexezuge/shared';
-import { Select } from './Input';
+import { Select } from './Input.tsx';
 
 /**
  * The language picker.

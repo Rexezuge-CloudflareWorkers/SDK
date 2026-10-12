@@ -1,8 +1,8 @@
 import { isMissingSchemaError } from '@rexezuge/d1';
-import { summarize } from './ResolvedAccount';
-import type { ResolvedAccount } from './ResolvedAccount';
-import { UserDAO } from './UserDAO';
-import { UserEmailDAO } from './UserEmailDAO';
+import { summarize } from './ResolvedAccount.ts';
+import type { ResolvedAccount } from './ResolvedAccount.ts';
+import { UserDAO } from './UserDAO.ts';
+import { UserEmailDAO } from './UserEmailDAO.ts';
 
 /**
  * Injected DAO factories. All optional: each defaults to a real DAO over the

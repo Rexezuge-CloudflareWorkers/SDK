@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { defineWebViteConfig, spaShellEmbedPlugin } from './vite';
+import { defineWebViteConfig, spaShellEmbedPlugin } from './vite.ts';
 
 const created: string[] = [];
 

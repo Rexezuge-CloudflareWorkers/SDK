@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bytesToBase64, base64ToBytes } from './Base64';
+import { bytesToBase64, base64ToBytes } from './Base64.ts';
 
 // Adapted from Durable-DAV's test/shared-base64.test.ts — the proven vectors for
 // the 3-byte-to-4-char table codec this file documents as "best".

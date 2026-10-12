@@ -1,4 +1,4 @@
-import type { Notice, NoticeKind } from './useNotice';
+import type { Notice, NoticeKind } from './useNotice.ts';
 
 /**
  * The transient status banner.

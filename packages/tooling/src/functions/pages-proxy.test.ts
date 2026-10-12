@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createPagesProxy } from './pages-proxy';
-import type { PagesProxyEnv } from './pages-proxy';
+import { createPagesProxy } from './pages-proxy.ts';
+import type { PagesProxyEnv } from './pages-proxy.ts';
 
 function fakeEnv(): { env: PagesProxyEnv; seen: { url: string; method: string; headers: Headers; body: string | null }[] } {
   const seen: { url: string; method: string; headers: Headers; body: string | null }[] = [];

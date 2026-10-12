@@ -36,8 +36,8 @@ import { encryptSecret } from '@rexezuge/d1';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { basename } from 'node:path';
-import { fail, setOutput } from '../lib/github-actions';
-import { backupFileName } from './naming';
+import { fail, setOutput } from '../lib/github-actions.ts';
+import { backupFileName } from './naming.ts';
 
 /** The dump the export step leaves in the working directory. */
 const SOURCE_FILE = 'backup.sql';

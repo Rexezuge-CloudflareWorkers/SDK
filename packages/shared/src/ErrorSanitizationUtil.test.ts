@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ErrorSanitizationUtil } from './ErrorSanitizationUtil';
+import { ErrorSanitizationUtil } from './ErrorSanitizationUtil.ts';
 
 describe('ErrorSanitizationUtil.sanitizeMessage', () => {
   it('redacts an Authorization header scheme', () => {

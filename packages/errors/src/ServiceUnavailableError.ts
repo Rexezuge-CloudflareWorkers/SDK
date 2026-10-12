@@ -1,4 +1,4 @@
-import { HttpServiceError } from './HttpServiceError';
+import { HttpServiceError } from './HttpServiceError.ts';
 
 /**
  * 503 — unavailable now, healthy later. The natural status for retryable

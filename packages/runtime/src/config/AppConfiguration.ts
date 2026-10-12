@@ -1,5 +1,5 @@
-import { EnvParser } from './EnvParser';
-import { DEFAULT_SITE_URL } from './ConfigurationDefaults';
+import { EnvParser } from './EnvParser.ts';
+import { DEFAULT_SITE_URL } from './ConfigurationDefaults.ts';
 
 /**
  * The base class every consumer's `AppConfiguration` extends.

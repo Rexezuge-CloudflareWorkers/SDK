@@ -31,7 +31,7 @@
  */
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { verifySpaShell } from './spa-shell';
+import { verifySpaShell } from './spa-shell.ts';
 
 /**
  * The repository root, derived from this file rather than from `process.cwd()`.

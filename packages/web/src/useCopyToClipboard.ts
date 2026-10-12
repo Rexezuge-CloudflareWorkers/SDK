@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { COPY_FEEDBACK_TIMEOUT_MS } from './constants';
+import { COPY_FEEDBACK_TIMEOUT_MS } from './constants.ts';
 
 /**
  * Copy text to the clipboard, reporting success only when it happened.

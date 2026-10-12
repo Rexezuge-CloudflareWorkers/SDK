@@ -31,9 +31,9 @@
  * - `WRANGLER_PATCH_JSON` — top-level keys merged into the config.
  * - `WRANGLER_VARS_PATCH_JSON` — `vars` entries merged into the config.
  */
-import { setOutput } from './lib/github-actions';
-import { applyTopLevelPatch, applyVarsPatch, ensureMinimumConfigVersion, prepareConfigFile } from './wrangler-config/patches';
-import { provisionWranglerResources } from './wrangler-config/resources';
+import { setOutput } from './lib/github-actions.ts';
+import { applyTopLevelPatch, applyVarsPatch, ensureMinimumConfigVersion, prepareConfigFile } from './wrangler-config/patches.ts';
+import { provisionWranglerResources } from './wrangler-config/resources.ts';
 
 prepareConfigFile();
 ensureMinimumConfigVersion();

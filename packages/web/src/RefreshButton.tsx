@@ -1,5 +1,5 @@
 import { RefreshCw } from 'lucide-react';
-import { Button } from './Button';
+import { Button } from './Button.tsx';
 
 /**
  * The refresh control.

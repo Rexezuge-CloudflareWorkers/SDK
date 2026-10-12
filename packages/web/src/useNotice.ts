@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { NOTICE_TIMEOUT_MS } from './constants';
+import { NOTICE_TIMEOUT_MS } from './constants.ts';
 
 /**
  * A transient status message.

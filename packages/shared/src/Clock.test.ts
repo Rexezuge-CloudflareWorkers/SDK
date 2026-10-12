@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FixedClock, SystemClock } from './Clock';
+import { FixedClock, SystemClock } from './Clock.ts';
 
 // Converged Clock: AWS's `now()` name, Mail-Otter/ChordDHT's mutable FixedClock.
 describe('Clock', () => {

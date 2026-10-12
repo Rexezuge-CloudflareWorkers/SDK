@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cn } from './utils';
+import { cn } from './utils.ts';
 
 describe('cn', () => {
   it('joins the classes it is given, in order', () => {

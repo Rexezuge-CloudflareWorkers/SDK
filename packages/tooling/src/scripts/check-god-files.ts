@@ -49,8 +49,8 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { join, relative } from 'node:path';
-import { fail } from './lib/github-actions';
-import { isSet, parseFlags, splitPositional, valueOf } from './lib/cli-args';
+import { fail } from './lib/github-actions.ts';
+import { isSet, parseFlags, splitPositional, valueOf } from './lib/cli-args.ts';
 
 /**
  * A file past a size the guard reports on.

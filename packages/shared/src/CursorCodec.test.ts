@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CursorCodec } from './CursorCodec';
-import type { Page } from './CursorCodec';
+import { CursorCodec } from './CursorCodec.ts';
+import type { Page } from './CursorCodec.ts';
 
 // Adapted from ChordDHT's Cursor tests + Edge-Git's decodeOrThrow/isValidCursor.
 describe('CursorCodec', () => {

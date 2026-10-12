@@ -1,17 +1,17 @@
-import type { BackendStrings, SupportedLocale } from './BackendStrings';
-import { normalizeLocale } from './BackendStrings';
-import { deStrings } from './locales/de';
-import { enStrings } from './locales/en';
-import { esStrings } from './locales/es';
-import { frStrings } from './locales/fr';
-import { itStrings } from './locales/it';
-import { jaStrings } from './locales/ja';
-import { koStrings } from './locales/ko';
-import { nlStrings } from './locales/nl';
-import { plStrings } from './locales/pl';
-import { ptStrings } from './locales/pt';
-import { zhCNStrings } from './locales/zh-CN';
-import { zhTWStrings } from './locales/zh-TW';
+import type { BackendStrings, SupportedLocale } from './BackendStrings.ts';
+import { normalizeLocale } from './BackendStrings.ts';
+import { deStrings } from './locales/de.ts';
+import { enStrings } from './locales/en.ts';
+import { esStrings } from './locales/es.ts';
+import { frStrings } from './locales/fr.ts';
+import { itStrings } from './locales/it.ts';
+import { jaStrings } from './locales/ja.ts';
+import { koStrings } from './locales/ko.ts';
+import { nlStrings } from './locales/nl.ts';
+import { plStrings } from './locales/pl.ts';
+import { ptStrings } from './locales/pt.ts';
+import { zhCNStrings } from './locales/zh-CN.ts';
+import { zhTWStrings } from './locales/zh-TW.ts';
 
 /**
  * The twelve bundles, keyed by locale.

@@ -1,8 +1,8 @@
 import { useId, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
-import { Label } from './Input';
-import { cn } from './utils';
-import { useCopyToClipboard } from './useCopyToClipboard';
+import { Label } from './Input.tsx';
+import { cn } from './utils.ts';
+import { useCopyToClipboard } from './useCopyToClipboard.ts';
 
 /**
  * A labelled, read-only value with an optional copy button.

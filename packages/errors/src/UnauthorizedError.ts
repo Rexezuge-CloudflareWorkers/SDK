@@ -1,4 +1,4 @@
-import { HttpServiceError } from './HttpServiceError';
+import { HttpServiceError } from './HttpServiceError.ts';
 
 /**
  * 401 — credentials missing, expired, or rejected. Distinct from `Forbidden`:

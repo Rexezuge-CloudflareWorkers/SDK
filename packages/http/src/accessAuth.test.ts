@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { AccessAuthError, authenticateAccess, verifyAccessJwt } from './accessAuth';
-import type { AccessBinding, AccessJwtVerifier } from './accessAuth';
+import { AccessAuthError, authenticateAccess, verifyAccessJwt } from './accessAuth.ts';
+import type { AccessBinding, AccessJwtVerifier } from './accessAuth.ts';
 
 const request = (headers: Record<string, string> = {}): Request => new Request('https://example.com/user/me', { headers });
 

@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import { Spinner } from './Spinner';
+import { Spinner } from './Spinner.tsx';
 
 afterEach(cleanup);
 

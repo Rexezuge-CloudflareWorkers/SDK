@@ -1,7 +1,7 @@
-import { CATALOG } from './CATALOG';
-import type { HttpErrorType } from './CATALOG';
-import { ServiceError } from './ServiceError';
-import type { ServiceErrorOptions } from './ServiceError';
+import { CATALOG } from './CATALOG.ts';
+import type { HttpErrorType } from './CATALOG.ts';
+import { ServiceError } from './ServiceError.ts';
+import type { ServiceErrorOptions } from './ServiceError.ts';
 
 /**
  * A `ServiceError` with a fixed HTTP status and type from the catalog.

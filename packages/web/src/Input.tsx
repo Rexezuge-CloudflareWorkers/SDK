@@ -6,7 +6,7 @@ import type {
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from 'react';
-import { cn } from './utils';
+import { cn } from './utils.ts';
 
 /**
  * Form controls: `Input`, `Select`, `Textarea`, `Label`.

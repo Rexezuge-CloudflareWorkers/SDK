@@ -2,9 +2,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import { NoticeBar } from './NoticeBar';
-import { LanguageSelector } from './LanguageSelector';
-import type { NoticeStatusLabels } from './NoticeBar';
+import { NoticeBar } from './NoticeBar.tsx';
+import { LanguageSelector } from './LanguageSelector.tsx';
+import type { NoticeStatusLabels } from './NoticeBar.tsx';
 
 afterEach(() => {
   cleanup();

@@ -1,23 +1,23 @@
-export { CATALOG } from './CATALOG';
-export type { HttpErrorDefinition, HttpErrorType } from './CATALOG';
-export { ServiceError } from './ServiceError';
-export type { ServiceErrorOptions, ErrorHttpPayload } from './ServiceError';
-export { HttpServiceError } from './HttpServiceError';
-export { BadRequestError } from './BadRequestError';
-export { UnauthorizedError } from './UnauthorizedError';
-export { ForbiddenError } from './ForbiddenError';
-export { NotFoundError } from './NotFoundError';
-export { MethodNotAllowedError } from './MethodNotAllowedError';
-export { ConflictError } from './ConflictError';
-export { PreconditionFailedError } from './PreconditionFailedError';
-export { PayloadTooLargeError } from './PayloadTooLargeError';
-export { UnsupportedMediaTypeError } from './UnsupportedMediaTypeError';
-export { RateLimitedError } from './RateLimitedError';
-export { InternalServerError, DefaultInternalServerError } from './InternalServerError';
-export { NotImplementedError } from './NotImplementedError';
-export { BadGatewayError } from './BadGatewayError';
-export { ServiceUnavailableError } from './ServiceUnavailableError';
-export { DatabaseError } from './DatabaseError';
+export { CATALOG } from './CATALOG.ts';
+export type { HttpErrorDefinition, HttpErrorType } from './CATALOG.ts';
+export { ServiceError } from './ServiceError.ts';
+export type { ServiceErrorOptions, ErrorHttpPayload } from './ServiceError.ts';
+export { HttpServiceError } from './HttpServiceError.ts';
+export { BadRequestError } from './BadRequestError.ts';
+export { UnauthorizedError } from './UnauthorizedError.ts';
+export { ForbiddenError } from './ForbiddenError.ts';
+export { NotFoundError } from './NotFoundError.ts';
+export { MethodNotAllowedError } from './MethodNotAllowedError.ts';
+export { ConflictError } from './ConflictError.ts';
+export { PreconditionFailedError } from './PreconditionFailedError.ts';
+export { PayloadTooLargeError } from './PayloadTooLargeError.ts';
+export { UnsupportedMediaTypeError } from './UnsupportedMediaTypeError.ts';
+export { RateLimitedError } from './RateLimitedError.ts';
+export { InternalServerError, DefaultInternalServerError } from './InternalServerError.ts';
+export { NotImplementedError } from './NotImplementedError.ts';
+export { BadGatewayError } from './BadGatewayError.ts';
+export { ServiceUnavailableError } from './ServiceUnavailableError.ts';
+export { DatabaseError } from './DatabaseError.ts';
 export {
   NonRetryableError,
   OAuth2TokenNonRetryableError,
@@ -26,5 +26,5 @@ export {
   ProviderApiNonRetryableError,
   ProviderApiRetryableError,
   RetryableError,
-} from './OutcomeError';
-export type { ErrorResponse } from './ErrorResponse';
+} from './OutcomeError.ts';
+export type { ErrorResponse } from './ErrorResponse.ts';

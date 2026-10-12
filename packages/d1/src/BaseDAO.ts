@@ -1,6 +1,6 @@
 import { DatabaseError } from '@rexezuge/errors';
-import { D1_RETRY_DEFAULTS, executeWithRetry } from './D1Retry';
-import type { D1PreparedStatement, D1Queryable, D1Result } from './D1Types';
+import { D1_RETRY_DEFAULTS, executeWithRetry } from './D1Retry.ts';
+import type { D1PreparedStatement, D1Queryable, D1Result } from './D1Types.ts';
 
 /**
  * A statement result plus the payload it produced, so the retry engine (which

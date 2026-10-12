@@ -1,4 +1,4 @@
-import { HttpServiceError } from './HttpServiceError';
+import { HttpServiceError } from './HttpServiceError.ts';
 
 /**
  * 404 — no such resource.

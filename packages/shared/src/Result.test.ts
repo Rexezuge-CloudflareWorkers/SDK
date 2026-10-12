@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { err, getOrThrow, isOk, mapResult, ok } from './Result';
-import type { Result } from './Result';
+import { err, getOrThrow, isOk, mapResult, ok } from './Result.ts';
+import type { Result } from './Result.ts';
 
 // From Edge-Git / ChordDHT-Tracker's Result.ts (byte-identical).
 describe('Result', () => {

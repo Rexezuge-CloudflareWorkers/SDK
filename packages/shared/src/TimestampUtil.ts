@@ -1,4 +1,4 @@
-import { SYSTEM_CLOCK, type Clock } from './Clock';
+import { SYSTEM_CLOCK, type Clock } from './Clock.ts';
 
 /**
  * Unix timestamps, in seconds and milliseconds.

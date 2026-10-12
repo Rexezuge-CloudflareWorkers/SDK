@@ -2,8 +2,8 @@
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
-import { useNotice } from './useNotice';
-import { NOTICE_TIMEOUT_MS } from './constants';
+import { useNotice } from './useNotice.ts';
+import { NOTICE_TIMEOUT_MS } from './constants.ts';
 
 afterEach(cleanup);
 beforeEach(() => {
