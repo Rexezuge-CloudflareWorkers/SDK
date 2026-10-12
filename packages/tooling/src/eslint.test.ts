@@ -165,6 +165,26 @@ describe('defineRepoLintConfig', () => {
     );
   });
 
+  it('keeps the family offs off after the presets assemble', () => {
+    // UNICORN_RULES carries `sonarjs/*` offs as well as `unicorn/*` ones, and
+    // flat-config later entries win: a preset assembled after the block
+    // re-enables whatever the block relaxed. That shipped — the sonarjs preset
+    // sat between the block and its own rules, so six deliberate offs linted
+    // as errors in every consumer. Asserted on the merged result, because the
+    // block alone always said the right thing; only the assembly was wrong.
+    const rules = rulesOf(config, 'packages/backend-data/src/dao/x.ts');
+    for (const rule of [
+      'sonarjs/void-use',
+      'sonarjs/different-types-comparison',
+      'sonarjs/use-type-alias',
+      'sonarjs/redundant-type-aliases',
+      'sonarjs/no-nested-assignment',
+      'sonarjs/no-all-duplicated-branches',
+    ]) {
+      expect(rules[rule]).toBe('off');
+    }
+  });
+
   it('covers the family superset of domain layers', () => {
     // provider-clients (AWS/CalDAV/Meow/Otter), webdav/dav-store (DAV/Router/Sonic),
     // git-protocol/git-service (Git): a repo without the package never imports it,
