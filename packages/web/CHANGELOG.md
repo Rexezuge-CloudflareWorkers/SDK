@@ -1,5 +1,13 @@
 # @rexezuge/web
 
+## 1.5.2
+
+### Patch Changes
+
+- Updated dependencies [0812aa7]
+  - @rexezuge/errors@1.5.2
+  - @rexezuge/shared@1.5.2
+
 ## 1.5.1
 
 ### Patch Changes
