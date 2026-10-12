@@ -1,7 +1,7 @@
-export { AbstractEntrypointWorker } from './AbstractEntrypointWorker';
-export type { WorkerExecutionContext, WorkerScheduledController } from './AbstractEntrypointWorker';
-export { AbstractDurableObjectWorker } from './AbstractDurableObjectWorker';
-export { AbstractQueueWorker } from './AbstractQueueWorker';
-export type { WorkerMessageBatch } from './AbstractQueueWorker';
-export { AbstractWorkflowWorker } from './AbstractWorkflowWorker';
-export type { WorkflowEventLike, WorkflowStepLike } from './AbstractWorkflowWorker';
+export { AbstractEntrypointWorker } from './AbstractEntrypointWorker.ts';
+export type { WorkerExecutionContext, WorkerScheduledController } from './AbstractEntrypointWorker.ts';
+export { AbstractDurableObjectWorker } from './AbstractDurableObjectWorker.ts';
+export { AbstractQueueWorker } from './AbstractQueueWorker.ts';
+export type { WorkerMessageBatch } from './AbstractQueueWorker.ts';
+export { AbstractWorkflowWorker } from './AbstractWorkflowWorker.ts';
+export type { WorkflowEventLike, WorkflowStepLike } from './AbstractWorkflowWorker.ts';

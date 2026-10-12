@@ -2,12 +2,12 @@ import { BadRequestError } from '@rexezuge/errors';
 import type { D1Queryable } from '@rexezuge/d1';
 import { isValidEmailFormat } from '@rexezuge/shared';
 import { TimestampUtil } from '@rexezuge/shared';
-import { registerAccount, resolveAccount } from './accountLookup';
-import type { AccountLookupDeps } from './accountLookup';
-import { newAnchor, summarize } from './ResolvedAccount';
-import type { ResolvedAccount } from './ResolvedAccount';
-import { UserDAO } from './UserDAO';
-import { UserEmailDAO } from './UserEmailDAO';
+import { registerAccount, resolveAccount } from './accountLookup.ts';
+import type { AccountLookupDeps } from './accountLookup.ts';
+import { newAnchor, summarize } from './ResolvedAccount.ts';
+import type { ResolvedAccount } from './ResolvedAccount.ts';
+import { UserDAO } from './UserDAO.ts';
+import { UserEmailDAO } from './UserEmailDAO.ts';
 
 interface UserIdentityEnv {
   DB: D1Queryable;

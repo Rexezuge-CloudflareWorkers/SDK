@@ -1,6 +1,6 @@
 import { executableStatements } from '@rexezuge/d1';
 import type { D1Queryable } from '@rexezuge/d1';
-import { UPGRADE_USER_IDENTITY, USERS_SCHEMA } from './migrations';
+import { UPGRADE_USER_IDENTITY, USERS_SCHEMA } from './migrations.ts';
 
 /**
  * The identity migrations this package ships, by filename. `IDENTITY_MIGRATIONS`

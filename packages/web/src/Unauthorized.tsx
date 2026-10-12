@@ -1,4 +1,4 @@
-import { ZERO_TRUST_AUTHENTICATION_PATH } from './constants';
+import { ZERO_TRUST_AUTHENTICATION_PATH } from './constants.ts';
 
 /**
  * The "you are not signed in" page.

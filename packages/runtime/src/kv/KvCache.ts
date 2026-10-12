@@ -1,6 +1,6 @@
-import { createLogger } from '../logger';
-import { KV_DOMAINS, buildKvKey, clampTtl, utf8ByteLength } from './KvDomains';
-import type { KvDomainName } from './KvDomains';
+import { createLogger } from '../logger.ts';
+import { KV_DOMAINS, buildKvKey, clampTtl, utf8ByteLength } from './KvDomains.ts';
+import type { KvDomainName } from './KvDomains.ts';
 
 /**
  * `KvCache` — typed facade over the single `CACHE` KV binding.

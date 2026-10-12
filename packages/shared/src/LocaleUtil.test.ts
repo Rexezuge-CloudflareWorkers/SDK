@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LocaleUtil, SUPPORTED_LOCALES } from './LocaleUtil';
+import { LocaleUtil, SUPPORTED_LOCALES } from './LocaleUtil.ts';
 
 // Converged from Mail-Meow/Mail-Otter's LocaleUtil (full negotiate/displayName set).
 describe('LocaleUtil', () => {

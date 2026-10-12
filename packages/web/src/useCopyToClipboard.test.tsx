@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { useCopyToClipboard } from './useCopyToClipboard';
-import { COPY_FEEDBACK_TIMEOUT_MS } from './constants';
+import { useCopyToClipboard } from './useCopyToClipboard.ts';
+import { COPY_FEEDBACK_TIMEOUT_MS } from './constants.ts';
 
 afterEach(() => {
   cleanup();

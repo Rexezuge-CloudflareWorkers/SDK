@@ -1,7 +1,7 @@
 import { BaseDAO } from '@rexezuge/d1';
 import type { D1Queryable } from '@rexezuge/d1';
-import { newAccountId } from './ResolvedAccount';
-import type { UserRow } from './ResolvedAccount';
+import { newAccountId } from './ResolvedAccount.ts';
+import type { UserRow } from './ResolvedAccount.ts';
 
 /**
  * The stored form of a handle: lowercase.

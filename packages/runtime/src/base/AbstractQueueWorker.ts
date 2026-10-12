@@ -1,4 +1,4 @@
-import type { WorkerExecutionContext } from './AbstractEntrypointWorker';
+import type { WorkerExecutionContext } from './AbstractEntrypointWorker.ts';
 
 /**
  * The queue consumer base, converged verbatim from `AbstractQueueWorker.ts`

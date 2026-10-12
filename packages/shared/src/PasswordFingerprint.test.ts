@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { passwordFingerprint } from './PasswordFingerprint';
-import { TokenHashUtil } from './TokenHashUtil';
-import { CryptoUtil } from './CryptoUtil';
+import { passwordFingerprint } from './PasswordFingerprint.ts';
+import { TokenHashUtil } from './TokenHashUtil.ts';
+import { CryptoUtil } from './CryptoUtil.ts';
 
 describe('passwordFingerprint', () => {
   it('is a deterministic unsalted SHA-256 of the password', async () => {

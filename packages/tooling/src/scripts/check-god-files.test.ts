@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { checkGodFiles, checkGodFilesCli, readAllowlist, HARD_LIMIT, SOFT_LIMIT } from './check-god-files';
+import { checkGodFiles, checkGodFilesCli, readAllowlist, HARD_LIMIT, SOFT_LIMIT } from './check-god-files.ts';
 
 function tempTree(files: Record<string, string>): string {
   const root = mkdtempSync(join(tmpdir(), 'god-files-'));

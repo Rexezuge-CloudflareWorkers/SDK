@@ -12,7 +12,7 @@
 
 import { copyFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { applyEdits, modify, parse } from 'jsonc-parser';
-import { CONFIG_PATH, TEMPLATE_PATH, type WranglerConfig } from './types';
+import { CONFIG_PATH, TEMPLATE_PATH, type WranglerConfig } from './types.ts';
 
 /** The config's current text and its parsed form. */
 export interface ConfigFile {

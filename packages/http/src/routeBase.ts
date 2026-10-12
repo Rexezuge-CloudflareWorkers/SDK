@@ -31,7 +31,7 @@
  * decision that is not the kit's to make.
  */
 import { BadRequestError, ServiceError } from '@rexezuge/errors';
-import { toErrorResponse } from './ErrorMapper';
+import { toErrorResponse } from './ErrorMapper.ts';
 
 /** The slice of a Hono context a route handler reads. */
 interface RouteContext {

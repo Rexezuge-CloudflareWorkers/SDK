@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { AlertTriangle, Check, Copy } from 'lucide-react';
-import { Button } from './Button';
-import { Input, Label } from './Input';
-import { ModalShell } from './ModalShell';
-import { useCopyToClipboard } from './useCopyToClipboard';
+import { Button } from './Button.tsx';
+import { Input, Label } from './Input.tsx';
+import { ModalShell } from './ModalShell.tsx';
+import { useCopyToClipboard } from './useCopyToClipboard.ts';
 
 /**
  * The "type the name to confirm this destructive action" dialog.

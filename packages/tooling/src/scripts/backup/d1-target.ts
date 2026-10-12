@@ -6,7 +6,7 @@
  * account.
  */
 
-import { DEFAULT_UUID } from '../wrangler-config/types';
+import { DEFAULT_UUID } from '../wrangler-config/types.ts';
 
 /** A D1 binding as a parsed wrangler config carries one. */
 export interface D1DatabaseBinding {

@@ -2,9 +2,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import { RefreshButton } from './RefreshButton';
-import { ReadOnlyField } from './ReadOnlyField';
-import { TypeToConfirmModal } from './TypeToConfirmModal';
+import { RefreshButton } from './RefreshButton.tsx';
+import { ReadOnlyField } from './ReadOnlyField.tsx';
+import { TypeToConfirmModal } from './TypeToConfirmModal.tsx';
 
 afterEach(() => {
   cleanup();

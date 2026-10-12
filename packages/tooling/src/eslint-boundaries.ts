@@ -9,10 +9,20 @@ import type tseslint from 'typescript-eslint';
  * argues about — are their own module rather than the tail of a 640-line
  * config file.
  *
+ * Converged across all nine family repos: `provider-clients` (AWS-AccessBridge,
+ * CalDAV-Bridge, Mail-Meow, Mail-Otter), `webdav`/`dav-store` (Durable-DAV,
+ * Durable-DAV-Router, Edge-Sonic), `git-protocol`/`git-service` (Edge-Git).
+ * `media-tags`/`subsonic` (Edge-Sonic) carry no boundary block in their source
+ * repo — they are unconstrained utility leaves — so they have no layer here.
+ *
  * The table is data rather than inline blocks so the dynamic-`import()` guard
  * is generated from the same list: a rule that derived its banned set from
  * another rule's configuration would be a second source of truth for the layer
  * table, and that table is what the docs describe.
+ *
+ * The table is a superset: a repo without a domain package simply never imports
+ * it, so its ban never fires. A layer entry for a directory that does not exist
+ * in the consumer matches no file and costs nothing.
  */
 
 /**
@@ -27,6 +37,11 @@ export const DEFAULT_PROJECT_DIRS: readonly string[] = [
   'packages/backend-errors',
   'packages/backend-runtime',
   'packages/backend-data',
+  'packages/provider-clients',
+  'packages/webdav',
+  'packages/dav-store',
+  'packages/git-protocol',
+  'packages/git-service',
   'packages/backend-services',
   'apps/api',
   'apps/background',
@@ -36,10 +51,16 @@ export const DEFAULT_PROJECT_DIRS: readonly string[] = [
 /**
  * One layer's ban list, as the repo-relative package suffixes it may not import.
  *
- * Converged from the four source stacks. `backend-data` and `backend-services`
- * appear in all four; `webdav`/`dav-store` are Durable-DAV's, `provider-clients`
- * is Mail-Meow's and AWS's. A layer only bans what exists in its repo, so the
+ * Converged from all nine family repos. `backend-data` and `backend-services`
+ * appear in all nine; `provider-clients` is AWS-AccessBridge's, CalDAV-Bridge's,
+ * Mail-Meow's and Mail-Otter's; `webdav`/`dav-store` are Durable-DAV's,
+ * Durable-DAV-Router's and Edge-Sonic's; `git-protocol`/`git-service` are
+ * Edge-Git's. A layer only bans what exists in its repo, so the
  * union is safe: a repo without `provider-clients` simply never imports it.
+ *
+ * One `dir` may appear in several entries (see `apps/api` below): each entry
+ * carries its own message and `allowTypeImports`, because the DAO ban allows
+ * type-only imports and the direct-client bans do not.
  */
 export interface LayerBan {
   /** Directory the rule is scoped to. */
@@ -70,13 +91,64 @@ export function layerBans(scope: string): readonly LayerBan[] {
     },
     {
       dir: 'packages/backend-runtime',
-      ban: [at('backend-data'), at('webdav'), at('backend-services'), at('api'), at('background')],
+      ban: [
+        at('backend-data'),
+        at('provider-clients'),
+        at('webdav'),
+        at('dav-store'),
+        at('git-protocol'),
+        at('git-service'),
+        at('backend-services'),
+        at('api'),
+        at('background'),
+      ],
       message: 'backend-runtime must not import from a higher layer',
     },
     {
       dir: 'packages/backend-data',
-      ban: [at('backend-runtime'), at('webdav'), at('backend-services'), at('api'), at('background')],
+      ban: [
+        at('backend-runtime'),
+        at('provider-clients'),
+        at('webdav'),
+        at('dav-store'),
+        at('git-protocol'),
+        at('git-service'),
+        at('backend-services'),
+        at('api'),
+        at('background'),
+      ],
       message: 'backend-data must not import from a higher layer',
+    },
+    // Domain protocol layers (layer 2, beside backend-data): each bans the DAO
+    // layer, the runtime, its store counterpart where it has one, the service
+    // layer and the apps. Sources: provider-clients (AWS-AccessBridge,
+    // Mail-Meow), webdav (Durable-DAV, Edge-Sonic), git-protocol (Edge-Git).
+    {
+      dir: 'packages/provider-clients',
+      ban: [at('backend-data'), at('backend-runtime'), at('backend-services'), at('api'), at('background')],
+      message: 'provider-clients must not import DAOs from backend-data',
+    },
+    {
+      dir: 'packages/webdav',
+      ban: [at('backend-data'), at('backend-runtime'), at('dav-store'), at('backend-services'), at('api'), at('background')],
+      message: 'webdav must not import DAOs from backend-data',
+    },
+    {
+      dir: 'packages/git-protocol',
+      ban: [at('backend-data'), at('backend-runtime'), at('git-service'), at('backend-services'), at('api'), at('background')],
+      message: 'git-protocol must not import DAOs from backend-data',
+    },
+    // Domain store layers (layer 2-3): only layers 0-2, never services or apps.
+    // Sources: dav-store (Durable-DAV), git-service (Edge-Git).
+    {
+      dir: 'packages/dav-store',
+      ban: [at('backend-services'), at('api'), at('background')],
+      message: 'dav-store must not import from backend-services (higher layer)',
+    },
+    {
+      dir: 'packages/git-service',
+      ban: [at('backend-services'), at('api'), at('background')],
+      message: 'git-service must not import from backend-services (higher layer)',
     },
     {
       dir: 'packages/backend-services',
@@ -87,7 +159,28 @@ export function layerBans(scope: string): readonly LayerBan[] {
       dir: 'apps/api',
       ban: [at('backend-data/dao'), at('backend-data')],
       allowTypeImports: true,
-      message: 'apps/api must not import DAOs or backend-data values directly; use backend-services instead',
+      message:
+        'apps/api must not import DAOs or backend-data values directly; use backend-services instead (type-only imports are allowed)',
+    },
+    // Direct-client bans: one entry per client package so each message names
+    // the correct alternative. A repo holds at most one of these packages, so
+    // the other two never fire. Sources: provider-clients (AWS-AccessBridge,
+    // Mail-Meow, Mail-Otter, CalDAV-Bridge), dav-store (Durable-DAV),
+    // git-service (Edge-Git).
+    {
+      dir: 'apps/api',
+      ban: [at('provider-clients')],
+      message: `apps/api must not import provider-clients directly; use ${scope}/backend-services instead`,
+    },
+    {
+      dir: 'apps/api',
+      ban: [at('dav-store')],
+      message: `apps/api must not import dav-store directly; use ${scope}/webdav + DO RPC via ${scope}/background instead`,
+    },
+    {
+      dir: 'apps/api',
+      ban: [at('git-service')],
+      message: `apps/api must not import git-service directly; use ${scope}/git-protocol + DO RPC via ${scope}/background instead`,
     },
     {
       dir: 'apps/background',

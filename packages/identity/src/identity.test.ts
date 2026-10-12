@@ -1,13 +1,13 @@
 import { BadRequestError } from '@rexezuge/errors';
 import { executableStatements } from '@rexezuge/d1';
 import { describe, expect, it } from 'vitest';
-import { UPGRADE_USER_IDENTITY, USERS_SCHEMA } from './migrations';
-import { registerAccount, resolveAccount } from './accountLookup';
-import { UserIdentityService } from './UserIdentityService';
-import { UserDAO } from './UserDAO';
-import type { UserRow } from './UserDAO';
-import { UserEmailDAO } from './UserEmailDAO';
-import type { UserEmailRow } from './UserEmailDAO';
+import { UPGRADE_USER_IDENTITY, USERS_SCHEMA } from './migrations.ts';
+import { registerAccount, resolveAccount } from './accountLookup.ts';
+import { UserIdentityService } from './UserIdentityService.ts';
+import { UserDAO } from './UserDAO.ts';
+import type { UserRow } from './UserDAO.ts';
+import { UserEmailDAO } from './UserEmailDAO.ts';
+import type { UserEmailRow } from './UserEmailDAO.ts';
 
 // ---------- a D1 fake that executes the kit's two tables ----------
 

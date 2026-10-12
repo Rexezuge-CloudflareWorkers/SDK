@@ -14,7 +14,7 @@
 
 import { writeFileSync } from 'node:fs';
 import { parse } from 'jsonc-parser';
-import { parseWranglerTableRows } from '../lib/wrangler-table';
+import { parseWranglerTableRows } from '../lib/wrangler-table.ts';
 import {
   CONFIG_PATH,
   DEFAULT_HEX_ID,
@@ -27,9 +27,9 @@ import {
   type KVNamespace,
   type SecretStore,
   type WranglerConfig,
-} from './types';
-import { parseJsonArray, runWrangler } from './cli';
-import { readConfig, writeConfig, writeConfigValue } from './patches';
+} from './types.ts';
+import { parseJsonArray, runWrangler } from './cli.ts';
+import { readConfig, writeConfig, writeConfigValue } from './patches.ts';
 
 /** What `ensure*` did, so a caller can act on the difference. */
 export interface Provisioned {

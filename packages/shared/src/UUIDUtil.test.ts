@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { UUIDUtil } from './UUIDUtil';
+import { UUIDUtil } from './UUIDUtil.ts';
 
 // Adapted from Edge-Sonic's deterministicId assertions (import-phases.test.ts).
 describe('UUIDUtil', () => {

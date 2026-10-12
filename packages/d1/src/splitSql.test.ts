@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { executableStatements, splitSql } from './splitSql';
+import { executableStatements, splitSql } from './splitSql.ts';
 
 describe('splitSql', () => {
   // Statements come back trimmed, without the trailing semicolon: the splitter

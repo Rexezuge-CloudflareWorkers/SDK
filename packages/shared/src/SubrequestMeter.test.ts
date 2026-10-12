@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { SubrequestCounter, UNMETERED_SUBREQUESTS, subrequestSpend, NO_SUBREQUESTS_SPENT } from './SubrequestMeter';
-import type { SubrequestSpend } from './SubrequestMeter';
+import { SubrequestCounter, UNMETERED_SUBREQUESTS, subrequestSpend, NO_SUBREQUESTS_SPENT } from './SubrequestMeter.ts';
+import type { SubrequestSpend } from './SubrequestMeter.ts';
 
 // Adapted from Edge-Sonic's test/subrequest-budget.test.ts (the "the counter" block).
 describe('SubrequestCounter', () => {

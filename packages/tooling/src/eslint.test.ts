@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defineRepoLintConfig } from './eslint';
+import { defineRepoLintConfig } from './eslint.ts';
 
 /**
  * Structural checks on the produced flat config.
@@ -153,6 +153,27 @@ describe('defineRepoLintConfig', () => {
     expect(rules['@typescript-eslint/no-unused-vars']).toStrictEqual(
       rulesOf(config, 'src/anything.ts')['@typescript-eslint/no-unused-vars'],
     );
+  });
+
+  it('covers the family superset of domain layers', () => {
+    // provider-clients (AWS/CalDAV/Meow/Otter), webdav/dav-store (DAV/Router/Sonic),
+    // git-protocol/git-service (Git): a repo without the package never imports it,
+    // so the union is safe and no repo needs extraLayers for a known package.
+    const rules = rulesJson(config);
+    expect(rules).toContain('@fixture/provider-clients');
+    expect(rules).toContain('@fixture/webdav');
+    expect(rules).toContain('@fixture/dav-store');
+    expect(rules).toContain('@fixture/git-protocol');
+    expect(rules).toContain('@fixture/git-service');
+  });
+
+  it('bans direct client imports from apps/api with the per-client alternative', () => {
+    const rules = rulesJson(config);
+    expect(rules).toContain('must not import provider-clients directly');
+    expect(rules).toContain('must not import dav-store directly');
+    expect(rules).toContain('must not import git-service directly');
+    // And the DAO ban still allows type-only imports beside them.
+    expect(rules).toContain('allowTypeImports');
   });
 
   it('accepts extra layers without losing the canonical ones', () => {

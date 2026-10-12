@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CryptoIdGenerator, FixedIdGenerator } from './IdGenerator';
+import { CryptoIdGenerator, FixedIdGenerator } from './IdGenerator.ts';
 
 // From ChordDHT-Tracker's IdGenerator.ts + its sharedUtils.test.ts.
 describe('IdGenerator', () => {

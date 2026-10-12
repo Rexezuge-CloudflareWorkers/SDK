@@ -18,7 +18,7 @@
  * the authorization request that started it, so it is generated here rather than
  * at each call site where three repos had each grown their own.
  */
-import { CryptoUtil } from './CryptoUtil';
+import { CryptoUtil } from './CryptoUtil.ts';
 
 /**
  * Generate an OAuth2 `state` value.

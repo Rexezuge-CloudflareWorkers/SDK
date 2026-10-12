@@ -1,6 +1,6 @@
 import { useState, type CSSProperties, type FocusEvent, type InputHTMLAttributes, type ReactElement } from 'react';
-import { Input } from './Input';
-import { theme } from './theme';
+import { Input } from './Input.tsx';
+import { theme } from './theme.ts';
 
 /**
  * A text field that paints its border while it holds focus.

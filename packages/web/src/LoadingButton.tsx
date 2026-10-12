@@ -1,5 +1,5 @@
 import { useCallback, useState, type MouseEvent, type ReactElement, type ReactNode } from 'react';
-import { Button, type ButtonSize, type ButtonVariant } from './Button';
+import { Button, type ButtonSize, type ButtonVariant } from './Button.tsx';
 
 /**
  * A button that owns its own busy state.

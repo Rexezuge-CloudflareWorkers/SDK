@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { clientIp, rateLimit } from './rateLimit';
-import type { RateLimitContext } from './rateLimit';
+import { clientIp, rateLimit } from './rateLimit.ts';
+import type { RateLimitContext } from './rateLimit.ts';
 
 /**
  * A structural `RateLimitContext` double.

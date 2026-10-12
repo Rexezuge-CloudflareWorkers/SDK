@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { resolveD1Target } from './d1-target';
-import { evaluateConfig } from './destination-config';
-import { backupFileName, backupStamp, requireRetentionDays, retentionCutoff } from './naming';
+import { resolveD1Target } from './d1-target.ts';
+import { evaluateConfig } from './destination-config.ts';
+import { backupFileName, backupStamp, requireRetentionDays, retentionCutoff } from './naming.ts';
 
 describe('resolveD1Target', () => {
   it('prefers database_name, falling back to the binding', () => {

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { theme } from './theme';
+import { theme } from './theme.ts';
 
 /**
  * The loading ring.

@@ -11,7 +11,7 @@ import {
   tdStyle,
   theme,
   thStyle,
-} from './theme';
+} from './theme.ts';
 
 describe('theme', () => {
   it('exposes the palette as one token group', () => {

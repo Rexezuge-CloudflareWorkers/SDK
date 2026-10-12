@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ModalShell } from './ModalShell';
+import { ModalShell } from './ModalShell.tsx';
 
 /**
  * The shared loading / empty / error states.

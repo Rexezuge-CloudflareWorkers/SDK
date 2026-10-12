@@ -10,7 +10,7 @@ import {
   type D1DatabaseLike,
   type D1PreparedStatementLike,
   type MigrationFile,
-} from './integration-migrations';
+} from './integration-migrations.ts';
 
 const created: string[] = [];
 

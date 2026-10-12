@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { TimestampUtil } from './TimestampUtil';
-import { FixedClock, SystemClock } from './Clock';
+import { TimestampUtil } from './TimestampUtil.ts';
+import { FixedClock, SystemClock } from './Clock.ts';
 
 // Converged TimestampUtil: full method set with an injectable Clock seam.
 describe('TimestampUtil', () => {

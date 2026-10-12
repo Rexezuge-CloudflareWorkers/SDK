@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canonicalizeLanguageTag } from './LanguageTag';
+import { canonicalizeLanguageTag } from './LanguageTag.ts';
 
 // Converged from Durable-DAV-Router/Edge-Git's LanguageTag.ts (byte-identical).
 describe('canonicalizeLanguageTag', () => {

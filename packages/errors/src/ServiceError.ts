@@ -1,4 +1,4 @@
-import type { ErrorResponse } from './ErrorResponse';
+import type { ErrorResponse } from './ErrorResponse.ts';
 
 interface ServiceErrorOptions {
   /** Marks a transient failure: a caller retrying is meaningful. */

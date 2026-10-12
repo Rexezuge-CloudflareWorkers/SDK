@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isMissingSchemaError } from './isMissingSchemaError';
+import { isMissingSchemaError } from './isMissingSchemaError.ts';
 
 describe('isMissingSchemaError', () => {
   it('matches a missing table/column/index in an Error', () => {

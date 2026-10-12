@@ -15,30 +15,39 @@
  * alongside `@rexezuge/d1`.
  */
 
-export { defineRepoLintConfig } from './eslint';
-export type { RepoLintConfigOptions } from './eslint';
+export { defineRepoLintConfig } from './eslint.ts';
+export type { RepoLintConfigOptions } from './eslint.ts';
 
-export { defineUnitVitestConfig } from './vitest';
-export type { CoverageThresholds, UnitVitestConfigOptions, VitestAlias } from './vitest';
+export { defineUnitVitestConfig } from './vitest.ts';
+export type { CoverageThresholds, UnitVitestConfigOptions, VitestAlias } from './vitest.ts';
 
-export { defineWebVitestConfig } from './vitest-web';
-export type { WebVitestConfigOptions } from './vitest-web';
+export { defineWebVitestConfig } from './vitest-web.ts';
+export type { WebVitestConfigOptions } from './vitest-web.ts';
 
-export { defineWebViteConfig, spaShellEmbedPlugin } from './vite';
-export type { ProxyEntry, SpaShellTarget, WebViteConfigOptions } from './vite';
+export { defineRepoVitestConfig } from './vitest-repo.ts';
+export type { RepoBackendOptions, RepoVitestConfigOptions, RepoWebOptions } from './vitest-repo.ts';
 
-export { createPagesProxy } from './functions/pages-proxy';
-export type { Fetcher, PagesFunction, PagesFunctionContext, PagesProxyEnv, PagesProxyOptions } from './functions/pages-proxy';
+export { defineIntegrationVitestConfig } from './vitest-integration.ts';
+export type { IntegrationVitestConfigOptions } from './vitest-integration.ts';
+
+export { DEFAULT_CLOUDFLARE_MOCKS, DEFAULT_WORKSPACE_PACKAGES, KIT_NO_EXTERNAL, workspaceAliases } from './vitest-aliases.ts';
+export type { VitestAlias as WorkspaceAlias, WorkspaceAliasesOptions } from './vitest-aliases.ts';
+
+export { defineWebViteConfig, spaShellEmbedPlugin } from './vite.ts';
+export type { ProxyEntry, SpaShellTarget, WebViteConfigOptions } from './vite.ts';
+
+export { createPagesProxy } from './functions/pages-proxy.ts';
+export type { Fetcher, PagesFunction, PagesFunctionContext, PagesProxyEnv, PagesProxyOptions } from './functions/pages-proxy.ts';
 
 // --- Test helpers ---------------------------------------------------------
 //
 // Aliased in a Vitest config, not imported by application code, so the mocks stay
 // where the suites can reach them.
 
-export { DurableObject, RpcTarget, WorkflowEntrypoint } from './test/mocks/cloudflare-workers';
-export type { DurableObjectState, ExecutionContext } from './test/mocks/cloudflare-workers';
+export { DurableObject, RpcTarget, WorkflowEntrypoint } from './test/mocks/cloudflare-workers.ts';
+export type { DurableObjectState, ExecutionContext } from './test/mocks/cloudflare-workers.ts';
 
-export { createMigrationHelper, readMigrationFiles, splitSql } from './test/integration-migrations';
+export { createMigrationHelper, readMigrationFiles, splitSql } from './test/integration-migrations.ts';
 export type {
   D1DatabaseLike,
   D1PreparedStatementLike,
@@ -46,4 +55,4 @@ export type {
   MigrationHelper,
   MigrationHelperOptions,
   MigrationRange,
-} from './test/integration-migrations';
+} from './test/integration-migrations.ts';

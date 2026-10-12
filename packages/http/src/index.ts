@@ -31,8 +31,8 @@
  * double usable without a framework import.
  */
 
-export { clientIp, rateLimit } from './rateLimit';
-export type { RateLimitContext, RateLimitHandler, RateLimitOptions, RateLimitSurface } from './rateLimit';
+export { clientIp, rateLimit } from './rateLimit.ts';
+export type { RateLimitContext, RateLimitHandler, RateLimitOptions, RateLimitSurface } from './rateLimit.ts';
 
 export {
   applySecurityHeaders,
@@ -41,14 +41,14 @@ export {
   CONTENT_SECURITY_POLICY,
   SECURITY_HEADERS,
   STRICT_TRANSPORT_SECURITY,
-} from './securityHeaders';
-export type { HeaderContext } from './securityHeaders';
+} from './securityHeaders.ts';
+export type { HeaderContext } from './securityHeaders.ts';
 
-export { AccessAuthError, authenticateAccess, identityFromBinding, verifyAccessJwt } from './accessAuth';
-export type { AccessAuthOptions, AccessBinding, AccessIdentity, AccessJwtVerifier } from './accessAuth';
+export { AccessAuthError, authenticateAccess, identityFromBinding, verifyAccessJwt } from './accessAuth.ts';
+export type { AccessAuthOptions, AccessBinding, AccessIdentity, AccessJwtVerifier } from './accessAuth.ts';
 
-export { errorBody, toErrorResponse, toServiceError, INTERNAL_SERVER_MESSAGE } from './ErrorMapper';
-export type { ErrorMapperOptions } from './ErrorMapper';
+export { errorBody, toErrorResponse, toServiceError, INTERNAL_SERVER_MESSAGE } from './ErrorMapper.ts';
+export type { ErrorMapperOptions } from './ErrorMapper.ts';
 
-export { BaseRoute, createRouteHandler } from './routeBase';
-export type { RouteContext, RouteHandler, RouteHandlerOptions } from './routeBase';
+export { BaseRoute, createRouteHandler } from './routeBase.ts';
+export type { RouteContext, RouteHandler, RouteHandlerOptions } from './routeBase.ts';

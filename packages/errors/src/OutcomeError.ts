@@ -1,5 +1,5 @@
-import { ServiceError } from './ServiceError';
-import type { ServiceErrorOptions } from './ServiceError';
+import { ServiceError } from './ServiceError.ts';
+import type { ServiceErrorOptions } from './ServiceError.ts';
 
 /**
  * An error whose retryability is decided by the thrower, not deduced.

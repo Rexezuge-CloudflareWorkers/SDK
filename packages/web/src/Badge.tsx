@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactElement } from 'react';
-import { cn } from './utils';
+import { cn } from './utils.ts';
 
 /**
  * A status pill.

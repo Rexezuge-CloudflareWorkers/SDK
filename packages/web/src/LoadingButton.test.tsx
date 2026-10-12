@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { act } from 'react';
-import { LoadingButton } from './LoadingButton';
+import { LoadingButton } from './LoadingButton.tsx';
 
 afterEach(cleanup);
 

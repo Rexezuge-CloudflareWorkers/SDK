@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TimeZoneUtil } from './TimeZoneUtil';
+import { TimeZoneUtil } from './TimeZoneUtil.ts';
 
 // From Mail-Otter's TimeZoneUtil. DST-free instants so the expected values are exact.
 describe('TimeZoneUtil', () => {

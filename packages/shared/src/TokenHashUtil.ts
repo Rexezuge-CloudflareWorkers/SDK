@@ -1,4 +1,4 @@
-import { CryptoUtil } from './CryptoUtil';
+import { CryptoUtil } from './CryptoUtil.ts';
 
 /**
  * The one-place hash for API / personal access tokens.

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ServiceError } from '@rexezuge/errors';
-import type { ApiClient } from './api';
+import type { ApiClient } from './api.ts';
 
 /**
  * The signed-in account, fetched once on mount.

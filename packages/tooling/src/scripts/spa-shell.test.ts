@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ensureSpaShellStub, spaShellCli, verifySpaShell } from './spa-shell';
+import { ensureSpaShellStub, spaShellCli, verifySpaShell } from './spa-shell.ts';
 
 function tempTree(): string {
   return mkdtempSync(join(tmpdir(), 'spa-shell-'));

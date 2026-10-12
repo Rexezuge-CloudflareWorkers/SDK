@@ -1,4 +1,4 @@
-import type { Container } from './Container';
+import type { Container } from './Container.ts';
 
 /**
  * Single-scope-per-request helper.

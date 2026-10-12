@@ -1,4 +1,4 @@
-import type { BackendStrings } from '../BackendStrings';
+import type { BackendStrings } from '../BackendStrings.ts';
 
 const itStrings: BackendStrings = {
   common: {

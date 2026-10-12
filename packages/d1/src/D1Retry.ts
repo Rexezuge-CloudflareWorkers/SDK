@@ -1,6 +1,6 @@
 import { DatabaseError } from '@rexezuge/errors';
-import { isD1ErrorRetryable } from './D1ErrorClassifier';
-import type { D1Result } from './D1Types';
+import { isD1ErrorRetryable } from './D1ErrorClassifier.ts';
+import type { D1Result } from './D1Types.ts';
 
 /**
  * The single retry engine for D1 statements.

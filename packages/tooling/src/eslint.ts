@@ -1,9 +1,9 @@
 /**
  * The converged ESLint flat config for a monorepo in the Rexezuge family.
  *
- * Provenance: the base is Durable-DAV's `eslint.config.mjs` (380+ lines, the most
+ * Provenance: the base is Durable-DAV's `eslint.config.mjs` (the most
  * elaborate of the nine repos, with the layered `no-restricted-imports` boundary
- * rules). Merged in from the other three stacks that share the same plugin set:
+ * rules). Merged in from the stacks that share the same plugin set:
  *
  * - **Edge-Sonic** — `test/**` is *not* ignored (it is linted like everything else,
  *   with a narrow override block for Vitest idioms), and `unicorn/prefer-ternary`
@@ -14,6 +14,9 @@
  *   `allowTypeImports` where the source repos do not. It is also the source for
  *   the anchored skip patterns and the symlink-safe walk that came out of its own
  *   backlog.
+ * - **CalDAV-Bridge, Mail-Otter, Durable-DAV-Router, Edge-Git, Agent-Router** —
+ *   the `provider-clients` / `webdav`+`dav-store` / `git-protocol`+`git-service`
+ *   layers and the per-client `apps/api` alternatives in the boundary table.
  *
  * Canonical decisions, and why each one:
  *
@@ -21,9 +24,11 @@
  *    `warn`, which under `eslint --quiet` is unenforceable — a gate nobody can see
  *    is a gate that has never run. Formatting drift is therefore a hard failure.
  * 2. **The layered boundary rules are parameterized by `scope`.** Every source
- *    repo wrote the same seven blocks with a different npm scope hardcoded; the
+ *    repo wrote the same blocks with a different npm scope hardcoded; the
  *    factory takes `scope` (`'@myapp'`) and generates the `@myapp/*` patterns.
- *    The table itself lives in {@link ./eslint-boundaries}.
+ *    The table itself lives in {@link ./eslint-boundaries.ts} and covers the
+ *    family superset — a repo without a domain package never triggers its ban,
+ *    so no repo needs `extraLayers` for a known package.
  * 3. **`test/**` is linted, not ignored.** Durable-DAV/AWS/Mail-Meow ignored it;
  *    Edge-Sonic does not, and records why: ~200 KB of test code had accumulated
  *    violations that nothing reported.
@@ -39,8 +44,8 @@
  *    zero-dependency, and the plugin belongs to the app that has JSX. A consumer
  *    appends it — the README shows the four lines.
  *
- * The rule bodies live in {@link ./eslint-rules} and the boundary table in
- * {@link ./eslint-boundaries}; this file is the assembly. A repo that needs a
+ * The rule bodies live in {@link ./eslint-rules.ts} and the boundary table in
+ * {@link ./eslint-boundaries.ts}; this file is the assembly. A repo that needs a
  * boundary the canonical table does not name passes `extraLayers` — see
  * {@link RepoLintConfigOptions}.
  */
@@ -53,9 +58,9 @@ import pluginRegexp from 'eslint-plugin-regexp';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import prettier from 'eslint-plugin-prettier';
 import type { FlatConfig } from 'typescript-eslint';
-import { DEFAULT_PROJECT_DIRS, layerBans, restrictedDynamicImports, restrictedImports } from './eslint-boundaries';
-import type { LayerBan } from './eslint-boundaries';
-import { SONARJS_RULES, TEST_RULES, TYPESCRIPT_RULES, UNICORN_RULES } from './eslint-rules';
+import { DEFAULT_PROJECT_DIRS, layerBans, restrictedDynamicImports, restrictedImports } from './eslint-boundaries.ts';
+import type { LayerBan } from './eslint-boundaries.ts';
+import { SONARJS_RULES, TEST_RULES, TYPESCRIPT_RULES, UNICORN_RULES } from './eslint-rules.ts';
 
 /**
  * What `defineRepoLintConfig` accepts.

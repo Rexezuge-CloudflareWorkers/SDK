@@ -1,4 +1,4 @@
-import { InternalServerError } from './InternalServerError';
+import { InternalServerError } from './InternalServerError.ts';
 
 /**
  * 500 for data-layer failures.

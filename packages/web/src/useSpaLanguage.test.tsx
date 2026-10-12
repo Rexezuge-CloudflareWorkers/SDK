@@ -8,7 +8,7 @@ import {
   DEFAULT_SUPPORTED_LANGUAGES,
   resolveLanguageTag,
   useSpaLanguage,
-} from './useSpaLanguage';
+} from './useSpaLanguage.ts';
 
 const SUPPORTED = ['en', 'de', 'fr', 'zh-CN', 'zh-TW'] as const;
 

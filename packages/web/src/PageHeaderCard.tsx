@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Card } from './Card';
+import { Card } from './Card.tsx';
 
 /**
  * The standard page-title header.

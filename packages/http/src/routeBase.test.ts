@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { NotFoundError } from '@rexezuge/errors';
-import { BaseRoute, createRouteHandler } from './routeBase';
-import type { RouteContext } from './routeBase';
+import { BaseRoute, createRouteHandler } from './routeBase.ts';
+import type { RouteContext } from './routeBase.ts';
 
 function context(body: unknown = {}): RouteContext & { body: unknown } {
   const variables = new Map<string, unknown>();

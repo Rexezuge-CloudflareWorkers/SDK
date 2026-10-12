@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { InternalServerError, NotFoundError, ServiceError, UnauthorizedError } from '@rexezuge/errors';
-import { buildQuery, createApiClient, HttpStatusError, MAX_ERROR_MESSAGE_LENGTH } from './api';
-import type { FetchFn } from './api';
+import { buildQuery, createApiClient, HttpStatusError, MAX_ERROR_MESSAGE_LENGTH } from './api.ts';
+import type { FetchFn } from './api.ts';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AbstractScheduledTask, TaskRegistry } from './index';
-import type { ScheduledTaskEnv, TaskRunRecorder, TaskRunSummary } from './index';
+import { AbstractScheduledTask, TaskRegistry } from './index.ts';
+import type { ScheduledTaskEnv, TaskRunRecorder, TaskRunSummary } from './index.ts';
 
 /** A recorder double that records what the template asked it to write. */
 function recorderDouble(overrides: Partial<TaskRunRecorder> = {}): TaskRunRecorder & { calls: string[] } {

@@ -1,4 +1,4 @@
-import { isValidEmailFormat, MAX_EMAIL_LENGTH } from './Identity';
+import { isValidEmailFormat, MAX_EMAIL_LENGTH } from './Identity.ts';
 
 /**
  * Email address value helpers.

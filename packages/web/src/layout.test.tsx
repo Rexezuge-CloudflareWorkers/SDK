@@ -2,10 +2,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import { AppPage } from './AppPage';
-import { PageHeaderCard } from './PageHeaderCard';
-import { ContextBar } from './ContextBar';
-import { Unauthorized } from './Unauthorized';
+import { AppPage } from './AppPage.tsx';
+import { PageHeaderCard } from './PageHeaderCard.tsx';
+import { ContextBar } from './ContextBar.tsx';
+import { Unauthorized } from './Unauthorized.tsx';
 
 afterEach(() => {
   cleanup();

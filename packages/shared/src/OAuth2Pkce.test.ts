@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateCodeVerifier, generateState, getCodeChallenge, getStateHash } from './OAuth2Pkce';
+import { generateCodeVerifier, generateState, getCodeChallenge, getStateHash } from './OAuth2Pkce.ts';
 
 describe('generateState', () => {
   it('is base64url and long enough not to be guessable', () => {

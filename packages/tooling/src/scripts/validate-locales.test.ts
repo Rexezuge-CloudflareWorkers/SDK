@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { parseObjectLiteral, validateLocales, validateLocalesCli } from './validate-locales';
+import { parseObjectLiteral, validateLocales, validateLocalesCli } from './validate-locales.ts';
 
 function writeBundles(root: string, locale: string, bundle: Record<string, unknown>): string {
   const dir = join(root, locale);

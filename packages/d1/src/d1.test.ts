@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DatabaseError } from '@rexezuge/errors';
-import { AesGcmKeyError, BaseDAO, assertSqlIdentifier, decryptSecret, encryptSecret, roundTripSecret } from './index';
-import { D1_RETRY_DEFAULTS } from './D1Retry';
-import { isD1ErrorRetryable } from './D1ErrorClassifier';
-import type { D1PreparedStatement, D1Queryable, D1Result } from './D1Types';
+import { AesGcmKeyError, BaseDAO, assertSqlIdentifier, decryptSecret, encryptSecret, roundTripSecret } from './index.ts';
+import { D1_RETRY_DEFAULTS } from './D1Retry.ts';
+import { isD1ErrorRetryable } from './D1ErrorClassifier.ts';
+import type { D1PreparedStatement, D1Queryable, D1Result } from './D1Types.ts';
 
 // ---------- fake D1 ----------
 

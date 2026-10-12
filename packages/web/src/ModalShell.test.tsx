@@ -2,8 +2,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import { ModalShell } from './ModalShell';
-import { ConfirmDeleteModal, EmptyState, LoadingSpinner } from './PageState';
+import { ModalShell } from './ModalShell.tsx';
+import { ConfirmDeleteModal, EmptyState, LoadingSpinner } from './PageState.tsx';
 
 afterEach(() => {
   cleanup();

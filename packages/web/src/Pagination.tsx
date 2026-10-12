@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
-import { Button } from './Button';
-import { cn } from './utils';
+import { Button } from './Button.tsx';
+import { cn } from './utils.ts';
 
 /**
  * Pager controls.

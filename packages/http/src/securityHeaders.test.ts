@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { applySecurityHeaders, securityHeaders, sensitivePaths } from './securityHeaders';
-import type { HeaderContext } from './securityHeaders';
+import { applySecurityHeaders, securityHeaders, sensitivePaths } from './securityHeaders.ts';
+import type { HeaderContext } from './securityHeaders.ts';
 
 interface TestContext extends HeaderContext {
   applied: Record<string, string>;

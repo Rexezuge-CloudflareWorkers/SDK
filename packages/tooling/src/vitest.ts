@@ -1,12 +1,12 @@
 /**
  * The unit-test Vitest config for the worker-and-packages half of the suite.
  *
- * Provenance: converged from the eight repos' `vitest.config.mts`. The coverage
+ * Provenance: converged from all nine repos' `vitest.config.mts`. The coverage
  * block is Durable-DAV-Router's (the most complete: v8 provider, explicit
  * include/exclude patterns, thresholds with the reasoning for why they sit just
- * under the measured value); the alias block is Durable-DAV's, which is the only
- * one that also aliases `cloudflare:workers` and `cloudflare:sockets` to the
- * Node mocks.
+ * under the measured value); the alias block is the union of Durable-DAV's
+ * `cloudflare:*` mocks, every repo's `@scope/* → src` workspace table, and the
+ * shared `@/` + `~/` prefixes — see {@link ./vitest-aliases.js}.
  *
  * Canonical decisions:
  *
@@ -17,29 +17,27 @@
  *    invisible rather than counted as zero, which is the exact regression this
  *    gate exists to catch.
  * 2. **The SPA is excluded here**, so this config and `defineWebVitestConfig()`
- *    partition the suite rather than each running all of it. Every SPA suite is
- *    named `web-*`. One number could not honestly describe both halves: the SPA's
- *    presentational modules pulled a shared floor down 16 points, so a change
- *    adding legitimate code in `apps/api` could fail the gate on the strength of
- *    files two directories away.
+ *    partition the suite rather than each running all of it. The default covers
+ *    every suite shape the family uses (`test/web/**`, `test/**​/web-*`,
+ *    `apps/web/**`); see `defineRepoVitestConfig()` for the single-file
+ *    `projects` composition the AWS/Mail-Meow/CalDAV repos use.
  * 3. **A custom `exclude` re-lists `node_modules`** — `test/` is a workspace
  *    project and therefore has its own, so without the re-list the glob reaches
  *    into `test/node_modules` and tries to run other packages' suites.
  * 4. **Thresholds are a consumer argument**, not a kit default. A floor is a
  *    per-repo ratchet measured against that repo's suite; the kit cannot know a
  *    number, and guessing one is how floors get lowered.
+ * 5. **`@rexezuge/*` is never externalized** — see `KIT_NO_EXTERNAL`: the kit
+ *    ships ESM `dist/` with bundler-style extensionless imports, which Node's
+ *    resolver refuses, so the kit stays inside Vite's pipeline (the same
+ *    resolver that bundles the worker).
  */
 
-import { defineConfig } from 'vitest/config';
-import { fileURLToPath } from 'node:url';
+import { defineConfig, type Plugin } from 'vitest/config';
+import { DEFAULT_CLOUDFLARE_MOCKS, DEFAULT_WORKSPACE_PACKAGES, KIT_NO_EXTERNAL, workspaceAliases } from './vitest-aliases.ts';
+import type { VitestAlias } from './vitest-aliases.ts';
 
-/**
- * One `{ find, replacement }` pair for Vitest's resolver.
- */
-export interface VitestAlias {
-  readonly find: string | RegExp;
-  readonly replacement: string;
-}
+export type { VitestAlias } from './vitest-aliases.ts';
 
 /**
  * Coverage thresholds, in the four figures Vitest gates on.
@@ -58,14 +56,64 @@ export interface CoverageThresholds {
  */
 export interface UnitVitestConfigOptions {
   /**
-   * Extra resolver entries, applied after the canonical ones.
+   * The consuming repo's npm scope, e.g. `'@myapp'`. When supplied, `@scope/*`
+   * workspace aliases are generated from `packages` (plus `background` under
+   * `apps/`); when omitted, only the `cloudflare:*`, `@/` and `~/` aliases
+   * apply and `aliases` carries the workspace table by hand.
+   */
+  readonly scope?: string;
+  /**
+   * Workspace package directory names. Defaults to the family superset; a repo
+   * without a domain package keeps the default harmlessly (its alias never
+   * matches).
+   */
+  readonly packages?: readonly string[];
+  /**
+   * Which `cloudflare:*` mocks to alias. Defaults to workers/sockets/workflows.
+   */
+  readonly mocks?: readonly string[];
+  /**
+   * Extra resolver entries, applied after the canonical ones (e.g. the `hono`
+   * dedupe two repos carry, or an `/index.ts` exact entry).
    */
   readonly aliases?: readonly VitestAlias[];
   /**
    * Where the repo root is, as a file URL. Defaults to the directory this
    * factory is *called* from, which is the repo root's `vitest.config.mts`.
+   * Pass `new URL('.', import.meta.url).href` explicitly from the caller —
+   * never rely on this module's own URL, which points into `node_modules`.
    */
   readonly root?: string;
+  /**
+   * Which suites to collect. Defaults to the whole unit suite.
+   */
+  readonly include?: readonly string[];
+  /**
+   * Suite paths to skip, replacing the default. Defaults re-list
+   * `node_modules`/`dist`/`integration` plus every SPA shape.
+   */
+  readonly exclude?: readonly string[];
+  /**
+   * `node_modules` specifiers to inline through Vite rather than externalize.
+   * Defaults to `['dofs']` (Durable-DAV: `dofs` imports `cloudflare:workers`,
+   * which Node rejects before `resolve.alias` is consulted).
+   */
+  readonly serverDepsInline?: readonly string[];
+  /**
+   * Resolver `noExternal` patterns. Defaults to keeping `@rexezuge/*` inside
+   * Vite's pipeline; see `KIT_NO_EXTERNAL`.
+   */
+  readonly noExternal?: readonly (string | RegExp)[];
+  /**
+   * Vite plugins for the suite (rare on the backend half; the SPA half passes
+   * `react()` here).
+   */
+  readonly plugins?: readonly Plugin[];
+  /**
+   * Setup files run before each test file (e.g. AWS's floci guard, Meow's
+   * backend/web setups).
+   */
+  readonly setupFiles?: readonly string[];
   /**
    * Coverage `include` globs. Defaults to the worker plus every workspace
    * package's `src`.
@@ -88,29 +136,13 @@ export interface UnitVitestConfigOptions {
 /**
  * The SPA's suites, excluded here so the two configs partition the suite.
  *
- * Every SPA suite is named `web-*`. `defineWebVitestConfig()` includes the same
- * glob, so a file is collected by exactly one config.
+ * Every shape the family uses: the `test/web/**` directory convention
+ * (CalDAV-Bridge, Mail-Meow), the root-suite `web-*` naming convention
+ * (Durable-DAV-Router), and suites bundled under `apps/web` (Mail-Otter).
+ * `defineWebVitestConfig()` includes the same globs, so a file is collected by
+ * exactly one config.
  */
-const SPA_FILES = 'test/**/web-*.test.{ts,tsx}';
-
-/**
- * The canonical alias set.
- *
- * Built relative to the consumer's repo root rather than the kit's directory,
- * so the factory describes *their* layout. A Vitest config is a standalone file
- * with no module graph to share through, and a suite resolving a workspace
- * import differently from its sibling fails in a way that looks like a product
- * bug — which is why these are stated once, here, rather than duplicated.
- */
-function canonicalAliases(root: string): VitestAlias[] {
-  const at = (relative: string): string => fileURLToPath(new URL(relative, root));
-  return [
-    { find: 'cloudflare:workers', replacement: at('test/mocks/cloudflare-workers.ts') },
-    { find: 'cloudflare:sockets', replacement: at('test/mocks/cloudflare-sockets.ts') },
-    { find: /^@\//, replacement: `${at('apps/api/src')}/` },
-    { find: /^~\//, replacement: `${at('apps/web/src')}/` },
-  ];
-}
+const SPA_FILES: readonly string[] = ['test/web/**', 'test/**/web-*.test.{ts,tsx}', 'apps/web/**/*.test.{ts,tsx}'];
 
 /**
  * Coverage `exclude` globs converged from the source repos.
@@ -124,6 +156,7 @@ function canonicalAliases(root: string): VitestAlias[] {
 const CANONICAL_COVERAGE_EXCLUDE: readonly string[] = [
   'scripts/**',
   '**/*.test.ts',
+  '**/*.test.tsx',
   '**/*.d.ts',
   '**/index.ts',
   '**/types.d.ts',
@@ -140,31 +173,47 @@ const CANONICAL_COVERAGE_EXCLUDE: readonly string[] = [
  * ```ts
  * // vitest.config.mts
  * import { defineUnitVitestConfig } from '@rexezuge/tooling/vitest';
- * export default defineUnitVitestConfig();
+ * export default defineUnitVitestConfig({
+ *   scope: '@myapp',
+ *   thresholds: { statements: 60, branches: 55, functions: 65, lines: 60 },
+ * });
  * ```
  */
 export function defineUnitVitestConfig(options: UnitVitestConfigOptions = {}): ReturnType<typeof defineConfig> {
   const root = options.root ?? new URL('.', import.meta.url).href;
   const coverageInclude = options.coverageInclude ?? ['apps/api/src/**/*.ts', 'apps/background/src/**/*.ts', 'packages/**/src/**/*.ts'];
   const coverageExclude = [...CANONICAL_COVERAGE_EXCLUDE, ...(options.coverageExclude ?? [])];
-  const aliases = [...canonicalAliases(root), ...(options.aliases ?? [])];
+  const baseAliases = workspaceAliases({
+    scope: options.scope ?? '@unused',
+    root,
+    packages: options.scope === undefined ? [] : (options.packages ?? DEFAULT_WORKSPACE_PACKAGES),
+    mocks: options.mocks ?? DEFAULT_CLOUDFLARE_MOCKS,
+  });
+  // A placeholder scope contributes no `@unused/*` entries; the mocks plus
+  // `@/`/`~/` survive either way.
+  const aliases = [
+    ...baseAliases.filter((alias) => typeof alias.find !== 'string' || !alias.find.startsWith('@unused')),
+    ...(options.aliases ?? []),
+  ];
 
   return defineConfig({
-    resolve: { alias: aliases },
+    ...(options.plugins !== undefined && { plugins: [...options.plugins] }),
+    resolve: { alias: aliases, noExternal: [...KIT_NO_EXTERNAL, ...(options.noExternal ?? [])] },
     test: {
       globals: true,
       environment: 'node',
-      include: ['test/**/*.test.{ts,tsx}'],
+      include: [...(options.include ?? ['test/**/*.test.{ts,tsx}'])],
       // `test` is a workspace project and therefore has its own node_modules;
       // without the re-list, the glob reaches into it.
-      exclude: ['**/node_modules/**', '**/dist/**', 'test/integration/**', SPA_FILES],
+      exclude: [...(options.exclude ?? ['**/node_modules/**', '**/dist/**', 'test/integration/**', ...SPA_FILES])],
+      ...(options.setupFiles !== undefined && { setupFiles: [...options.setupFiles] }),
       server: {
         deps: {
           // A `node_modules` dependency is externalized by default, so Node's
           // own ESM loader resolves a `cloudflare:workers` specifier and rejects
           // the scheme before `resolve.alias` is ever consulted. Inlining routes
           // it back through Vite, where the alias applies.
-          inline: ['dofs'],
+          inline: [...(options.serverDepsInline ?? ['dofs'])],
         },
       },
       coverage: {

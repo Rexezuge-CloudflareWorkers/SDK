@@ -6,8 +6,8 @@ import {
   getLocalizedStrings,
   normalizeLocale,
   resolveLocalizedStrings,
-} from './index';
-import type { BackendStrings } from './BackendStrings';
+} from './index.ts';
+import type { BackendStrings } from './BackendStrings.ts';
 
 /**
  * The bundle-integrity checks the consumer repos run as

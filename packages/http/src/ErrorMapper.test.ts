@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DatabaseError, NotFoundError, RateLimitedError, ServiceError } from '@rexezuge/errors';
-import { errorBody, toErrorResponse, toServiceError } from './ErrorMapper';
+import { errorBody, toErrorResponse, toServiceError } from './ErrorMapper.ts';
 
 const json = (body: unknown, status: number, headers?: Record<string, string>): Response =>
   new Response(JSON.stringify(body), { status, headers });
