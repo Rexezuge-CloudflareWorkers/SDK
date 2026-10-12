@@ -3,8 +3,10 @@ import { NotFoundError } from '@rexezuge/errors';
 import { BaseRoute, createRouteHandler } from './routeBase.ts';
 import type { RouteContext } from './routeBase.ts';
 
-function context(body: unknown = {}): RouteContext & { body: unknown } {
-  const variables = new Map<string, unknown>();
+function context(body: unknown = {}, vars: Record<string, unknown> = {}): RouteContext & { body: unknown } {
+  // Seedable so a caller can stage context variables; the default none-set
+  // fixture reads every key as missing.
+  const variables = new Map<string, unknown>(Object.entries(vars));
   return {
     body,
     req: {
@@ -13,7 +15,7 @@ function context(body: unknown = {}): RouteContext & { body: unknown } {
     },
     env: { DB: 'test' },
     get: (key: string) => variables.get(key),
-    json: (payload: unknown, status = 200) => new Response(JSON.stringify(payload), { status }),
+    json: (payload: unknown, status = 200) => Response.json(payload, { status }),
   };
 }
 

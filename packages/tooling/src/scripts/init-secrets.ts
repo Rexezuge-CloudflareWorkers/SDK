@@ -61,10 +61,14 @@ import { CONFIG_PATH, type WranglerConfig } from './wrangler-config/types.ts';
  */
 const ENCRYPTION_KEY_SUFFIX = '-encryption-key';
 
-/** The secret names the random signing secret generator produces. */
+/**
+The secret names the random signing secret generator produces.
+*/
 const SIGNING_SECRET_SUFFIX = '-signing-secret';
 
-/** A 256-bit AES-GCM key, base64-encoded — the shape the worker's crypto layer accepts. */
+/**
+A 256-bit AES-GCM key, base64-encoded — the shape the worker's crypto layer accepts.
+*/
 async function generateAESGCMKey(): Promise<string> {
   const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
   const exported = await crypto.subtle.exportKey('raw', key);
@@ -77,7 +81,9 @@ async function generateAESGCMKey(): Promise<string> {
   return btoa(binary);
 }
 
-/** A 256-bit random signing secret for internal self-calls, hex-encoded. */
+/**
+A 256-bit random signing secret for internal self-calls, hex-encoded.
+*/
 function generateSigningSecret(): Promise<string> {
   let hex = '';
   for (const byte of crypto.getRandomValues(new Uint8Array(32))) {
@@ -102,8 +108,10 @@ function generatorFor(secretName: string): () => Promise<string> {
   );
 }
 
-/** Whether this script can produce a value for `secretName`. */
-export function canProvisionSecret(secretName: string): boolean {
+/**
+Whether this script can produce a value for `secretName`.
+*/
+function canProvisionSecret(secretName: string): boolean {
   try {
     generatorFor(secretName);
     return true;
@@ -150,7 +158,9 @@ function parseWranglerConfig(): WranglerConfig {
   return config;
 }
 
-/** One secret to create, as the plan names it. */
+/**
+One secret to create, as the plan names it.
+*/
 interface PlannedSecret {
   storeId: string;
   secretName: string;
@@ -163,7 +173,7 @@ interface PlannedSecret {
  * unprovisionable secret fails the step in milliseconds instead of after some other
  * secret has already been created.
  */
-export function planSecrets(config: WranglerConfig): PlannedSecret[] {
+function planSecrets(config: WranglerConfig): PlannedSecret[] {
   const plan: PlannedSecret[] = [];
   for (const [index, secret] of (config.secrets_store_secrets ?? []).entries()) {
     const label = secret.binding ?? `index ${index}`;

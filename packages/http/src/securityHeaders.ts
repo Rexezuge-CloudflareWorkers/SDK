@@ -19,7 +19,9 @@
  * prefixes, and the compiler asks for them rather than letting them be omitted.
  */
 
-/** The slice of a Hono context this middleware reads. */
+/**
+The slice of a Hono context this middleware reads.
+*/
 interface HeaderContext {
   header(name: string, value: string): void;
   res: { headers: Headers };
@@ -55,7 +57,9 @@ const SECURITY_HEADERS: Readonly<Record<string, string>> = {
 const CONTENT_SECURITY_POLICY =
   "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; object-src 'none'; form-action 'self'; base-uri 'self'; frame-ancestors 'none'; upgrade-insecure-requests";
 
-/** HSTS. Only sent over HTTPS — sending it over plain HTTP risks local pinning. */
+/**
+HSTS. Only sent over HTTPS — sending it over plain HTTP risks local pinning.
+*/
 const STRICT_TRANSPORT_SECURITY = 'max-age=31536000; includeSubDomains';
 
 /**

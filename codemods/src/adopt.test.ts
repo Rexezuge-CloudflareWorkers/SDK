@@ -13,11 +13,11 @@
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
-const ADOPT = join(dirname(fileURLToPath(import.meta.url)), 'adopt.ts');
+const ADOPT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'adopt.ts');
 const roots: string[] = [];
 
 afterEach(() => {
@@ -26,22 +26,27 @@ afterEach(() => {
   }
 });
 
-/** Build a throwaway consumer repo. `files` are paths relative to the root. */
+/**
+Build a throwaway consumer repo. `files` are paths relative to the root.
+*/
 function fixture(files: Record<string, string>): string {
-  const root = mkdtempSync(join(tmpdir(), 'adopt-test-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'adopt-test-'));
   roots.push(root);
-  for (const [path, content] of Object.entries(files)) {
-    const full = join(root, path);
-    mkdirSync(dirname(full), { recursive: true });
+  for (const [relativePath, content] of Object.entries(files)) {
+    const full = path.join(root, relativePath);
+    mkdirSync(path.dirname(full), { recursive: true });
     writeFileSync(full, content);
   }
   return root;
 }
 
 function adopt(root: string, args: readonly string[] = []): string {
+  // `npx` is resolved from PATH deliberately: the suite exercises the CLI the
+  // way an operator meets it, on whatever machine runs the tests.
+  // eslint-disable-next-line sonarjs/no-os-command-from-path
   return execFileSync('npx', ['tsx', ADOPT, root, '--scope', '@dav', ...args], {
     encoding: 'utf8',
-    cwd: dirname(dirname(fileURLToPath(import.meta.url))),
+    cwd: path.dirname(path.dirname(fileURLToPath(import.meta.url))),
   });
 }
 
@@ -58,7 +63,7 @@ describe('adopt: scanning and rewriting', () => {
 
     expect(output).toContain('files changed:   1');
     expect(output).toContain('import rewrites: 1');
-    expect(readFileSync(join(root, 'apps/api/src/index.ts'), 'utf8')).toContain("from '@rexezuge/errors'");
+    expect(readFileSync(path.join(root, 'apps/api/src/index.ts'), 'utf8')).toContain("from '@rexezuge/errors'");
   });
 
   it('writes nothing in a dry run', () => {
@@ -69,7 +74,7 @@ describe('adopt: scanning and rewriting', () => {
 
     // The report still counts the change, but the file is untouched — a dry run
     // that wrote anyway would be the worst possible failure for this tool.
-    expect(readFileSync(join(root, 'apps/api/src/index.ts'), 'utf8')).toBe(source);
+    expect(readFileSync(path.join(root, 'apps/api/src/index.ts'), 'utf8')).toBe(source);
   });
 
   it('is idempotent: a second run changes nothing', () => {
@@ -100,7 +105,7 @@ describe('adopt: scanning and rewriting', () => {
     const output = adopt(root, ['--write']);
 
     expect(output).toContain('files changed:   0');
-    expect(readFileSync(join(root, 'node_modules/thing/index.ts'), 'utf8')).toBe(stray);
+    expect(readFileSync(path.join(root, 'node_modules/thing/index.ts'), 'utf8')).toBe(stray);
   });
 
   it('reports an unmapped subpath rather than guessing past the table', () => {
@@ -131,7 +136,7 @@ describe('adopt: web components', () => {
     const output = adopt(root, ['--write']);
 
     expect(output).toContain('component moves: 2 (onto @rexezuge/web)');
-    const rewritten = readFileSync(join(root, 'apps/web/src/views/View.tsx'), 'utf8');
+    const rewritten = readFileSync(path.join(root, 'apps/web/src/views/View.tsx'), 'utf8');
     expect(rewritten).toContain("import { AppPage, RefreshButton } from '@rexezuge/web';");
     // The unrelated local import is untouched, and still in place.
     expect(rewritten).toContain("import { VolumeDAO } from '../dao/VolumeDAO';");
@@ -152,7 +157,7 @@ describe('adopt: web components', () => {
 
     adopt(root, ['--write']);
 
-    expect(readFileSync(join(root, 'apps/web/src/views/View.tsx'), 'utf8')).toBe(source);
+    expect(readFileSync(path.join(root, 'apps/web/src/views/View.tsx'), 'utf8')).toBe(source);
   });
 
   it('is idempotent across a second run', () => {
@@ -192,12 +197,12 @@ describe('adopt: --remove-packages', () => {
     // Dry run: nothing is deleted even with the flag, because the flag alone
     // does not imply consent to write.
     adopt(root, ['--remove-packages']);
-    expect(existsSync(join(root, 'packages/backend-errors'))).toBe(true);
+    expect(existsSync(path.join(root, 'packages/backend-errors'))).toBe(true);
 
     adopt(root, ['--write', '--remove-packages']);
 
-    expect(existsSync(join(root, 'packages/backend-errors'))).toBe(false);
-    expect(existsSync(join(root, 'packages/backend-data'))).toBe(true);
+    expect(existsSync(path.join(root, 'packages/backend-errors'))).toBe(false);
+    expect(existsSync(path.join(root, 'packages/backend-data'))).toBe(true);
   });
 
   it('counts a package still imported by a subpath', () => {
@@ -226,7 +231,7 @@ describe('adopt: --remove-packages', () => {
 
     expect(output).toContain('no remaining imports (1): @dav/backend-errors-extra');
     expect(output).not.toContain('@dav/backend-errors-extra ×');
-    expect(existsSync(join(root, 'packages/backend-errors-extra'))).toBe(false);
+    expect(existsSync(path.join(root, 'packages/backend-errors-extra'))).toBe(false);
   });
 
   it('is a no-op for a repo with no packages directory', () => {
@@ -240,7 +245,11 @@ describe('adopt: flags', () => {
   it('exits non-zero without a root or scope', () => {
     const root = fixture({ 'apps/api/src/index.ts': 'export const x = 1;\n' });
 
+    // Same PATH reliance as the `adopt` helper above: the assertion is about the
+    // exit code an operator sees, so the invocation has to match theirs.
+    // eslint-disable-next-line sonarjs/no-os-command-from-path
     expect(() => execFileSync('npx', ['tsx', ADOPT, root], { encoding: 'utf8', stdio: 'pipe' })).toThrow();
+    // eslint-disable-next-line sonarjs/no-os-command-from-path
     expect(() => execFileSync('npx', ['tsx', ADOPT], { encoding: 'utf8', stdio: 'pipe' })).toThrow();
   });
 });

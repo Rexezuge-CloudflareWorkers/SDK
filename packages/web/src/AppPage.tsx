@@ -22,12 +22,16 @@ import { cn } from './utils.ts';
  * wider than the page it introduces is a layout bug, not a style.
  */
 
-/** `wide` is the default for every view. `narrow` is for centered forms. */
+/**
+`wide` is the default for every view. `narrow` is for centered forms.
+*/
 type AppPageVariant = 'wide' | 'narrow' | 'hero';
 
 interface AppPageProps {
   variant?: AppPageVariant;
-  /** Merged last, so it wins over the variant's own classes. */
+  /**
+  Merged last, so it wins over the variant's own classes.
+  */
   className?: string;
   children: ReactNode;
 }

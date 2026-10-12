@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { AbstractScheduledTask, TaskRegistry } from './index.ts';
 import type { ScheduledTaskEnv, TaskRunRecorder, TaskRunSummary } from './index.ts';
 
-/** A recorder double that records what the template asked it to write. */
+/**
+A recorder double that records what the template asked it to write.
+*/
 function recorderDouble(overrides: Partial<TaskRunRecorder> = {}): TaskRunRecorder & { calls: string[] } {
   const calls: string[] = [];
   return {
@@ -24,8 +26,8 @@ function recorderDouble(overrides: Partial<TaskRunRecorder> = {}): TaskRunRecord
   };
 }
 
-const EVENT = { cron: '0 * * * *', scheduledTime: 0, noRetry: () => undefined };
-const CTX = { waitUntil: () => undefined, passThroughOnException: () => undefined };
+const EVENT = { cron: '0 * * * *', scheduledTime: 0, noRetry: () => {} };
+const CTX = { waitUntil: () => {}, passThroughOnException: () => {} };
 const ENV: ScheduledTaskEnv = { DB: {} };
 
 class RecordingTask extends AbstractScheduledTask {
@@ -117,7 +119,7 @@ describe('AbstractScheduledTask', () => {
   });
 
   it('treats an absent summary as zero processed', async () => {
-    const succeedRun = vi.fn(async () => undefined);
+    const succeedRun = vi.fn(async () => {});
     const rec = recorderDouble({ succeedRun });
     class Silent extends AbstractScheduledTask {
       protected override getTaskType(): string {

@@ -62,9 +62,13 @@ const buttonSizeClass: Record<ButtonSize, string> = {
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** Visual weight; defaults to `secondary`. */
+  /**
+  Visual weight; defaults to `secondary`.
+  */
   variant?: ButtonVariant;
-  /** Control size; defaults to `md`. */
+  /**
+  Control size; defaults to `md`.
+  */
   size?: ButtonSize;
   /**
    * Shows the spinner and blocks activation until it clears. A busy button is

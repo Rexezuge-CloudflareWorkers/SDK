@@ -7,25 +7,34 @@ pnpm workspace (`pnpm@11.2.2`, Node 24 per CI). Nine public packages in
 
 ## Commands
 
-- `pnpm install` then `pnpm run checks`, which runs `build && typecheck && test && format:check`,
-  all recursive via `pnpm -r --if-present`. CI (`ci.yml`) runs these four as four
-  separate jobs — keep the order and the split.
+- `pnpm install` then `pnpm run checks`, which runs `build && typecheck && lint:check && test && format:check`,
+  the middle three recursive via `pnpm -r --if-present` and the outer two at the root.
+  CI (`continuous-integration.yml`) runs these five as five separate jobs — keep the order and the split.
 - `pnpm run format` rewrites formatting in place; `pnpm run format:check` is the
   CI gate, and the only one of the two that fails instead of repairing.
+- `pnpm run lint` repairs lint findings in place; `pnpm run lint:check` is the CI
+  gate. The root `eslint.config.mjs` is `defineRepoLintConfig({ scope: '@rexezuge' })`
+  from `@rexezuge/tooling/eslint` (the AWS-AccessBridge-converged config) plus the
+  kit's own dependency boundaries as `extraLayers`.
 - Per package: `pnpm --filter @rexezuge/<name> <build|typecheck|test>`.
 - Single file: `pnpm --filter @rexezuge/<name> exec vitest run src/<file>`.
-- No root eslint config and lint is **not** a CI gate; do not add one. Formatting
-  is a separate Prettier gate and does not change that decision.
 
 ## Structure quirks
 
 - Each package: `src/` + `tsconfig.json` (emits to `dist/`, excludes
   `*.test.ts`) + `tsconfig.test.json` (`noEmit`, includes tests). `build` is
-  `tsc -p tsconfig.json`; `typecheck` covers source and tests.
+  `tsc -p tsconfig.json && node ../../scripts/minify-dist.mjs` — `dist/*.js` ships
+  esbuild-minified (external sourcemaps kept), `dist/*.d.ts` untouched.
+  `typecheck` covers source and tests.
 - Cross-package imports (`@rexezuge/d1` → `errors`, `shared`;
   `identity` → `d1`, `errors`, `shared`; `web` → `errors`, `shared`) resolve
-  to `dist/` via `workspace:*`. **Always `build` before `typecheck`/`test`
-  after touching a dependency package**, or dependents test stale output.
+  to `dist/` via `workspace:*`. **Always `build` before `lint`/`typecheck`/`test`
+  after touching a dependency package**, or dependents test stale output — and `lint`
+  additionally imports its own config factory from `@rexezuge/tooling`'s built output.
+- The root `tsconfig.json` (`noEmit`, test files only) exists for the lint gate:
+  typescript-eslint's project service only discovers `tsconfig.json`-named projects,
+  and the build configs must keep excluding tests so `dist/` stays pure. Nothing
+  builds from it.
 - `@rexezuge/tooling` must stay dependency-free except its declared `@rexezuge/d1`
   dep (used only by `scripts/backup/encrypt-backup.ts`); its ESLint/vitest/vite
   factories take consumer repos as arguments and never encode kit paths.

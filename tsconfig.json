@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["packages/*/src/**/*.test.ts", "packages/*/src/**/*.test.tsx", "codemods/src/**/*.test.ts", "packages/*/vitest.config.mts"],
+  "exclude": ["node_modules"]
+}

@@ -1,4 +1,4 @@
-import { useCallback, useState, type MouseEvent, type ReactElement, type ReactNode } from 'react';
+import { useCallback, useState, type ReactElement, type ReactNode } from 'react';
 import { Button, type ButtonSize, type ButtonVariant } from './Button.tsx';
 
 /**
@@ -28,18 +28,30 @@ import { Button, type ButtonSize, type ButtonVariant } from './Button.tsx';
  */
 
 interface LoadingButtonProps {
-  /** Runs on activation; the button is busy until a returned promise settles. */
+  /**
+  Runs on activation; the button is busy until a returned promise settles.
+  */
   onClick: () => Promise<void> | void;
-  /** Blocks activation regardless of the busy state. */
+  /**
+  Blocks activation regardless of the busy state.
+  */
   disabled?: boolean;
-  /** Visual weight; defaults to `primary`. */
+  /**
+  Visual weight; defaults to `primary`.
+  */
   variant?: ButtonVariant;
-  /** Control size; defaults to `md`. */
+  /**
+  Control size; defaults to `md`.
+  */
   size?: ButtonSize;
   children: ReactNode;
-  /** Defaults to `button`, matching `Button`. */
+  /**
+  Defaults to `button`, matching `Button`.
+  */
   type?: 'button' | 'submit' | 'reset';
-  /** Extra classes, merged over the button's. */
+  /**
+  Extra classes, merged over the button's.
+  */
   className?: string;
 }
 
@@ -54,30 +66,28 @@ function LoadingButton({
 }: Readonly<LoadingButtonProps>): ReactElement {
   const [loading, setLoading] = useState(false);
 
-  const handleClick = useCallback(
-    (event: MouseEvent<HTMLButtonElement>) => {
-      if (disabled || loading) {
-        return;
-      }
-      const result = onClick();
-      if (result instanceof Promise) {
-        setLoading(true);
-        // The state flip is scheduled before the await, not after it: a caller
-        // reading the tree right after the click must already see the spinner.
-        //
-        // A rejection clears the busy state and is deliberately *not*
-        // re-thrown: the handler is fire-and-forget, so re-throwing would only
-        // produce an unhandled rejection (and a failed test run under vitest).
-        // The call site owns its error reporting — every AWS-AccessBridge call
-        // site does exactly that inside its own `onClick`.
-        const settle = (): void => {
-          setLoading(false);
-        };
-        void result.then(settle, settle);
-      }
-    },
-    [disabled, loading, onClick],
-  );
+  const handleClick = useCallback(() => {
+    if (disabled || loading) {
+      return;
+    }
+    const result = onClick();
+    if (!(result instanceof Promise)) {
+      return;
+    }
+    setLoading(true);
+    // The state flip is scheduled before the await, not after it: a caller
+    // reading the tree right after the click must already see the spinner.
+    //
+    // A rejection clears the busy state and is deliberately *not*
+    // re-thrown: the handler is fire-and-forget, so re-throwing would only
+    // produce an unhandled rejection (and a failed test run under vitest).
+    // The call site owns its error reporting — every AWS-AccessBridge call
+    // site does exactly that inside its own `onClick`.
+    const settle = (): void => {
+      setLoading(false);
+    };
+    void result.then(settle).catch(settle);
+  }, [disabled, loading, onClick]);
 
   return (
     <Button variant={variant} size={size} type={type} className={className} loading={loading} disabled={disabled} onClick={handleClick}>

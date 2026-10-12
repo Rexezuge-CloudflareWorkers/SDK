@@ -62,7 +62,7 @@ function digest128(input: string): string {
   const offsets = [0x81_1c_9d_c5, 0xc2_b2_ae_35, 0x27_d4_eb_2f, 0x16_56_67_b1];
   let out = '';
   for (let lane = 0; lane < LANES; lane += 1) {
-    let hash = offsets[lane] as number;
+    let hash = offsets[lane];
     const prime = 0x01_00_01_93 + lane * 0x9e_37_79_b9;
     for (let i = 0; i < input.length; i += 1) {
       hash ^= input.codePointAt(i) ?? 0;

@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DatabaseError, NotFoundError, RateLimitedError, ServiceError } from '@rexezuge/errors';
 import { errorBody, toErrorResponse, toServiceError } from './ErrorMapper.ts';
 
-const json = (body: unknown, status: number, headers?: Record<string, string>): Response =>
-  new Response(JSON.stringify(body), { status, headers });
+const json = (body: unknown, status: number, headers?: Record<string, string>): Response => Response.json(body, { status, headers });
 
 describe('toServiceError', () => {
   it('passes a ServiceError through untouched', () => {
@@ -62,7 +61,7 @@ describe('toErrorResponse', () => {
   });
 
   it('falls through when the surface declines to handle the error', () => {
-    const response = toErrorResponse(new NotFoundError(), json, { toResponse: () => undefined });
+    const response = toErrorResponse(new NotFoundError(), json, { toResponse: () => {} });
     expect(response.status).toBe(404);
   });
 });

@@ -14,7 +14,9 @@ import { copyFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { applyEdits, modify, parse } from 'jsonc-parser';
 import { CONFIG_PATH, TEMPLATE_PATH, type WranglerConfig } from './types.ts';
 
-/** The config's current text and its parsed form. */
+/**
+The config's current text and its parsed form.
+*/
 export interface ConfigFile {
   content: string;
   config: WranglerConfig;
@@ -33,7 +35,9 @@ export function writeConfigValue(content: string, path: Array<string | number>, 
   return applyEdits(content, edits);
 }
 
-/** Write the config, guaranteeing a trailing newline so Prettier sees a fixed point. */
+/**
+Write the config, guaranteeing a trailing newline so Prettier sees a fixed point.
+*/
 export function writeConfig(content: string): void {
   writeFileSync(CONFIG_PATH, content.endsWith('\n') ? content : `${content}\n`);
 }
@@ -49,7 +53,9 @@ export function parseTopLevelPatch(): Record<string, unknown> | undefined {
   return parseJsonObject(process.env['WRANGLER_PATCH_JSON'], 'WRANGLER_PATCH_JSON', 'a JSON object');
 }
 
-/** The `vars` entries a caller wants to merge, from the environment. */
+/**
+The `vars` entries a caller wants to merge, from the environment.
+*/
 export function parseVarsPatch(): Record<string, string> | undefined {
   const parsed = parseJsonObject(process.env['WRANGLER_VARS_PATCH_JSON'], 'WRANGLER_VARS_PATCH_JSON', 'a JSON object of string values');
   if (parsed === undefined) {
@@ -149,7 +155,9 @@ export function applyVarsPatch(): void {
   ) {
     throw new Error('wrangler.jsonc vars must be an object before applying WRANGLER_VARS_PATCH_JSON.');
   }
-  if (prepared.config.vars === undefined || prepared.config.vars === null) {
+  // `null` needs no branch here: the guard above throws for it, so by this
+  // line `vars` is either absent or an object.
+  if (prepared.config.vars === undefined) {
     content = writeConfigValue(content, ['vars'], {});
   }
   for (const [key, value] of entries) {

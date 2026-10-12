@@ -56,8 +56,7 @@ function splitSql(sql: string): string[] {
 
   let index = 0;
   while (index < sql.length) {
-    const char = sql[index] as string;
-    const next = sql[index + 1] ?? '';
+    const char = sql[index];
 
     if (inLineComment) {
       current += char;
@@ -65,6 +64,7 @@ function splitSql(sql: string): string[] {
       index += 1;
       continue;
     }
+    const next = sql[index + 1] ?? '';
     if (inBlockComment) {
       current += char;
       if (char === '*' && next === '/') {

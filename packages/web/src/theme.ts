@@ -41,7 +41,9 @@ const theme = {
   red: '#dc2626',
   redHover: '#b91c1c',
   spinnerBlue: '#60a5fa',
-  /** The border colour a focused field paints. */
+  /**
+  The border colour a focused field paints.
+  */
   focusBorder: '#3b82f6',
 } as const;
 
@@ -58,14 +60,18 @@ const buttonColors: Record<string, { bg: string; hover: string }> = {
   red: { bg: theme.red, hover: theme.redHover },
 };
 
-/** The standard content card surface. */
+/**
+The standard content card surface.
+*/
 const cardStyle: CSSProperties = {
   background: theme.cardBg,
   borderRadius: '12px',
   padding: '24px',
 };
 
-/** The standard text field surface. */
+/**
+The standard text field surface.
+*/
 const inputStyle: CSSProperties = {
   width: '100%',
   padding: '12px',
@@ -78,14 +84,18 @@ const inputStyle: CSSProperties = {
   transition: 'border-color 0.15s',
 };
 
-/** A card whose content is a table: the table supplies its own padding. */
+/**
+A card whose content is a table: the table supplies its own padding.
+*/
 const tableCardStyle: CSSProperties = {
   background: theme.cardBg,
   borderRadius: '12px',
   overflow: 'hidden',
 };
 
-/** Column header cell. */
+/**
+Column header cell.
+*/
 const thStyle: CSSProperties = {
   textAlign: 'left',
   padding: '12px',
@@ -97,13 +107,17 @@ const thStyle: CSSProperties = {
   fontWeight: 500,
 };
 
-/** Body cell. */
+/**
+Body cell.
+*/
 const tdStyle: CSSProperties = {
   padding: '12px',
   borderTop: '1px solid rgba(55,65,81,0.3)',
 };
 
-/** A pager control, as used by `Pagination`'s inline-styled consumers. */
+/**
+A pager control, as used by `Pagination`'s inline-styled consumers.
+*/
 const paginationBtnStyle: CSSProperties = {
   padding: '6px 12px',
   background: theme.inputBg,
@@ -132,7 +146,9 @@ const btnBase: CSSProperties = {
 const btnBlueStyle: CSSProperties = { ...btnBase, background: theme.blue };
 const btnGreenStyle: CSSProperties = { ...btnBase, background: theme.green };
 
-/** The dense action button used in table rows. */
+/**
+The dense action button used in table rows.
+*/
 const btnSmallStyle: CSSProperties = {
   padding: '6px 12px',
   borderRadius: '6px',

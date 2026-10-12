@@ -6,7 +6,7 @@
   "type": "module",
   "description": "Codemods that migrate a consumer repo onto the @rexezuge SDK. Clients adapt to the kit.",
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
     "test": "vitest run"
   },
   "devDependencies": {

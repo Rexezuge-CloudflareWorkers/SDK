@@ -7,7 +7,9 @@
  * in that project's config section.
  */
 
-/** Used when `SITE_URL` is unset — the value that renders correct absolute links in tests. */
+/**
+Used when `SITE_URL` is unset — the value that renders correct absolute links in tests.
+*/
 const DEFAULT_SITE_URL = 'http://localhost:8787';
 
 export { DEFAULT_SITE_URL };

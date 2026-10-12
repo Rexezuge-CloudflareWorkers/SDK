@@ -44,28 +44,42 @@ import type { ApiClient } from './api.ts';
  *    do at every call site anyway.
  */
 
-/** The account shape a caller reads. `preferredLanguage` is what `useSpaLanguage` consumes. */
+/**
+The account shape a caller reads. `preferredLanguage` is what `useSpaLanguage` consumes.
+*/
 interface CurrentUser {
   preferredLanguage?: string | null;
 }
 
 interface UseCurrentUserOptions {
-  /** The path to GET. Defaults to `/user/me`, the family's profile route. */
+  /**
+  The path to GET. Defaults to `/user/me`, the family's profile route.
+  */
   path?: string;
 }
 
 interface UseCurrentUserResult<TUser> {
-  /** The account, or `null` until it loads (and after a failure). */
+  /**
+  The account, or `null` until it loads (and after a failure).
+  */
   user: TUser | null;
-  /** `true` while the request is in flight, including the first one. */
+  /**
+  `true` while the request is in flight, including the first one.
+  */
   loading: boolean;
-  /** The normalized failure, or `null`. A `ServiceError`, always. */
+  /**
+  The normalized failure, or `null`. A `ServiceError`, always.
+  */
   error: ServiceError | null;
-  /** Re-runs the request. */
+  /**
+  Re-runs the request.
+  */
   reload: () => void;
 }
 
-/** The profile route every repo in the family serves. */
+/**
+The profile route every repo in the family serves.
+*/
 const CURRENT_USER_PATH = '/user/me';
 
 function useCurrentUser<TUser = CurrentUser>(
@@ -85,12 +99,15 @@ function useCurrentUser<TUser = CurrentUser>(
   }, [client]);
 
   const reload = useCallback(() => {
+    // Set here, in the event, rather than in the effect below: the effect
+    // adopting it would be a set-state-in-effect, and the initial `useState`
+    // already covers the first load.
+    setLoading(true);
     setReloadKey((key) => key + 1);
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     clientRef.current
       .get<TUser>(path)
       .then((me) => {

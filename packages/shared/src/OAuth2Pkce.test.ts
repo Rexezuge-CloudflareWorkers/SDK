@@ -4,7 +4,7 @@ import { generateCodeVerifier, generateState, getCodeChallenge, getStateHash } f
 describe('generateState', () => {
   it('is base64url and long enough not to be guessable', () => {
     const state = generateState();
-    expect(state).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(state).toMatch(/^[\w-]+$/i);
     // 32 random bytes, unpadded base64url.
     expect(state).toHaveLength(43);
   });
@@ -20,7 +20,7 @@ describe('generateCodeVerifier', () => {
     const verifier = generateCodeVerifier();
     expect(verifier.length).toBeGreaterThanOrEqual(43);
     expect(verifier.length).toBeLessThanOrEqual(128);
-    expect(verifier).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(verifier).toMatch(/^[\w-]+$/i);
   });
 });
 
@@ -47,7 +47,7 @@ describe('getCodeChallenge', () => {
   });
 
   it('is base64url with no padding', async () => {
-    expect(await getCodeChallenge('a-verifier')).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(await getCodeChallenge('a-verifier')).toMatch(/^[\w-]+$/i);
   });
 
   it('is stable for the same verifier', async () => {

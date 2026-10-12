@@ -1,13 +1,13 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { verifyMigrations, verifyMigrationsCli, LOCK_NAME } from './verify-migrations.ts';
 
 function tempMigrations(files: Record<string, string>): string {
-  const root = mkdtempSync(join(tmpdir(), 'migrations-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'migrations-'));
   for (const [name, content] of Object.entries(files)) {
-    writeFileSync(join(root, name), content, 'utf8');
+    writeFileSync(path.join(root, name), content, 'utf8');
   }
   return root;
 }
@@ -33,7 +33,7 @@ describe('verifyMigrations', () => {
   it('fails when a migration changed after locking', () => {
     const root = tempMigrations({ '0001_init.sql': ONE });
     verifyMigrations(root, { write: true });
-    writeFileSync(join(root, '0001_init.sql'), 'CREATE TABLE changed (id TEXT);', 'utf8');
+    writeFileSync(path.join(root, '0001_init.sql'), 'CREATE TABLE changed (id TEXT);', 'utf8');
     const report = verifyMigrations(root);
     expect(report.problems.map((problem) => problem.problem).join('\n')).toContain('changed after locking');
   });
@@ -58,7 +58,7 @@ describe('verifyMigrations', () => {
     const root = tempMigrations({ '0001_init.sql': ONE, '0002_more.sql': TWO });
     verifyMigrations(root, { write: true });
     const { rmSync } = await import('node:fs');
-    rmSync(join(root, '0002_more.sql'));
+    rmSync(path.join(root, '0002_more.sql'));
     expect(
       verifyMigrations(root)
         .problems.map((problem) => problem.problem)
@@ -70,7 +70,7 @@ describe('verifyMigrations', () => {
     const root = tempMigrations({ '0001_init.sql': ONE });
     const report = verifyMigrations(root, { write: true });
     expect(report.problems).toStrictEqual([]);
-    const lock = JSON.parse(readFileSync(join(root, LOCK_NAME), 'utf8')) as { migrations: { sha256: string }[] };
+    const lock = JSON.parse(readFileSync(path.join(root, LOCK_NAME), 'utf8')) as { migrations: { sha256: string }[] };
     expect(lock.migrations[0]?.sha256).toMatch(/^[a-f0-9]{64}$/);
   });
 

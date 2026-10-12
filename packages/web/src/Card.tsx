@@ -25,28 +25,34 @@ import { cn } from './utils.ts';
  * `cardTitleClass`.
  */
 
-/** The card surface. */
+/**
+The card surface.
+*/
 const cardClass = 'rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5';
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {}
+type CardProps = HTMLAttributes<HTMLDivElement>;
 
 function Card({ className, ...rest }: Readonly<CardProps>): ReactElement {
   return <div className={cn(cardClass, className)} {...rest} />;
 }
 
-/** The header row: title on the left, actions on the right. */
+/**
+The header row: title on the left, actions on the right.
+*/
 const cardHeaderClass = 'mb-4 flex items-center justify-between gap-3';
 
-interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {}
+type CardHeaderProps = HTMLAttributes<HTMLDivElement>;
 
 function CardHeader({ className, ...rest }: Readonly<CardHeaderProps>): ReactElement {
   return <div className={cn(cardHeaderClass, className)} {...rest} />;
 }
 
-/** The card's title. Renders an `<h2>`; nested headings override the level via `role`. */
+/**
+The card's title. Renders an `<h2>`; nested headings override the level via `role`.
+*/
 const cardTitleClass = 'text-lg font-semibold text-[var(--color-text-primary)]';
 
-interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {}
+type CardTitleProps = HTMLAttributes<HTMLHeadingElement>;
 
 function CardTitle({ className, ...rest }: Readonly<CardTitleProps>): ReactElement {
   return <h2 className={cn(cardTitleClass, className)} {...rest} />;

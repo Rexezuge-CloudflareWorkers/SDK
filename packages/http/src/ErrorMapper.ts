@@ -39,9 +39,13 @@ interface ErrorMapperOptions {
    * 500 — a non-`ServiceError` that reached the boundary is an unknown failure.
    */
   fallbackStatus?: number;
-  /** A surface-specific dialect. Returns `undefined` to fall through to the default. */
+  /**
+  A surface-specific dialect. Returns `undefined` to fall through to the default.
+  */
   toResponse?(error: ServiceError, status: number): Response | undefined;
-  /** Adds headers to the response (e.g. `Retry-After` on a 429). */
+  /**
+  Adds headers to the response (e.g. `Retry-After` on a 429).
+  */
   headers?(status: number, error: ServiceError): Record<string, string>;
 }
 

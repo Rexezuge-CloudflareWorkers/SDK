@@ -33,11 +33,17 @@ interface ContextBarProps {
    * not be omittable. Pass an empty node only if a route genuinely has no home.
    */
   home: ReactNode;
-  /** The current location's name. Usually a `Link` or breadcrumb segment. */
+  /**
+  The current location's name. Usually a `Link` or breadcrumb segment.
+  */
   crumb: ReactNode;
-  /** Right-aligned controls — refresh, settings, a sign-out button. */
+  /**
+  Right-aligned controls — refresh, settings, a sign-out button.
+  */
   actions?: ReactNode;
-  /** Merged last onto the bar's outer element. */
+  /**
+  Merged last onto the bar's outer element.
+  */
   className?: string;
 }
 

@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { Label } from './Input.tsx';
 import { cn } from './utils.ts';
@@ -34,11 +34,17 @@ import { useCopyToClipboard } from './useCopyToClipboard.ts';
  */
 
 interface ReadOnlyFieldProps {
-  /** The field's label. */
+  /**
+  The field's label.
+  */
   label: string;
-  /** The value, shown verbatim and selectable. */
+  /**
+  The value, shown verbatim and selectable.
+  */
   value: string;
-  /** Show the copy button. Defaults to false. */
+  /**
+  Show the copy button. Defaults to false.
+  */
   showCopy?: boolean;
   /**
    * The copy button's accessible name and tooltip.
@@ -47,7 +53,9 @@ interface ReadOnlyFieldProps {
    * announced as "button" with nothing else.
    */
   copyLabel?: string;
-  /** Merged last onto the value's `<input>`. */
+  /**
+  Merged last onto the value's `<input>`.
+  */
   className?: string;
 }
 

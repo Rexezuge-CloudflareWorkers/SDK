@@ -22,7 +22,9 @@ export interface SymbolRenameResult {
 
 const CALL_PREFIXES = ['this.', 'await this.', 'super.'];
 
-/** Every rename table, composed once: the DAO/config/identity/i18n surfaces. */
+/**
+Every rename table, composed once: the DAO/config/identity/i18n surfaces.
+*/
 const RENAMES: Record<string, string> = { ...DAO_RENAMES, ...CONFIG_RENAMES, ...IDENTITY_RENAMES, ...I18N_RENAMES };
 
 export function renameSymbols(source: string): SymbolRenameResult {
@@ -32,44 +34,47 @@ export function renameSymbols(source: string): SymbolRenameResult {
   // inside a string literal is rewritten. With it, a match preceded by a quote
   // character anywhere in its prefix is left alone.
   const member = new RegExp(
-    `(?<!["'])(?:${CALL_PREFIXES.map((prefix) => prefix.replace('.', '\\.')).join('|')})\\b(${Object.keys(RENAMES).join('|')})\\b\\(`,
+    String.raw`(?<!["'])(?:${CALL_PREFIXES.map((prefix) => prefix.replace('.', String.raw`\.`)).join('|')})\b(${Object.keys(RENAMES).join('|')})\b\(`,
     'g',
   );
-  const constructed = new RegExp(`\\bnew\\s+(${Object.keys(RENAMES).join('|')})\\b\\(`, 'g');
-  const imported = new RegExp(`import\\s+(?:type\\s+)?\\{([^}]*)\\}\\s+from`, 'g');
+  const constructed = new RegExp(String.raw`\bnew\s+(${Object.keys(RENAMES).join('|')})\b\(`, 'g');
+  const imported = /import\s+(?:type\s+)?\{([^}]*)\}\s+from/g;
 
   let output = source;
   const usedRenames: Record<string, string> = {};
 
   output = output.replace(member, (match, name: string) => {
     changes += 1;
-    return match.replace(name, RENAMES[name] as string);
+    // A replacer function, not a replacement string: a table value is never
+    // re-scanned for `$` patterns, so a future rename containing one renames
+    // literally instead of interpolating the match.
+    return match.replace(name, () => RENAMES[name]);
   });
   output = output.replace(constructed, (match, name: string) => {
     changes += 1;
-    return match.replace(name, RENAMES[name] as string);
+    return match.replace(name, () => RENAMES[name]);
   });
-  output = output.replace(imported, (match, names: string) => {
+  output = output.replaceAll(imported, (match, names: string) => {
     const renamed = names
       .split(',')
       .map((entry) => entry.trim())
       .filter(Boolean)
       .map((entry) => {
+        if (!Object.hasOwn(RENAMES, entry)) return entry;
         const renamedName = RENAMES[entry];
-        if (renamedName === undefined) return entry;
         changes += 1;
         usedRenames[entry] = renamedName;
         return renamedName;
       });
-    return match.replace(names, ` ${renamed.join(', ')} `);
+    return match.replace(names, () => ` ${renamed.join(', ')} `);
   });
 
   // The imported-and-renamed set, followed through this file.
   const followed = Object.keys(usedRenames);
   if (followed.length > 0) {
-    output = output.replace(new RegExp(`\\b(${followed.join('|')})\\b`, 'g'), (match, name: string) => {
+    output = output.replace(new RegExp(String.raw`\b(${followed.join('|')})\b`, 'g'), (match, name: string) => {
       changes += 1;
-      return usedRenames[name] as string;
+      return usedRenames[name];
     });
   }
 

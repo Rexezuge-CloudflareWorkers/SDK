@@ -23,7 +23,9 @@ import { ZERO_TRUST_AUTHENTICATION_PATH } from './constants.ts';
  */
 
 interface UnauthorizedProps {
-  /** The heading. Required: this is the page's only `h1`. */
+  /**
+  The heading. Required: this is the page's only `h1`.
+  */
   title: string;
   /**
    * Why they are being stopped.
@@ -32,7 +34,9 @@ interface UnauthorizedProps {
    * A blank line under the heading reads as a rendering bug.
    */
   message?: string;
-  /** The sign-in button's label. Required. */
+  /**
+  The sign-in button's label. Required.
+  */
   actionLabel: string;
   /**
    * What the button does.
@@ -47,7 +51,7 @@ function Unauthorized({ title, message, actionLabel, onAuthenticate }: Readonly<
   const authenticate =
     onAuthenticate ??
     ((): void => {
-      globalThis.location.assign(ZERO_TRUST_AUTHENTICATION_PATH);
+      location.assign(ZERO_TRUST_AUTHENTICATION_PATH);
     });
 
   return (

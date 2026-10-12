@@ -67,15 +67,19 @@
 
 import { executableStatements, splitSql } from '@rexezuge/d1';
 import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 
 /**
  * One migration file, as it is read.
  */
 export interface MigrationFile {
-  /** Bare filename, e.g. `0007_replication.sql`. */
+  /**
+  Bare filename, e.g. `0007_replication.sql`.
+  */
   name: string;
-  /** The file's full text. */
+  /**
+  The file's full text.
+  */
   sql: string;
 }
 
@@ -132,17 +136,29 @@ export interface MigrationHelperOptions {
  * A bound migration helper.
  */
 export interface MigrationHelper {
-  /** Every migration, in apply order. */
+  /**
+  Every migration, in apply order.
+  */
   migrationFiles(): MigrationFile[];
-  /** The filenames, in apply order. */
+  /**
+  The filenames, in apply order.
+  */
   migrationFileNames(): string[];
-  /** The concatenation of every file, in apply order — what a fresh database becomes. */
+  /**
+  The concatenation of every file, in apply order — what a fresh database becomes.
+  */
   migrationSql(): string;
-  /** One file's SQL, by name. "What does *this* file say", not "what does the set say". */
+  /**
+  One file's SQL, by name. "What does *this* file say", not "what does the set say".
+  */
   migrationSqlOf(name: string): string;
-  /** Split one file into statements, comments included. */
+  /**
+  Split one file into statements, comments included.
+  */
   splitSql(sql: string): string[];
-  /** The statements of one file that SQLite will actually execute. */
+  /**
+  The statements of one file that SQLite will actually execute.
+  */
   executableStatements(sql: string): string[];
   /**
    * Apply a range of migrations, at most once per database and range.
@@ -166,7 +182,7 @@ export function readMigrationFiles(dir: string): MigrationFile[] {
   const entries = readdirSync(dir, { withFileTypes: true });
   return entries
     .filter((entry) => entry.isFile() && entry.name.endsWith('.sql'))
-    .map((entry) => ({ name: entry.name, sql: readFileSync(join(dir, entry.name), 'utf8') }))
+    .map((entry) => ({ name: entry.name, sql: readFileSync(path.join(dir, entry.name), 'utf8') }))
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
@@ -183,19 +199,20 @@ function stripLeadingComments(statement: string): string {
   }
 }
 
-/** Re-exported for surface parity with the source repos — the rules live in @rexezuge/d1. */
-export { executableStatements, splitSql };
+/**
+Re-exported for surface parity with the source repos — the rules live in @rexezuge/d1.
+*/
 
 /**
  * Bind a migration directory into a helper.
  *
  * ```ts
- * const migrations = createMigrationHelper({ migrationsDir: path.join(REPO_ROOT, 'migrations') });
+ * const migrations = createMigrationHelper({ migrationsDir: join(REPO_ROOT, 'migrations') });
  * await migrations.applyMigrations(env.DB);
  * ```
  */
 export function createMigrationHelper(options: MigrationHelperOptions): MigrationHelper {
-  const files = options.files !== undefined ? [...options.files] : readMigrationFiles(options.migrationsDir);
+  const files = options.files === undefined ? readMigrationFiles(options.migrationsDir) : [...options.files];
 
   /**
    * Databases this helper has already migrated, keyed by the range applied.
@@ -265,3 +282,5 @@ export function createMigrationHelper(options: MigrationHelperOptions): Migratio
     },
   };
 }
+
+export { executableStatements, splitSql } from '@rexezuge/d1';

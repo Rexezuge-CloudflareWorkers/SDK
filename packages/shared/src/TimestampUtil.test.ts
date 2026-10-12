@@ -22,7 +22,7 @@ describe('TimestampUtil', () => {
   });
 
   it('derives seconds from the injected clock, not the wall clock', () => {
-    const clock = new FixedClock(1_999);
+    const clock = new FixedClock(1999);
     expect(TimestampUtil.getCurrentUnixTimestampInSeconds(clock)).toBe(1);
     clock.advanceByMs(1);
     expect(TimestampUtil.getCurrentUnixTimestampInSeconds(clock)).toBe(2);

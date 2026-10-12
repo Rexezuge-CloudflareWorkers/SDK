@@ -24,7 +24,9 @@
  * its `BackgroundTaskRunDAO` at the composition root.
  */
 
-/** The summary a task reports when it finishes. */
+/**
+The summary a task reports when it finishes.
+*/
 interface TaskRunSummary {
   itemsProcessed: number;
   itemsFailed: number;
@@ -59,7 +61,9 @@ interface ApplicationRunHandle {
   skip(reason?: string): Promise<void>;
 }
 
-/** The minimum a task needs from `env`: a D1 binding, when the repo has one. */
+/**
+The minimum a task needs from `env`: a D1 binding, when the repo has one.
+*/
 interface ScheduledTaskEnv {
   DB?: unknown;
 }
@@ -78,7 +82,9 @@ interface ScheduledControllerLike {
   noRetry(): void;
 }
 
-/** The execution context, structurally. See {@link ScheduledControllerLike}. */
+/**
+The execution context, structurally. See {@link ScheduledControllerLike}.
+*/
 interface ExecutionContextLike {
   waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
@@ -111,12 +117,16 @@ abstract class AbstractScheduledTask<TEnv extends ScheduledTaskEnv = ScheduledTa
     return null;
   }
 
-  /** Factory Method for the recorder. Override in tests. */
+  /**
+  Factory Method for the recorder. Override in tests.
+  */
   protected createRunRecorder(): TaskRunRecorder | null {
     return null;
   }
 
-  /** Override to route this task's failures somewhere other than the console. */
+  /**
+  Override to route this task's failures somewhere other than the console.
+  */
   protected logger(): TaskLogger {
     return consoleLogger;
   }
@@ -131,13 +141,13 @@ abstract class AbstractScheduledTask<TEnv extends ScheduledTaskEnv = ScheduledTa
     const taskType = this.getTaskType();
     const recorder = taskType === null ? null : this.createRunRecorder();
 
-    let runId: string | undefined;
+    let runId: string | null = null;
     if (recorder && taskType !== null) {
-      runId = await recorder.startRun({ taskType }).catch((error: unknown) => {
-        // Losing the record must not lose the run.
+      runId = await recorder.startRun({ taskType }).catch((): string | null => {
+        // Losing the record must not lose the run: `null` is the absent run
+        // id, which the `succeedRun` guard below already treats as "unrecorded".
         this.logger()('warn', `[${this.constructor.name}] failed to start task run record`);
-        void error;
-        return undefined;
+        return null;
       });
     }
 
@@ -179,17 +189,17 @@ abstract class AbstractScheduledTask<TEnv extends ScheduledTaskEnv = ScheduledTa
         recorder
           .succeedRun(runId, result)
           .catch(warn('succeeded'))
-          .then(() => undefined),
+          .then(() => {}),
       fail: (errorMessage: string, partial?: Partial<TaskRunSummary>): Promise<void> =>
         recorder
           .failRun(runId, errorMessage, partial)
           .catch(warn('failed'))
-          .then(() => undefined),
+          .then(() => {}),
       skip: (reason?: string): Promise<void> =>
         recorder
           .skipRun(runId, reason)
           .catch(warn('skipped'))
-          .then(() => undefined),
+          .then(() => {}),
     };
   }
 
@@ -224,12 +234,16 @@ class TaskRegistry {
     return this;
   }
 
-  /** Every task in a phase, in registration order. */
+  /**
+  Every task in a phase, in registration order.
+  */
   public tasksForPhase(phase: number): readonly AbstractScheduledTask[] {
     return this.byPhase.get(phase) ?? [];
   }
 
-  /** The phases that have at least one task, ascending. */
+  /**
+  The phases that have at least one task, ascending.
+  */
   public phases(): readonly number[] {
     return [...this.byPhase.keys()].sort((left, right) => left - right);
   }

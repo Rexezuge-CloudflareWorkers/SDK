@@ -49,7 +49,9 @@ interface UseCopyToClipboardResult {
    * this `false`, which is the answer that matters — there is nothing to undo.
    */
   copied: boolean;
-  /** Writes `text`, or does nothing if the clipboard is unavailable. */
+  /**
+  Writes `text`, or does nothing if the clipboard is unavailable.
+  */
   copy: (text: string) => void;
 }
 
@@ -88,7 +90,7 @@ function useCopyToClipboard(): UseCopyToClipboardResult {
       // Leave `copied` false rather than flashing and clearing it: a rejection
       // means the text is still on screen and unread, so the affordance must
       // not claim otherwise.
-      .catch(() => undefined);
+      .catch(() => {});
   }, []);
 
   return { copied, copy };

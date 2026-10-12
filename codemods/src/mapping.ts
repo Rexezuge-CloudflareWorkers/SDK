@@ -74,7 +74,9 @@ export const SUBPATH_RULES: Readonly<Record<string, Record<string, string | null
   },
 };
 
-/** The kit package each *subpath-rule* source package's kernel moves into. */
+/**
+The kit package each *subpath-rule* source package's kernel moves into.
+*/
 export const KIT_PACKAGE_FOR: Readonly<Record<string, string>> = {
   shared: '@rexezuge/shared',
   'backend-runtime': '@rexezuge/runtime',
@@ -141,7 +143,9 @@ export const CONFIG_RENAMES: Readonly<Record<string, string>> = {
   ServiceContext: 'RequestScope',
 };
 
-/** Identity service renames across the family's copies. */
+/**
+Identity service renames across the family's copies.
+*/
 export const IDENTITY_RENAMES: Readonly<Record<string, string>> = {
   resolveUserById: 'resolveAccountById',
   resolveUserId: 'resolveAccountId',

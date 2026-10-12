@@ -30,7 +30,9 @@ export function backupStamp(date: Date): string {
   return `${iso.slice(0, 10)}_${iso.slice(11, 19).replaceAll(':', '-')}`;
 }
 
-/** The full artifact name: `<prefix><stamp>.sql.xz.enc`. */
+/**
+The full artifact name: `<prefix><stamp>.sql.xz.enc`.
+*/
 export function backupFileName(date: Date): string {
   return `${BACKUP_FILE_PREFIX}${backupStamp(date)}.sql.xz.enc`;
 }

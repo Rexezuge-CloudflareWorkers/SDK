@@ -55,7 +55,9 @@ export class UserEmailDAO extends BaseDAO {
     return this.first<UserEmailRow>('SELECT * FROM user_emails WHERE email = ? LIMIT 1', [email.toLowerCase()]);
   }
 
-  /** Login resolution: only a verified address identifies an account. */
+  /**
+  Login resolution: only a verified address identifies an account.
+  */
   public async resolveVerified(email: string): Promise<UserEmailRow | null> {
     return this.first<UserEmailRow>('SELECT * FROM user_emails WHERE email = ? AND is_verified = 1 LIMIT 1', [email.toLowerCase()]);
   }
@@ -64,7 +66,9 @@ export class UserEmailDAO extends BaseDAO {
     return this.all<UserEmailRow>('SELECT * FROM user_emails WHERE user_id = ? ORDER BY is_verified DESC, created_at ASC', [userId]);
   }
 
-  /** Revoke an address for login while keeping it resolvable for attribution. */
+  /**
+  Revoke an address for login while keeping it resolvable for attribution.
+  */
   public async revoke(email: string): Promise<void> {
     await this.run('UPDATE user_emails SET is_verified = 0 WHERE email = ?', [email.toLowerCase()]);
   }

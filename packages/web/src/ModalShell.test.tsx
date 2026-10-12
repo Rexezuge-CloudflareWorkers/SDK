@@ -12,7 +12,7 @@ afterEach(() => {
 describe('ModalShell', () => {
   it('renders as a labelled dialog', () => {
     render(
-      <ModalShell ariaLabel="Confirm" onClose={() => undefined}>
+      <ModalShell ariaLabel="Confirm" onClose={() => {}}>
         <p>body</p>
       </ModalShell>,
     );
@@ -54,7 +54,7 @@ describe('ModalShell', () => {
         <p>body</p>
       </ModalShell>,
     );
-    fireEvent.keyDown(globalThis, { key: 'Escape' });
+    fireEvent.keyDown(document, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -65,7 +65,7 @@ describe('ModalShell', () => {
         <p>body</p>
       </ModalShell>,
     );
-    fireEvent.keyDown(globalThis, { key: 'Escape' });
+    fireEvent.keyDown(document, { key: 'Escape' });
     expect(onClose).not.toHaveBeenCalled();
   });
 
@@ -86,7 +86,7 @@ describe('ModalShell', () => {
         <p>body</p>
       </ModalShell>,
     );
-    fireEvent.keyDown(globalThis, { key: 'Escape' });
+    fireEvent.keyDown(document, { key: 'Escape' });
 
     expect(first).not.toHaveBeenCalled();
     expect(second).toHaveBeenCalledTimes(1);
@@ -102,7 +102,7 @@ describe('ConfirmDeleteModal', () => {
   };
 
   it('names what will be deleted', () => {
-    render(<ConfirmDeleteModal {...props} onConfirm={() => undefined} onCancel={() => undefined} />);
+    render(<ConfirmDeleteModal {...props} onConfirm={() => {}} onCancel={() => {}} />);
     expect(screen.getByText(/support@example\.com/)).toBeDefined();
   });
 
@@ -110,7 +110,7 @@ describe('ConfirmDeleteModal', () => {
     // Two buttons announced as "Cancel" leave the operator guessing which one
     // they are on; this is the regression that shipped when the corner close
     // button borrowed the cancel label.
-    render(<ConfirmDeleteModal {...props} onConfirm={() => undefined} onCancel={() => undefined} />);
+    render(<ConfirmDeleteModal {...props} onConfirm={() => {}} onCancel={() => {}} />);
     expect(screen.getAllByRole('button', { name: 'Cancel' })).toHaveLength(1);
   });
 
@@ -129,7 +129,7 @@ describe('ConfirmDeleteModal', () => {
 
   it('is armed immediately — no confirm timer to wait out', () => {
     const onConfirm = vi.fn();
-    render(<ConfirmDeleteModal {...props} onConfirm={onConfirm} onCancel={() => undefined} />);
+    render(<ConfirmDeleteModal {...props} onConfirm={onConfirm} onCancel={() => {}} />);
     expect(screen.getByRole('button', { name: 'Delete' })).not.toBeDisabled();
   });
 });

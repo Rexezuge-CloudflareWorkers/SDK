@@ -120,8 +120,6 @@ export function workspaceAliases(options: WorkspaceAliasesOptions): VitestAlias[
   }
   const apiSrc = at('apps/api/src');
   const webSrc = at('apps/web/src');
-  aliases.push({ find: /^@\//, replacement: `${apiSrc}/` });
-  aliases.push({ find: /^~\//, replacement: `${webSrc}/` });
-  aliases.push(...(options.extraAliases ?? []));
+  aliases.push({ find: /^@\//, replacement: `${apiSrc}/` }, { find: /^~\//, replacement: `${webSrc}/` }, ...(options.extraAliases ?? []));
   return aliases;
 }

@@ -38,28 +38,42 @@ import { NOTICE_TIMEOUT_MS } from './constants.ts';
 
 type NoticeKind = 'success' | 'error';
 
-/** One transient message. `kind` is the tone, `message` the sentence. */
+/**
+One transient message. `kind` is the tone, `message` the sentence.
+*/
 interface Notice {
   kind: NoticeKind;
   message: string;
 }
 
-/** The setter views and hooks are handed. */
+/**
+The setter views and hooks are handed.
+*/
 type ShowNotice = (kind: NoticeKind, message: string) => void;
 
 interface UseNoticeOptions {
-  /** How long a notice stays up. Defaults to `NOTICE_TIMEOUT_MS`. */
+  /**
+  How long a notice stays up. Defaults to `NOTICE_TIMEOUT_MS`.
+  */
   dismissAfterMs?: number;
-  /** A notice to start with — the URL-seeded OAuth result, in a consumer. */
+  /**
+  A notice to start with — the URL-seeded OAuth result, in a consumer.
+  */
   initial?: Notice | null;
 }
 
 interface UseNoticeResult {
-  /** The notice to render, or `null` when there is nothing to say. */
+  /**
+  The notice to render, or `null` when there is nothing to say.
+  */
   notice: Notice | null;
-  /** Shows a notice, replacing any notice already showing (and its timer). */
+  /**
+  Shows a notice, replacing any notice already showing (and its timer).
+  */
   showNotice: ShowNotice;
-  /** Hides the notice and cancels its pending dismissal. */
+  /**
+  Hides the notice and cancels its pending dismissal.
+  */
   dismissNotice: () => void;
 }
 

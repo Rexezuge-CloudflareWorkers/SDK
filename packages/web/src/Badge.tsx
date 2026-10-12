@@ -26,10 +26,14 @@ import { cn } from './utils.ts';
 
 type BadgeVariant = 'success' | 'error' | 'warning' | 'info' | 'neutral';
 
-/** Layout and type scale, shared by every variant. */
+/**
+Layout and type scale, shared by every variant.
+*/
 const badgeBaseClass = 'inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-xs font-medium';
 
-/** The tone palette. `neutral` is the default: an unknown verdict is not a failure. */
+/**
+The tone palette. `neutral` is the default: an unknown verdict is not a failure.
+*/
 const badgeVariantClass: Record<BadgeVariant, string> = {
   neutral: 'bg-[var(--color-neutral-bg)] text-[var(--color-neutral-text)]',
   success: 'bg-[var(--color-success-bg)] text-[var(--color-success-text)]',
@@ -39,7 +43,9 @@ const badgeVariantClass: Record<BadgeVariant, string> = {
 };
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
-  /** Tone; defaults to `neutral`. */
+  /**
+  Tone; defaults to `neutral`.
+  */
   variant?: BadgeVariant;
 }
 

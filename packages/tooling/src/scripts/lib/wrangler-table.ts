@@ -56,10 +56,10 @@ export function parseWranglerTableRows(output: string): string[][] {
       .split(COLUMN_SEPARATOR)
       .map((cell) => cell.trim())
       .filter(Boolean);
-    const firstCell = cells[0];
-    if (firstCell === undefined || cells.length < 2) {
+    if (cells.length < 2) {
       continue;
     }
+    const firstCell = cells[0];
     // The header row and the horizontal rules are frame, not data.
     if (firstCell === HEADER_FIRST_CELL || firstCell.includes(RULE_CHARACTER)) {
       continue;
@@ -78,7 +78,9 @@ export function parseWranglerTableRows(output: string): string[][] {
 export function parseWranglerNames(output: string): Set<string> {
   const names = new Set<string>();
   for (const row of parseWranglerTableRows(output)) {
-    const name = row[0];
+    // `.at()` rather than `[0]`: the absence case is real for a hand-built row
+    // in a test double, and the guard below is what keeps it out of the set.
+    const name = row.at(0);
     if (name !== undefined) names.add(name);
   }
   return names;

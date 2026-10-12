@@ -59,7 +59,7 @@ export function parseFlags(argv: readonly string[], spec: FlagSpec): ParsedFlags
   const flags: ParsedFlags = new Map();
 
   for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index] as string;
+    const arg = argv[index];
     if (!arg.startsWith('-')) {
       throw new Error(`Unexpected argument: ${arg}`);
     }
@@ -81,7 +81,10 @@ export function parseFlags(argv: readonly string[], spec: FlagSpec): ParsedFlags
       throw new Error(`--${name} was given more than once`);
     }
 
-    const value = argv[index + 1];
+    // `argv[index + 1]` is statically a string, but a value flag in last
+    // position has no next element at runtime — the length check is what makes
+    // the `undefined` below reachable rather than dead.
+    const value = index + 1 < argv.length ? argv[index + 1] : undefined;
     // A value that starts with `-` is treated as a missing value so that
     // `--to --dry-run` reports the real problem instead of capturing the flag.
     if (value === undefined || value.startsWith('-')) {
@@ -132,7 +135,7 @@ export function splitPositional(
   const rest: string[] = [];
 
   for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index] as string;
+    const arg = argv[index];
     if (arg.startsWith('-')) {
       rest.push(arg);
       continue;

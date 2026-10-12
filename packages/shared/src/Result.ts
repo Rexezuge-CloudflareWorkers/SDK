@@ -34,6 +34,7 @@ function mapResult<T, U, E>(result: Result<T, E>, fn: (value: T) => U): Result<U
 }
 
 function getOrThrow<T, E = Error>(result: Result<T, E>): T {
+  // eslint-disable-next-line @typescript-eslint/only-throw-error -- rethrowing the carried error, whatever its type, is this function's whole contract; callers build the `Err` they get back.
   if (!result.ok) throw result.error;
   return result.value;
 }

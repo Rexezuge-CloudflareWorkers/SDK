@@ -63,13 +63,21 @@ export const DEFAULT_PROJECT_DIRS: readonly string[] = [
  * type-only imports and the direct-client bans do not.
  */
 export interface LayerBan {
-  /** Directory the rule is scoped to. */
+  /**
+  Directory the rule is scoped to.
+  */
   readonly dir: string;
-  /** Package suffixes (relative to `scope`) that may not be imported from here. */
+  /**
+  Package suffixes (relative to `scope`) that may not be imported from here.
+  */
   readonly ban: readonly string[];
-  /** Message shown when the rule fires. */
+  /**
+  Message shown when the rule fires.
+  */
   readonly message: string;
-  /** Type-only imports are allowed, for the DAO boundary in `apps/api`. */
+  /**
+  Type-only imports are allowed, for the DAO boundary in `apps/api`.
+  */
   readonly allowTypeImports?: boolean;
 }
 
@@ -253,7 +261,7 @@ export function restrictedDynamicImports(bans: readonly LayerBan[]): ConfigInput
       'no-restricted-syntax': [
         'error',
         ...ban.map((specifier) => ({
-          selector: `ImportExpression[source.type='Literal'][source.value=/^${specifier.replaceAll('/', '\\/')}/]`,
+          selector: `ImportExpression[source.type='Literal'][source.value=/^${specifier.replaceAll('/', String.raw`\/`)}/]`,
           message: `A dynamic import() is not covered by no-restricted-imports, so this layer reaches \`${specifier}\` through the one syntax that gate does not see. Both say no: ${message}`,
         })),
       ],

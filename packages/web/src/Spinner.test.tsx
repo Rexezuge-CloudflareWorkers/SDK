@@ -6,7 +6,9 @@ import { Spinner } from './Spinner.tsx';
 
 afterEach(cleanup);
 
-/** The ring is a bordered circle; read its declarations, not a computed style. */
+/**
+The ring is a bordered circle; read its declarations, not a computed style.
+*/
 function ringStyle(container: HTMLElement): string {
   const ring = container.querySelector('.animate-spin');
   expect(ring).not.toBeNull();

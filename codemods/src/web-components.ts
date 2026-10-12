@@ -28,7 +28,9 @@
  * rather than accepting any path ending in `/Card`.
  */
 
-/** The one specifier this transform rewrites to. See {@link mergeDuplicateImports}. */
+/**
+The one specifier this transform rewrites to. See {@link mergeDuplicateImports}.
+*/
 const WEB_COMPONENT_TARGET = '@rexezuge/web';
 
 /**
@@ -73,11 +75,13 @@ const WEB_COMPONENT_MAP: Readonly<Record<string, string>> = {
  * path is not caught. The trailing quote is required so `AppPage` does not match
  * `AppPageHeader`.
  */
-const COMPONENT_IMPORT_PATTERN = /from\s+(['"])(?:\.{1,2}\/)+(?:components\/)(?:[^'"]*\/)?([A-Z][A-Za-z0-9]*)\1/g;
+const COMPONENT_IMPORT_PATTERN = /from\s+(['"])(?:\.{1,2}\/)+components\/(?:[^'"]*\/)?([A-Z][A-Za-z0-9]*)\1/g;
 
 interface RewriteResult {
   output: string;
-  /** File names this run moved to `@rexezuge/web`. */
+  /**
+  File names this run moved to `@rexezuge/web`.
+  */
   changed: string[];
   /**
    * Files under a `components/` directory whose name is not in the table.
@@ -101,14 +105,14 @@ function rewriteComponentImports(source: string): RewriteResult {
   const changed = new Set<string>();
   const unmapped = new Set<string>();
 
-  const output = source.replace(COMPONENT_IMPORT_PATTERN, (match, quote: string, name: string) => {
-    const target = WEB_COMPONENT_MAP[name];
-    if (target === undefined) {
+  const output = source.replaceAll(COMPONENT_IMPORT_PATTERN, (match, quote: string, name: string) => {
+    if (!Object.hasOwn(WEB_COMPONENT_MAP, name)) {
       // Still under `components/`, still not ours — e.g. a repo-local
       // `components/volume/VolumeCard.tsx`. Leave the line exactly as it was.
       unmapped.add(name);
       return match;
     }
+    const target = WEB_COMPONENT_MAP[name];
     changed.add(name);
     return `from ${quote}${target}${quote}`;
   });
@@ -136,7 +140,9 @@ function rewriteComponentImports(source: string): RewriteResult {
  */
 function mergeDuplicateImports(source: string): string {
   const lines = source.split('\n');
-  /** Index of the line already holding each merged name list, by specifier+kind. */
+  /**
+  Index of the line already holding each merged name list, by specifier+kind.
+  */
   const mergedInto = new Map<string, number>();
   const namesFor = new Map<string, string[]>();
   const dropped = new Set<number>();
@@ -186,9 +192,9 @@ function mergeDuplicateImports(source: string): string {
       if (dropped.has(index)) return null;
       for (const [key, target] of mergedInto) {
         if (target !== index) continue;
-        const [kind, specifier, quote] = key.split(':');
+        const [kind, specifier, quote] = key.split(':', 3);
         const prefix = kind === 'type' ? 'import type' : 'import';
-        const names = [...new Set(namesFor.get(key) ?? [])];
+        const names = [...new Set(namesFor.get(key))];
         return `${prefix} { ${names.join(', ')} } from ${quote}${specifier}${quote};`;
       }
       return line;

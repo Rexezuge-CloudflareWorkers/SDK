@@ -13,7 +13,9 @@ import { IDENTITY_DAO_SUBPATHS, KIT_PACKAGE_FOR, SUBPATH_RULES, WHOLE_PACKAGE_MA
 export interface RenameResult {
   output: string;
   changes: Array<{ from: string; to: string }>;
-  /** Specifiers inside a rules package that no rule matched: reported, not skipped. */
+  /**
+  Specifiers inside a rules package that no rule matched: reported, not skipped.
+  */
   unmapped: string[];
 }
 
@@ -24,7 +26,9 @@ interface SpecifierMapping {
   outcome: MappingOutcome;
 }
 
-/** `@scope/pkg/sub/path` → the kit specifier, or `local`/`unruled`. */
+/**
+`@scope/pkg/sub/path` → the kit specifier, or `local`/`unruled`.
+*/
 function mapSpecifier(specifier: string, scope: string): SpecifierMapping {
   const prefix = `${scope}/`;
   if (!specifier.startsWith(prefix)) return { specifier, outcome: 'local' };
@@ -33,31 +37,28 @@ function mapSpecifier(specifier: string, scope: string): SpecifierMapping {
   const packageName = slash === -1 ? rest : rest.slice(0, slash);
   const subpath = slash === -1 ? '' : rest.slice(slash);
 
-  const stay: SpecifierMapping = { specifier, outcome: 'local' };
-
   // Whole-package migration: the repo package is deleted outright.
-  const whole = WHOLE_PACKAGE_MAP[packageName];
-  if (whole !== undefined) {
+  if (Object.hasOwn(WHOLE_PACKAGE_MAP, packageName)) {
+    const whole = WHOLE_PACKAGE_MAP[packageName];
     return { specifier: subpath === '' ? whole : `${whole}${subpath}`, outcome: 'rewritten' };
   }
 
   // Subpath rules: the package stays, its kernel moves out.
+  if (!Object.hasOwn(SUBPATH_RULES, packageName)) return { specifier, outcome: 'local' }; // business package: never touched
+  if (subpath === '') return { specifier, outcome: 'local' }; // the bare package stays local
   const rules = SUBPATH_RULES[packageName];
-  if (rules === undefined) return stay; // business package: never touched
-  if (subpath === '') return stay; // the bare package stays local
 
   // Identity DAOs sit inside `backend-data`, whose `default: null` would
   // otherwise park them as "stays local" forever. Checked *before* the rules so
   // a repo that declares its own row for a given specifier still wins — see the
   // table's doc comment for that escape hatch.
   const hasOverride = Object.hasOwn(rules, subpath);
-  if (!hasOverride && packageName === 'backend-data') {
-    const identityTarget = IDENTITY_DAO_SUBPATHS[subpath];
-    if (identityTarget !== undefined) return { specifier: identityTarget, outcome: 'rewritten' };
+  if (!hasOverride && packageName === 'backend-data' && Object.hasOwn(IDENTITY_DAO_SUBPATHS, subpath)) {
+    return { specifier: IDENTITY_DAO_SUBPATHS[subpath], outcome: 'rewritten' };
   }
 
   const mapped = rules[subpath];
-  if (mapped === null) return stay; // explicitly stays local
+  if (mapped === null) return { specifier, outcome: 'local' }; // explicitly stays local
   if (mapped === undefined) {
     // `default: null` in the rules means "everything else here stays local";
     // no `default` key at all means "no rule and no stated policy" — reported.
@@ -71,21 +72,23 @@ function mapSpecifier(specifier: string, scope: string): SpecifierMapping {
       }
       return { specifier, outcome: 'unruled' };
     }
-    if (fallback === null) return stay;
+    if (fallback === null) return { specifier, outcome: 'local' };
     return { specifier: fallback, outcome: 'rewritten' };
   }
   if (mapped.startsWith('@')) return { specifier: mapped, outcome: 'rewritten' };
-  const kit = KIT_PACKAGE_FOR[packageName] as string;
+  const kit = KIT_PACKAGE_FOR[packageName];
   return { specifier: mapped === '' ? kit : `${kit}${mapped}`, outcome: 'rewritten' };
 }
 
-const IMPORT_PATTERN = /(['"])(@[a-z0-9][a-z0-9-]*)\/[^'"\n]+\1/g;
+const IMPORT_PATTERN = /(['"])@[a-z0-9][a-z0-9-]*\/[^'"\n]+\1/g;
 
-/** Rewrite every import of a consumed scope to the kit, in one file's text. */
+/**
+Rewrite every import of a consumed scope to the kit, in one file's text.
+*/
 export function renameImports(source: string, scope: string): RenameResult {
   const changes: Array<{ from: string; to: string }> = [];
   const unmapped: string[] = [];
-  const output = source.replace(IMPORT_PATTERN, (match) => {
+  const output = source.replaceAll(IMPORT_PATTERN, (match) => {
     const specifier = match.slice(1, -1);
     const mapped = mapSpecifier(specifier, scope);
     if (mapped.outcome === 'rewritten') {

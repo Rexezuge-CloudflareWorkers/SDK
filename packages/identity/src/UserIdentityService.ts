@@ -69,7 +69,9 @@ export class UserIdentityService {
     return resolved;
   }
 
-  /** Account id for a sign-in address, or null when unknown. */
+  /**
+  Account id for a sign-in address, or null when unknown.
+  */
   public async resolveAccountId(email: string): Promise<string | null> {
     const account = await this.resolveAccount(email);
     return account?.id ?? null;

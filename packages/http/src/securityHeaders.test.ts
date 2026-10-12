@@ -118,6 +118,6 @@ describe('securityHeaders middleware', () => {
       req: { url: 'https://example.com/' },
     } as unknown as HeaderContext;
 
-    await expect(securityHeaders(sensitivePaths('/user'))(broken, async () => undefined)).resolves.toBeUndefined();
+    await expect(securityHeaders(sensitivePaths('/user'))(broken, async () => {})).resolves.toBeUndefined();
   });
 });

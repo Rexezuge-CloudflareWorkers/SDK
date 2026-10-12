@@ -28,9 +28,13 @@ import { Button } from './Button.tsx';
 
 interface RefreshButtonProps {
   onRefresh: () => void;
-  /** Shows the spinner and blocks activation until the caller's work clears. */
+  /**
+  Shows the spinner and blocks activation until the caller's work clears.
+  */
   loading?: boolean;
-  /** The button's text. */
+  /**
+  The button's text.
+  */
   label: string;
   className?: string;
 }

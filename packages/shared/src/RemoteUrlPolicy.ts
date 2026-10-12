@@ -230,17 +230,14 @@ function isLocalhostName(host: string): boolean {
  */
 function isPrivateOrInternalHost(hostname: string): boolean {
   const host = stripTrailingDot(hostname).toLowerCase();
-  if (host.length === 0) return true;
-  if (isLocalhostName(host)) return true;
-  if (BLOCKED_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix))) return true;
+  if (host.length === 0 || isLocalhostName(host) || BLOCKED_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix))) return true;
 
   if (isIpv4Literal(host)) {
     const octets = ipv4Octets(host);
     return octets === null || isBlockedIpv4(octets);
   }
   if (host.includes(':')) return isBlockedIpv6(host);
-  if (looksLikeObfuscatedNumericHost(host)) return true;
-  return false;
+  return looksLikeObfuscatedNumericHost(host);
 }
 
 /**

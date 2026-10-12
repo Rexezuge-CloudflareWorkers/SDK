@@ -32,7 +32,9 @@ abstract class AppConfiguration {
     return url;
   }
 
-  /** The deployment stage this configuration believes itself in. */
+  /**
+  The deployment stage this configuration believes itself in.
+  */
   public getEnvironment(): string {
     return EnvParser.string(this.env, 'ENVIRONMENT', 'development');
   }
@@ -56,7 +58,9 @@ abstract class AppConfiguration {
     return warnings;
   }
 
-  /** The raw env, for subclasses that need a key this base does not know. */
+  /**
+  The raw env, for subclasses that need a key this base does not know.
+  */
   protected raw(): unknown {
     return this.env;
   }

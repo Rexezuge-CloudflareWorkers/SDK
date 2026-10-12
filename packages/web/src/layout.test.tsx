@@ -84,7 +84,7 @@ describe('ContextBar', () => {
     render(
       <ContextBar
         home={
-          <button type="button" onClick={() => undefined}>
+          <button type="button" onClick={() => {}}>
             Home
           </button>
         }

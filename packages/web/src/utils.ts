@@ -34,10 +34,14 @@
  * `const cn = (...values: ClassValue[]) => twMerge(kitCn(...values))`.
  */
 
-/** Everything `cn` accepts, mirroring clsx's `ClassValue`. */
+/**
+Everything `cn` accepts, mirroring clsx's `ClassValue`.
+*/
 type ClassValue = string | number | boolean | null | undefined | ClassDictionary | readonly ClassValue[];
 
-/** `{ 'px-4': isActive }` — a class is present when its value is truthy. */
+/**
+`{ 'px-4': isActive }` — a class is present when its value is truthy.
+*/
 interface ClassDictionary {
   [className: string]: boolean | null | undefined;
 }
@@ -223,14 +227,18 @@ const SINGLETON_UTILITIES: Record<string, string> = {
   collapse: 'visibility',
 };
 
-/** A length/count-like remainder: `-2`, `1.5`, `[3px]`, `px`, `full`, `none`. */
-const VALUE_SUFFIX = /^(-?(?:\d+\.?\d*|\[[^\]]*\]|px|full|none|auto|screen|min|max|fit))$/;
+/**
+A length/count-like remainder: `-2`, `1.5`, `[3px]`, `px`, `full`, `none`.
+*/
+const VALUE_SUFFIX = /^-?(?:\d+(?:\.\d*)?|\[[^\]]*\]|px|full|none|auto|screen|min|max|fit)$/;
 
 function isClassList(value: ClassValue): value is readonly ClassValue[] {
   return Array.isArray(value);
 }
 
-/** Pushes the whitespace-separated classes of one string, dropping empties. */
+/**
+Pushes the whitespace-separated classes of one string, dropping empties.
+*/
 function pushClasses(into: string[], value: string): void {
   for (const className of value.split(/\s+/)) {
     if (className !== '') {
@@ -239,7 +247,9 @@ function pushClasses(into: string[], value: string): void {
   }
 }
 
-/** Flattens clsx-style inputs into the classes they contribute, in order. */
+/**
+Flattens clsx-style inputs into the classes they contribute, in order.
+*/
 function flattenClasses(values: readonly ClassValue[], into: string[]): void {
   for (const value of values) {
     if (value === null || value === undefined || value === false || value === '') {
@@ -273,7 +283,8 @@ function flattenClasses(values: readonly ClassValue[], into: string[]): void {
 function splitVariants(className: string): { variants: string; base: string } {
   let depth = 0;
   let lastSeparator = -1;
-  for (let index = 0; index < className.length; index += 1) {
+  let index = 0;
+  while (index < className.length) {
     const character = className[index];
     if (character === '[' || character === '(') {
       depth += 1;
@@ -282,6 +293,7 @@ function splitVariants(className: string): { variants: string; base: string } {
     } else if (character === ':' && depth === 0) {
       lastSeparator = index;
     }
+    index += 1;
   }
   if (lastSeparator === -1) {
     return { variants: '', base: className };
@@ -297,9 +309,8 @@ function splitVariants(className: string): { variants: string; base: string } {
  */
 function groupKeyFor(className: string): string | null {
   const { variants, base } = splitVariants(className);
-  const singletonGroup = SINGLETON_UTILITIES[base];
-  if (singletonGroup !== undefined) {
-    return `${variants}|${singletonGroup}`;
+  if (Object.hasOwn(SINGLETON_UTILITIES, base)) {
+    return `${variants}|${SINGLETON_UTILITIES[base]}`;
   }
   for (const prefix of VALUE_UTILITY_PREFIXES) {
     if (base === prefix) {
@@ -319,7 +330,9 @@ function groupKeyFor(className: string): string | null {
   return null;
 }
 
-/** Drops an exact duplicate, keeping its last occurrence. */
+/**
+Drops an exact duplicate, keeping its last occurrence.
+*/
 function dedupeClasses(classes: readonly string[]): string[] {
   const lastIndex = new Map<string, number>();
   classes.forEach((className, index) => {
@@ -328,7 +341,9 @@ function dedupeClasses(classes: readonly string[]): string[] {
   return classes.filter((className, index) => lastIndex.get(className) === index);
 }
 
-/** Drops each class that a later member of its own group has replaced. */
+/**
+Drops each class that a later member of its own group has replaced.
+*/
 function mergeGroups(classes: readonly string[]): string[] {
   const merged: string[] = [];
   const positionByGroup = new Map<string, number>();

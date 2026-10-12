@@ -20,14 +20,16 @@ function context(ip: string | undefined = '203.0.113.7', identity?: string): Rat
     get: (key: string) => variables.get(key),
     json: (body: unknown, status = 200, extra?: Record<string, string>) => {
       for (const [key, value] of Object.entries(extra ?? {})) headers[key] = value;
-      return new Response(JSON.stringify(body), { status, headers });
+      return Response.json(body, { status, headers });
     },
   };
 }
 
 const OPTS = { windowMs: 60_000, max: 2, keyPrefix: 'test' } as const;
 
-/** Run the handler `times` times against one context; the last response wins. */
+/**
+Run the handler `times` times against one context; the last response wins.
+*/
 async function hit(handler: ReturnType<typeof rateLimit>, c: RateLimitContext, times: number): Promise<Response> {
   let last = new Response(null, { status: 200 });
   for (let index = 0; index < times; index += 1) {
@@ -44,7 +46,7 @@ describe('clientIp', () => {
   it('falls back to a shared bucket when the header is absent', () => {
     // Fail-closed grouping: without a trusted address every caller shares one
     // bucket rather than getting per-spoofed-header isolation.
-    expect(clientIp(() => undefined)).toBe('unknown');
+    expect(clientIp(() => {})).toBe('unknown');
   });
 
   it('ignores a spoofable forwarding header entirely', () => {
@@ -144,12 +146,12 @@ describe('rateLimit: fail-open', () => {
   });
 
   it('fails open when the resolver answers a non-positive integer', async () => {
-    const handler = rateLimit({ ...OPTS, keyPrefix: 'nan', max: () => Number.NaN });
+    const handler = rateLimit({ ...OPTS, keyPrefix: 'nan', max: () => NaN });
     expect((await hit(handler, context(), 1)).status).toBe(200);
   });
 
   it('runs next() exactly once per request', async () => {
-    const handler = rateLimit({ ...OPTS, keyPrefix: 'once', max: () => Number.NaN });
+    const handler = rateLimit({ ...OPTS, keyPrefix: 'once', max: () => NaN });
     const next = vi.fn(async () => new Response('ok'));
     await handler(context(), next);
     // Hono's compose throws on a second next() call; a fail-open branch that

@@ -41,7 +41,7 @@ for (const problem of report.problems) {
 }
 
 console.log(
-  `${report.lock === null ? 'left' : 'wrote'} ${path.join(migrationsDir, LOCK_NAME)} ` + `(${report.files.length} migration(s) recorded)`,
+  `${report.lock === null ? 'left' : 'wrote'} ${path.join(migrationsDir, LOCK_NAME)} (${report.files.length} migration(s) recorded)`,
 );
 
 // The lock is re-checked by the caller: `verify-migrations.ts` re-reads from disk,

@@ -33,17 +33,27 @@ import { useCopyToClipboard } from './useCopyToClipboard.ts';
  */
 
 interface TypeToConfirmModalProps {
-  /** The dialog's heading, and its accessible name. */
+  /**
+  The dialog's heading, and its accessible name.
+  */
   title: string;
-  /** The line under the heading, explaining what happens on confirm. */
+  /**
+  The line under the heading, explaining what happens on confirm.
+  */
   description: string;
-  /** The string the operator must type. Shown, and offered as a copy. */
+  /**
+  The string the operator must type. Shown, and offered as a copy.
+  */
   expectedName: string;
   confirmLabel: string;
   cancelLabel: string;
-  /** The copy button's accessible name and tooltip. */
+  /**
+  The copy button's accessible name and tooltip.
+  */
   copyLabel: string;
-  /** The prompt over the input. Name the thing: `Type "prod" to confirm`. */
+  /**
+  The prompt over the input. Name the thing: `Type "prod" to confirm`.
+  */
   promptLabel: string;
   onConfirm: () => void;
   onCancel: () => void;

@@ -12,7 +12,7 @@ describe('pageCountFor', () => {
     expect(pageCountFor(0, 10)).toBe(1);
     expect(pageCountFor(10, 0)).toBe(1);
     expect(pageCountFor(10, -5)).toBe(1);
-    expect(pageCountFor(Number.NaN, 10)).toBe(1);
+    expect(pageCountFor(NaN, 10)).toBe(1);
   });
 });
 
@@ -21,7 +21,7 @@ describe('clampPage', () => {
     expect(clampPage(0, 4)).toBe(1);
     expect(clampPage(9, 4)).toBe(4);
     expect(clampPage(2.7, 4)).toBe(2);
-    expect(clampPage(Number.NaN, 4)).toBe(1);
+    expect(clampPage(NaN, 4)).toBe(1);
     expect(clampPage(5, 0)).toBe(1);
   });
 });
@@ -45,17 +45,17 @@ describe('pageWindow', () => {
 
 describe('Pagination', () => {
   it('renders nothing when the collection fits on one page', () => {
-    const { container } = render(<Pagination page={1} pageCount={1} onChange={() => undefined} />);
+    const { container } = render(<Pagination page={1} pageCount={1} onChange={() => {}} />);
     expect(container).toBeEmptyDOMElement();
   });
 
   it('renders nothing when there is nothing to derive a page count from', () => {
-    const { container } = render(<Pagination page={1} onChange={() => undefined} />);
+    const { container } = render(<Pagination page={1} onChange={() => {}} />);
     expect(container).toBeEmptyDOMElement();
   });
 
   it('shows a window of page numbers around the current page', () => {
-    render(<Pagination page={6} total={100} pageSize={10} onChange={() => undefined} />);
+    render(<Pagination page={6} total={100} pageSize={10} onChange={() => {}} />);
     for (const pageNumber of [4, 5, 6, 7, 8]) {
       expect(screen.getByRole('button', { name: String(pageNumber) })).toBeInTheDocument();
     }
@@ -81,14 +81,14 @@ describe('Pagination', () => {
   });
 
   it('clamps an out-of-range page it was handed', () => {
-    render(<Pagination page={99} pageCount={3} onChange={() => undefined} />);
+    render(<Pagination page={99} pageCount={3} onChange={() => {}} />);
     // The current page is pinned to the last one, so Next is disabled.
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '3' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('renders a summary instead of numbers in the compact variant', () => {
-    render(<Pagination page={2} pageCount={3} variant="compact" onChange={() => undefined} />);
+    render(<Pagination page={2} pageCount={3} variant="compact" onChange={() => {}} />);
     expect(screen.getByText('Page 2 of 3')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '1' })).toBeNull();
   });
@@ -100,7 +100,7 @@ describe('Pagination', () => {
         pageCount={2}
         variant="compact"
         labels={{ previous: 'Zurück', next: 'Weiter', summary: (page, count) => `Seite ${page} von ${count}` }}
-        onChange={() => undefined}
+        onChange={() => {}}
       />,
     );
     expect(screen.getByRole('button', { name: 'Zurück' })).toBeDisabled();

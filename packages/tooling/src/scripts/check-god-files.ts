@@ -48,7 +48,7 @@
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { join, relative } from 'node:path';
+import path from 'node:path';
 import { fail } from './lib/github-actions.ts';
 import { isSet, parseFlags, splitPositional, valueOf } from './lib/cli-args.ts';
 
@@ -56,11 +56,17 @@ import { isSet, parseFlags, splitPositional, valueOf } from './lib/cli-args.ts';
  * A file past a size the guard reports on.
  */
 export interface GodFileFinding {
-  /** Path relative to the root the check ran against. */
+  /**
+  Path relative to the root the check ran against.
+  */
   readonly file: string;
-  /** Lines it has. */
+  /**
+  Lines it has.
+  */
   readonly lines: number;
-  /** `warn` past the soft limit, `critical` past the hard one. */
+  /**
+  `warn` past the soft limit, `critical` past the hard one.
+  */
   readonly level: 'warn' | 'critical';
 }
 
@@ -68,11 +74,17 @@ export interface GodFileFinding {
  * The outcome of one run.
  */
 export interface GodFileReport {
-  /** Files over a limit, worst first, minus the allowlisted. */
+  /**
+  Files over a limit, worst first, minus the allowlisted.
+  */
   readonly findings: readonly GodFileFinding[];
-  /** How many files the walk measured. */
+  /**
+  How many files the walk measured.
+  */
   readonly scanned: number;
-  /** Allowlisted files that are over a limit — reported, never counted. */
+  /**
+  Allowlisted files that are over a limit — reported, never counted.
+  */
   readonly allowlisted: readonly GodFileFinding[];
   /**
    * Whether the tree may be committed as it stands.
@@ -81,7 +93,9 @@ export interface GodFileReport {
    * only when the caller asked for the gate.
    */
   readonly passed: boolean;
-  /** The message to print, either way. */
+  /**
+  The message to print, either way.
+  */
   readonly reported: string;
 }
 
@@ -89,7 +103,9 @@ export interface GodFileReport {
  * What `checkGodFiles` accepts.
  */
 export interface GodFileOptions {
-  /** Directory to walk. */
+  /**
+  Directory to walk.
+  */
   readonly root: string;
   /**
    * Repo-relative paths (or directory prefixes ending in `/`) exempt from the
@@ -97,17 +113,27 @@ export interface GodFileOptions {
    * when that file exists — see `readAllowlist`.
    */
   readonly allowlist?: readonly string[];
-  /** Soft limit, past which a file is reported as `warn`. */
+  /**
+  Soft limit, past which a file is reported as `warn`.
+  */
   readonly soft?: number;
-  /** Hard limit, past which a file is reported as `critical`. */
+  /**
+  Hard limit, past which a file is reported as `critical`.
+  */
   readonly hard?: number;
-  /** Make a `critical` finding fail the run. */
+  /**
+  Make a `critical` finding fail the run.
+  */
   readonly failOnHard?: boolean;
 }
 
-/** Default soft limit, as every source repo uses. */
+/**
+Default soft limit, as every source repo uses.
+*/
 export const SOFT_LIMIT = 300;
-/** Default hard limit, as every source repo uses. */
+/**
+Default hard limit, as every source repo uses.
+*/
 export const HARD_LIMIT = 400;
 
 /**
@@ -154,15 +180,18 @@ const TEST_SUFFIXES: readonly string[] = ['test', 'spec'].flatMap((kind) =>
  * that dead pattern.
  */
 export function shouldSkip(rel: string): boolean {
-  if (/(?:^|\/)(?:locales|generated)\//.test(rel)) return true;
-  if (/(?:^|\/)__(?:tests|mocks)__(?:\/|$)/.test(rel)) return true;
-  if (/(?:^|\/)scripts\//.test(rel)) return true;
-  if (/(?:^|\/)(?:test|tests|__tests__)\//.test(rel)) return true;
-  if (/\.config\.(?:m?[jt]s|cjs)$/.test(rel)) return true;
-  if (rel.endsWith('.d.ts')) return true;
-  if (rel.endsWith('.json')) return true;
-  if (rel.endsWith('.sql')) return true;
-  if (rel.endsWith('.md')) return true;
+  if (
+    /(?:^|\/)(?:locales|generated)\//.test(rel) ||
+    /(?:^|\/)__(?:tests|mocks)__(?:\/|$)/.test(rel) ||
+    /(?:^|\/)scripts\//.test(rel) ||
+    /(?:^|\/)(?:test|tests|__tests__)\//.test(rel) ||
+    /\.config\.(?:m?[jt]s|cjs)$/.test(rel) ||
+    rel.endsWith('.d.ts') ||
+    rel.endsWith('.json') ||
+    rel.endsWith('.sql') ||
+    rel.endsWith('.md')
+  )
+    return true;
   return TEST_SUFFIXES.some((suffix) => rel.endsWith(suffix));
 }
 
@@ -186,7 +215,7 @@ export function walk(root: string): string[] {
   const out: string[] = [];
   const visit = (dir: string): void => {
     for (const entry of readdirSync(dir)) {
-      const full = join(dir, entry);
+      const full = path.join(dir, entry);
       let stat;
       try {
         stat = statSync(full);
@@ -197,7 +226,7 @@ export function walk(root: string): string[] {
         if (EXCLUDE_DIRS.has(entry)) continue;
         visit(full);
       } else if (SOURCE_EXTENSIONS.test(entry)) {
-        out.push(relative(root, full));
+        out.push(path.relative(root, full));
       }
     }
   };
@@ -221,7 +250,7 @@ export function checkGodFiles(options: GodFileOptions): GodFileReport {
   const allowlisted: GodFileFinding[] = [];
 
   for (const rel of scanned) {
-    const lines = readFileSync(join(options.root, rel), 'utf8').split('\n').length;
+    const lines = readFileSync(path.join(options.root, rel), 'utf8').split('\n').length;
     if (lines <= soft) continue;
     const finding: GodFileFinding = { file: rel, lines, level: lines > hard ? 'critical' : 'warn' };
     if (isAllowlisted(rel, allowlist)) {
@@ -255,10 +284,10 @@ export function checkGodFiles(options: GodFileOptions): GodFileReport {
  * A malformed file is an error rather than an empty list, because "the allowlist
  * is empty" silently un-reports every known offender.
  */
-export function readAllowlist(path: string): string[] {
+export function readAllowlist(file: string): string[] {
   let raw: string;
   try {
-    raw = readFileSync(path, 'utf8');
+    raw = readFileSync(file, 'utf8');
   } catch {
     return [];
   }
@@ -266,10 +295,10 @@ export function readAllowlist(path: string): string[] {
   try {
     parsed = JSON.parse(raw);
   } catch (error: unknown) {
-    throw new Error(`${path} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+    throw new Error(`${file} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
   }
   if (!Array.isArray(parsed) || parsed.some((entry) => typeof entry !== 'string')) {
-    throw new Error(`${path} must be a JSON array of repo-relative path strings.`);
+    throw new Error(`${file} must be a JSON array of repo-relative path strings.`);
   }
   return parsed as string[];
 }
@@ -296,7 +325,7 @@ export function checkGodFilesCli(argv: readonly string[] = process.argv.slice(2)
     boolean: ['fail-on-hard'],
   });
   const root = valueOf(flags, 'root') ?? positional[0] ?? '.';
-  const allowlistPath = valueOf(flags, 'allowlist') ?? join(root, 'scripts/god-files.allowlist.json');
+  const allowlistPath = valueOf(flags, 'allowlist') ?? path.join(root, 'scripts/god-files.allowlist.json');
   const report = checkGodFiles({
     root,
     allowlist: readAllowlist(allowlistPath),

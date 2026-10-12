@@ -32,11 +32,15 @@ import type { Notice, NoticeKind } from './useNotice.ts';
  * which loses the kind for a user who cannot see the colour.
  */
 
-/** The two accessible names, keyed by the kind they announce. */
+/**
+The two accessible names, keyed by the kind they announce.
+*/
 type NoticeStatusLabels = Record<NoticeKind, string>;
 
 interface NoticeBarProps {
-  /** The notice to show, or `null` for nothing — which is what `useNotice` hands back when idle. */
+  /**
+  The notice to show, or `null` for nothing — which is what `useNotice` hands back when idle.
+  */
   notice: Notice | null;
   /**
    * The screen-reader prefix for each kind, e.g. `{ success: 'Success', error: 'Error' }`.

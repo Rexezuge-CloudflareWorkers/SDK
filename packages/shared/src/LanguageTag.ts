@@ -28,6 +28,7 @@ function canonicalizeLanguageTag(tag: string): string {
  * A BCP-47 language tag, canonicalized: `zh_TW`, `zh-tw`, and `zh-TW` all
  * canonicalize to `zh-TW`.
  */
+// eslint-disable-next-line sonarjs/redundant-type-aliases -- the alias is the kit's documented domain type, named across public signatures; inlining it to `string` would erase the constraint the name carries.
 type LanguageTag = string;
 
 export { canonicalizeLanguageTag };

@@ -17,15 +17,25 @@ import { theme } from './theme.ts';
  */
 
 interface SpinnerProps {
-  /** Diameter in pixels. */
+  /**
+  Diameter in pixels.
+  */
   size?: number;
-  /** Border colour; `currentColor` inherits from the surrounding text. */
+  /**
+  Border colour; `currentColor` inherits from the surrounding text.
+  */
   color?: string;
-  /** Optional caption under the ring. */
+  /**
+  Optional caption under the ring.
+  */
   label?: string;
-  /** Padding around the whole block, as a CSS shorthand. */
+  /**
+  Padding around the whole block, as a CSS shorthand.
+  */
   padding?: string;
-  /** Extra styles for the outer wrapper. */
+  /**
+  Extra styles for the outer wrapper.
+  */
   style?: CSSProperties;
 }
 

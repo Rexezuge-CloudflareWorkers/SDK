@@ -15,7 +15,7 @@ interface Account {
 afterEach(cleanup);
 
 function clientReturning(body: unknown): ApiClient {
-  const fetchMock = vi.fn<FetchFn>(async () => new Response(JSON.stringify(body), { status: 200 }));
+  const fetchMock = vi.fn<FetchFn>(async () => Response.json(body, { status: 200 }));
   return createApiClient(fetchMock);
 }
 
@@ -37,7 +37,7 @@ describe('useCurrentUser', () => {
   });
 
   it('requests the profile path it was given', async () => {
-    const fetchMock = vi.fn<FetchFn>(async () => new Response(JSON.stringify({}), { status: 200 }));
+    const fetchMock = vi.fn<FetchFn>(async () => Response.json({}, { status: 200 }));
     const client = createApiClient(fetchMock);
     renderHook(() => useCurrentUser(client, { path: '/user/me?verbose=1' }));
 
@@ -48,7 +48,7 @@ describe('useCurrentUser', () => {
   });
 
   it('reports a failure as a ServiceError and leaves the user null', async () => {
-    const fetchMock = vi.fn<FetchFn>(async () => new Response(JSON.stringify({ Exception: { Message: 'D1 is down.' } }), { status: 500 }));
+    const fetchMock = vi.fn<FetchFn>(async () => Response.json({ Exception: { Message: 'D1 is down.' } }, { status: 500 }));
     const client = createApiClient(fetchMock);
     const { result } = renderHook(() => useCurrentUser<Account>(client));
 
@@ -80,7 +80,7 @@ describe('useCurrentUser', () => {
   });
 
   it('re-runs the request when reload is called', async () => {
-    const fetchMock = vi.fn<FetchFn>(async () => new Response(JSON.stringify({ email: 'a@example.test' }), { status: 200 }));
+    const fetchMock = vi.fn<FetchFn>(async () => Response.json({ email: 'a@example.test' }, { status: 200 }));
     const client = createApiClient(fetchMock);
     const { result } = renderHook(() => useCurrentUser<Account>(client));
 
@@ -98,7 +98,7 @@ describe('useCurrentUser', () => {
   });
 
   it('does not re-fetch when a fresh client instance is passed', async () => {
-    const fetchMock = vi.fn<FetchFn>(async () => new Response(JSON.stringify({ email: 'a@example.test' }), { status: 200 }));
+    const fetchMock = vi.fn<FetchFn>(async () => Response.json({ email: 'a@example.test' }, { status: 200 }));
     const { rerender } = renderHook(() => useCurrentUser<Account>(createApiClient(fetchMock)));
 
     await act(async () => {

@@ -4,14 +4,16 @@ import { buildQuery, createApiClient, HttpStatusError, MAX_ERROR_MESSAGE_LENGTH 
 import type { FetchFn } from './api.ts';
 
 function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+  return Response.json(body, { status, headers: { 'Content-Type': 'application/json' } });
 }
 
 function textResponse(text: string, status: number, contentType = 'text/html'): Response {
   return new Response(text, { status, headers: { 'Content-Type': contentType } });
 }
 
-/** The `fetch` call a client made, as its two arguments. */
+/**
+The `fetch` call a client made, as its two arguments.
+*/
 function recordedCall(fetchMock: ReturnType<typeof vi.fn>): { url: string; init: RequestInit } {
   const call = fetchMock.mock.calls.at(-1);
   if (call === undefined) {

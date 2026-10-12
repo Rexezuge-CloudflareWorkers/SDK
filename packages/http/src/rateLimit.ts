@@ -141,7 +141,9 @@ const MAX_BUCKETS = 5000;
  */
 const CLEANUP_THRESHOLD = 1000;
 
-/** The sweep runs at most this often, regardless of bucket count. */
+/**
+The sweep runs at most this often, regardless of bucket count.
+*/
 const CLEANUP_INTERVAL_MS = 30_000;
 
 let lastCleanupAt = 0;

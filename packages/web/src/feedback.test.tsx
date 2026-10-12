@@ -56,26 +56,26 @@ describe('NoticeBar', () => {
 
 describe('LanguageSelector', () => {
   it('offers the family locale table by default', () => {
-    render(<LanguageSelector value="en" onChange={() => undefined} label="Language" unknownLabel="Unknown" />);
+    render(<LanguageSelector value="en" onChange={() => {}} label="Language" unknownLabel="Unknown" />);
     // Twelve, from `LocaleUtil` — not from a table re-typed into this repo.
     expect(screen.getAllByRole('option')).toHaveLength(12);
   });
 
   it('labels each option in its own language', () => {
-    render(<LanguageSelector value="de" onChange={() => undefined} label="Language" unknownLabel="Unknown" />);
+    render(<LanguageSelector value="de" onChange={() => {}} label="Language" unknownLabel="Unknown" />);
     expect(screen.getByRole('option', { name: 'Deutsch' })).toBeDefined();
     expect(screen.getByRole('option', { name: '日本語' })).toBeDefined();
   });
 
   it('carries the accessible name the copies got from useTranslation', () => {
-    render(<LanguageSelector value="en" onChange={() => undefined} label="Sprache wählen" unknownLabel="Unknown" />);
+    render(<LanguageSelector value="en" onChange={() => {}} label="Sprache wählen" unknownLabel="Unknown" />);
     expect(screen.getByRole('combobox', { name: 'Sprache wählen' })).toBeDefined();
   });
 
   it('resolves a regional tag onto a supported option', () => {
     // A browser reporting `en-US` must not leave the control showing nothing
     // selected. This is the copy's `normalizeLanguage` step.
-    render(<LanguageSelector value="en-US" onChange={() => undefined} label="Language" unknownLabel="Unknown" />);
+    render(<LanguageSelector value="en-US" onChange={() => {}} label="Language" unknownLabel="Unknown" />);
     expect(screen.getByRole('combobox')).toHaveValue('en');
   });
 
@@ -89,14 +89,14 @@ describe('LanguageSelector', () => {
   it('renders a disabled control when no language could be resolved', () => {
     // The copies spelled this `'unknown'`, a string that could not be told
     // apart from a locale literally named `unknown`. It is `null` here.
-    render(<LanguageSelector value={null} onChange={() => undefined} label="Language" unknownLabel="Unknown" />);
+    render(<LanguageSelector value={null} onChange={() => {}} label="Language" unknownLabel="Unknown" />);
     const select = screen.getByRole('combobox');
     expect(select).toBeDisabled();
     expect(screen.getByRole('option', { name: 'Unknown' })).toBeDefined();
   });
 
   it('honours a narrowed supported list', () => {
-    render(<LanguageSelector value="en" onChange={() => undefined} label="Language" unknownLabel="Unknown" supported={['en', 'de']} />);
+    render(<LanguageSelector value="en" onChange={() => {}} label="Language" unknownLabel="Unknown" supported={['en', 'de']} />);
     expect(screen.getAllByRole('option')).toHaveLength(2);
   });
 });

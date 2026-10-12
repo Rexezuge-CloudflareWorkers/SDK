@@ -61,15 +61,19 @@
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 
-/** One migration as the lock records it. */
+/**
+One migration as the lock records it.
+*/
 interface MigrationEntry {
   name: string;
   sha256: string;
 }
 
-/** The parsed `migrations/migrations.lock.json`. */
+/**
+The parsed `migrations/migrations.lock.json`.
+*/
 interface MigrationLockFile {
   version: 1;
   /**
@@ -82,17 +86,25 @@ interface MigrationLockFile {
   migrations: MigrationEntry[];
 }
 
-/** One failure, phrased for the operator. */
+/**
+One failure, phrased for the operator.
+*/
 interface MigrationProblem {
   problem: string;
 }
 
-/** The outcome of one run. */
+/**
+The outcome of one run.
+*/
 interface MigrationReport {
-  /** Migration filenames, in apply order. */
+  /**
+  Migration filenames, in apply order.
+  */
   files: string[];
   problems: MigrationProblem[];
-  /** The lock as it reads after the run. */
+  /**
+  The lock as it reads after the run.
+  */
   lock: MigrationLockFile | null;
 }
 
@@ -105,13 +117,19 @@ interface MigrationReport {
  */
 const LOCK_NAME = 'migrations.lock.json';
 
-/** The filename shape every migration must have. `NNNN_` is fixed at four digits. */
+/**
+The filename shape every migration must have. `NNNN_` is fixed at four digits.
+*/
 const NAME_PATTERN = /^(\d{4})_[a-z0-9_]+\.sql$/;
 
-/** The squashed-baseline shape. The highest-numbered match is the baseline. */
+/**
+The squashed-baseline shape. The highest-numbered match is the baseline.
+*/
 const SQUASH_PATTERN = /^\d{4}_squash\.sql$/;
 
-/** The lock's format version. Bumped only on an incompatible shape change. */
+/**
+The lock's format version. Bumped only on an incompatible shape change.
+*/
 const LOCK_VERSION = 1;
 
 function sha256Hex(content: string): string {
@@ -133,7 +151,9 @@ export function baselineOf(files: readonly string[]): string | undefined {
   return highest;
 }
 
-/** True when `name` is at or before the baseline, i.e. the set a squash absorbs. */
+/**
+True when `name` is at or before the baseline, i.e. the set a squash absorbs.
+*/
 function isSubsumed(name: string, baseline: string | undefined): boolean {
   return baseline !== undefined && name <= baseline;
 }
@@ -185,9 +205,9 @@ function inspectMigrations(migrationsDir: string): MigrationReport {
   // it absorbs, so numbering restarts wherever it starts and a hole is the
   // expected shape rather than a defect.
   if (baseline === undefined) {
-    for (let index = 0; index < prefixes.length; index += 1) {
+    for (const [index, prefix] of prefixes.entries()) {
       const expected = String(index + 1).padStart(4, '0');
-      if (prefixes[index] !== expected) {
+      if (prefix !== expected) {
         problems.push({
           problem: `migration numbering is not contiguous: expected ${expected}_*.sql, found ${files[index] ?? '?'}`,
         });
@@ -195,7 +215,7 @@ function inspectMigrations(migrationsDir: string): MigrationReport {
     }
   }
 
-  const lockPath = join(migrationsDir, LOCK_NAME);
+  const lockPath = path.join(migrationsDir, LOCK_NAME);
   let lock: MigrationLockFile | null = null;
   if (existsSync(lockPath)) {
     try {
@@ -222,7 +242,7 @@ function buildUpdatedLock(
   existing: MigrationLockFile | null,
   baseline: string | undefined,
 ): MigrationLockFile | null {
-  const digestOf = (name: string): string => sha256Hex(readFileSync(join(migrationsDir, name), 'utf8'));
+  const digestOf = (name: string): string => sha256Hex(readFileSync(path.join(migrationsDir, name), 'utf8'));
 
   if (existing === null) {
     return {
@@ -242,7 +262,7 @@ function buildUpdatedLock(
   // Unlocked files are added — that is the new-migration case. Every other entry
   // is carried across untouched, so an `edited` finding survives the write.
   for (const file of files) {
-    if (!kept.has(file) && !existing.migrations.some((entry) => entry.name === file)) {
+    if (!kept.has(file) && existing.migrations.every((entry) => entry.name !== file)) {
       kept.set(file, digestOf(file));
     }
   }
@@ -263,7 +283,9 @@ function buildUpdatedLock(
   };
 }
 
-/** Verify (or with `write: true`, record) the lock against the files. */
+/**
+Verify (or with `write: true`, record) the lock against the files.
+*/
 function verifyMigrations(migrationsDir: string, options: { write?: boolean } = {}): MigrationReport {
   const report = inspectMigrations(migrationsDir);
   const baseline = baselineOf(report.files);
@@ -277,17 +299,17 @@ function verifyMigrations(migrationsDir: string, options: { write?: boolean } = 
   if (options.write === true) {
     const updated = buildUpdatedLock(migrationsDir, report.files, report.lock, baseline);
     const next = `${JSON.stringify(updated, null, 2)}\n`;
-    const path = join(migrationsDir, LOCK_NAME);
+    const lockfile = path.join(migrationsDir, LOCK_NAME);
     let before: string | null = null;
     try {
-      before = readFileSync(path, 'utf8');
+      before = readFileSync(lockfile, 'utf8');
     } catch (error) {
       if ((error as NodeJS.ErrnoException)?.code !== 'ENOENT') {
         throw error;
       }
     }
     if (before !== next) {
-      writeFileSync(path, next, 'utf8');
+      writeFileSync(lockfile, next, 'utf8');
     }
     report.lock = updated;
     return report;
@@ -309,7 +331,7 @@ function verifyMigrations(migrationsDir: string, options: { write?: boolean } = 
     // At or before the baseline, a squash rewrites its own file, and that is the
     // whole reason a baseline exists.
     if (isSubsumed(name, baseline)) continue;
-    const actual = sha256Hex(readFileSync(join(migrationsDir, name), 'utf8'));
+    const actual = sha256Hex(readFileSync(path.join(migrationsDir, name), 'utf8'));
     if (actual !== expected) {
       report.problems.push({
         problem: `${name} changed after locking (expected ${expected.slice(0, 12)}…, got ${actual.slice(0, 12)}…)`,
@@ -318,8 +340,7 @@ function verifyMigrations(migrationsDir: string, options: { write?: boolean } = 
   }
 
   for (const entry of lock.migrations) {
-    if (report.files.includes(entry.name)) continue;
-    if (isSubsumed(entry.name, baseline)) continue;
+    if (report.files.includes(entry.name) || isSubsumed(entry.name, baseline)) continue;
     report.problems.push({ problem: `${entry.name} is in the lock but no longer exists` });
   }
 
@@ -340,7 +361,9 @@ function verifyMigrations(migrationsDir: string, options: { write?: boolean } = 
   return report;
 }
 
-/** CLI entry: `verifyMigrationsCli(['[migrations-dir]?', '--write'?'])`. */
+/**
+CLI entry: `verifyMigrationsCli(['[migrations-dir]?', '--write'?'])`.
+*/
 function verifyMigrationsCli(argv: readonly string[] = process.argv.slice(2)): number {
   const dir = argv.find((arg) => !arg.startsWith('--')) ?? 'migrations';
   const write = argv.includes('--write');

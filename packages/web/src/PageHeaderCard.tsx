@@ -15,7 +15,9 @@ import { Card } from './Card.tsx';
  */
 
 interface PageHeaderCardProps {
-  /** Leading avatar. Omitted renders no avatar slot at all, not an empty one. */
+  /**
+  Leading avatar. Omitted renders no avatar slot at all, not an empty one.
+  */
   icon?: ReactNode;
   /**
    * The page's name.
@@ -34,7 +36,9 @@ interface PageHeaderCardProps {
    * it means the layout is the same whether or not there is something to say.
    */
   description: ReactNode;
-  /** Right-aligned. Omitted renders no actions slot. */
+  /**
+  Right-aligned. Omitted renders no actions slot.
+  */
   actions?: ReactNode;
 }
 

@@ -67,7 +67,7 @@ describe('evaluateConfig', () => {
   });
 
   it('treats whitespace-only secrets as absent', () => {
-    expect(evaluateConfig({ S3_ACCESS_KEY_ID: '   ', S3_SECRET_ACCESS_KEY: ' ', S3_BUCKET: '\t' }).s3).toBe(false);
+    expect(evaluateConfig({ S3_ACCESS_KEY_ID: ' '.repeat(3), S3_SECRET_ACCESS_KEY: ' ', S3_BUCKET: '\t' }).s3).toBe(false);
   });
 });
 

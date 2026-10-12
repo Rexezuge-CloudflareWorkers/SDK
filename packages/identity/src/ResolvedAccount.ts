@@ -45,7 +45,9 @@ export interface ResolvedAccount {
   username: string | null;
 }
 
-/** The denormalized subset routes and the permission path use. */
+/**
+The denormalized subset routes and the permission path use.
+*/
 export type AccountSummary = Pick<ResolvedAccount, 'id' | 'email' | 'username'>;
 
 /**
@@ -58,7 +60,9 @@ export type AccountSummary = Pick<ResolvedAccount, 'id' | 'email' | 'username'>;
  */
 export type UserRowLike = Pick<UserRow, 'id' | 'email' | 'current_email' | 'username'> | null;
 
-/** Project a `users` row onto a `ResolvedAccount`. */
+/**
+Project a `users` row onto a `ResolvedAccount`.
+*/
 export function summarize(row: UserRowLike): ResolvedAccount | null {
   return row?.id
     ? { id: row.id, email: (row.current_email ?? row.email).toLowerCase(), anchorEmail: row.email, username: row.username ?? null }
