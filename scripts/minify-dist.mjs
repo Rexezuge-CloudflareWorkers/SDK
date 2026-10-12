@@ -54,6 +54,17 @@ for (const file of files) {
     outfile: file,
     bundle: false,
     minify: true,
+    // esbuild's minifier renames class and function *bindings* by default, so
+    // `new NotFoundError().name` came back as `'t'` from the published dist
+    // while the same assertion passed against `src/` in the package's own test
+    // run. The kit leans on real names in two places that a consumer can
+    // observe: `ServiceError` sets `this.name = new.target.name`, and
+    // `OutcomeError` derives its wire `type` from it — so a minified build
+    // shipped `Exception.Type: 't'` to clients and mangled class names into
+    // every log line. Tests run on source, so nothing in CI could see it.
+    // Keeping names costs a few bytes and is the only thing that makes the
+    // published artifact behave like the tested source.
+    keepNames: true,
     format: 'esm',
     target: 'es2022',
     sourcemap: 'external',
