@@ -49,6 +49,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Include Version In Commit Message
+        if: steps.changesets.outputs.pullRequestNumber != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin changeset-release/main
+          git checkout changeset-release/main
+          VERSION=$(node -p "require('./packages/errors/package.json').version")
+          MSG="CHORE: Version Packages v$VERSION"
+          CURRENT=$(git log -1 --format=%s)
+          if [ "$CURRENT" != "$MSG" ]; then
+            git commit --amend -m "$MSG"
+            git push --force-with-lease origin changeset-release/main
+          fi
+
       - name: Close Superseded Version Pull Requests
         if: steps.changesets.outputs.pullRequestNumber != ''
         run: |
