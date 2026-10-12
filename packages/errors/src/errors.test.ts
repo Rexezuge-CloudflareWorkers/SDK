@@ -7,6 +7,7 @@ import { InternalServerError } from './InternalServerError.ts';
 import { NotFoundError } from './NotFoundError.ts';
 import { RetryableError } from './OutcomeError.ts';
 import { ServiceError } from './ServiceError.ts';
+import { SubrequestBudgetExhaustedError } from './SubrequestBudgetExhaustedError.ts';
 import { UnauthorizedError } from './UnauthorizedError.ts';
 
 describe('CATALOG', () => {
@@ -102,6 +103,19 @@ describe('OutcomeError taxonomy', () => {
 
   it('honors an explicit status override', () => {
     expect(new RetryableError('throttled', 503).status).toBe(503);
+  });
+});
+
+describe('SubrequestBudgetExhaustedError', () => {
+  it('shares the 413 status with a distinct type', () => {
+    const error = new SubrequestBudgetExhaustedError();
+    expect(error.status).toBe(413);
+    expect(error.type).toBe('SubrequestBudgetExhausted');
+    expect(error.expose).toBe(true);
+  });
+
+  it('stays a PayloadTooLarge for boundary checks', () => {
+    expect(new SubrequestBudgetExhaustedError()).toBeInstanceOf(ServiceError);
   });
 });
 
