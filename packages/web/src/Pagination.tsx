@@ -26,7 +26,9 @@ import { cn } from './utils.ts';
  * render `null` for a single page.
  */
 
-/** How many pages `total` items occupy. A non-positive page size yields 1, never `Infinity`/`NaN`. */
+/**
+How many pages `total` items occupy. A non-positive page size yields 1, never `Infinity`/`NaN`.
+*/
 function pageCountFor(total: number, pageSize: number): number {
   if (!Number.isFinite(total) || !Number.isFinite(pageSize) || pageSize <= 0 || total <= 0) {
     return 1;
@@ -34,7 +36,9 @@ function pageCountFor(total: number, pageSize: number): number {
   return Math.ceil(total / pageSize);
 }
 
-/** Pins `page` into `[1, pageCount]`, rounding to the first page when it cannot be read. */
+/**
+Pins `page` into `[1, pageCount]`, rounding to the first page when it cannot be read.
+*/
 function clampPage(page: number, pageCount: number): number {
   const upper = Math.max(1, Math.trunc(Number.isFinite(pageCount) ? pageCount : 1));
   const wanted = Number.isFinite(page) ? Math.trunc(page) : 1;
@@ -56,28 +60,48 @@ function pageWindow(currentPage: number, pageCount: number, windowSize = 5): num
   return Array.from({ length: count }, (_, index) => start + index);
 }
 
-/** Overridable text, so an i18next app is not stuck with the English defaults. */
+/**
+Overridable text, so an i18next app is not stuck with the English defaults.
+*/
 interface PaginationLabels {
-  /** Prev-button accessible name / label. */
+  /**
+  Prev-button accessible name / label.
+  */
   previous?: string;
-  /** Next-button accessible name / label. */
+  /**
+  Next-button accessible name / label.
+  */
   next?: string;
-  /** The "Page X of Y" summary in `compact` (and as the pager's `aria-label` in `full`). */
+  /**
+  The "Page X of Y" summary in `compact` (and as the pager's `aria-label` in `full`).
+  */
   summary?: (page: number, pageCount: number) => string;
 }
 
 interface PaginationProps {
-  /** The page being displayed, 1-based. Clamped into range for rendering. */
+  /**
+  The page being displayed, 1-based. Clamped into range for rendering.
+  */
   page: number;
-  /** Total pages. Omit to derive it from `total` and `pageSize`. */
+  /**
+  Total pages. Omit to derive it from `total` and `pageSize`.
+  */
   pageCount?: number;
-  /** Total item count across every page. */
+  /**
+  Total item count across every page.
+  */
   total?: number;
-  /** Items per page. */
+  /**
+  Items per page.
+  */
   pageSize?: number;
-  /** Called with the 1-based page to move to; already clamped into range. */
+  /**
+  Called with the 1-based page to move to; already clamped into range.
+  */
   onChange: (page: number) => void;
-  /** `full` shows page numbers, `compact` shows a summary. */
+  /**
+  `full` shows page numbers, `compact` shows a summary.
+  */
   variant?: 'full' | 'compact';
   labels?: PaginationLabels;
 }
@@ -94,14 +118,15 @@ function Pagination({
   const derivedPageCount = pageCount ?? (total !== undefined && pageSize !== undefined ? pageCountFor(total, pageSize) : 1);
   const pages = Math.max(1, Math.trunc(Number.isFinite(derivedPageCount) ? derivedPageCount : 1));
   const current = clampPage(page, pages);
-  const previousLabel = labels.previous ?? 'Previous';
-  const nextLabel = labels.next ?? 'Next';
-  const summaryLabel = labels.summary ?? ((page: number, count: number) => `Page ${page} of ${count}`);
 
   // Nothing to page: a single-page list shows no pager rather than a disabled one.
   if (pages <= 1) {
     return null;
   }
+
+  const previousLabel = labels.previous ?? 'Previous';
+  const nextLabel = labels.next ?? 'Next';
+  const summaryLabel = labels.summary ?? ((page: number, count: number) => `Page ${page} of ${count}`);
 
   const step = (next: number): void => {
     const target = clampPage(next, pages);

@@ -14,10 +14,14 @@ const IDENTITY_MIGRATION_SQL = {
 
 type IdentityMigrationName = keyof typeof IDENTITY_MIGRATION_SQL;
 
-/** The full fresh-install order. */
+/**
+The full fresh-install order.
+*/
 const FRESH_MIGRATIONS: readonly IdentityMigrationName[] = ['users.sql'];
 
-/** A legacy database applies the upgrade after the fresh schema is in place. */
+/**
+A legacy database applies the upgrade after the fresh schema is in place.
+*/
 const UPGRADE_MIGRATIONS: readonly IdentityMigrationName[] = ['users.sql', 'upgrade-user-identity.sql'];
 
 /**

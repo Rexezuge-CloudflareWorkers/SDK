@@ -25,7 +25,7 @@ const onRequest = createPagesProxy();
 describe('createPagesProxy', () => {
   it('forwards the URL verbatim and rewrites the three X-Forwarded headers', async () => {
     const { env, seen } = fakeEnv();
-    const request = new Request('https://pages.example.com/user/volumes?page=2', { method: 'GET' });
+    const request = new Request('https://pages.example.com/user/volumes?page=2');
     const response = await onRequest({ request, env } as never);
     expect(response.status).toBe(200);
     expect(seen[0]?.url).toBe('https://pages.example.com/user/volumes?page=2');

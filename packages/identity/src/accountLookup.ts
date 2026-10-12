@@ -70,7 +70,9 @@ export async function resolveAccount(deps: AccountLookupDeps, email: string): Pr
   return summarize(legacy);
 }
 
-/** Account id for a sign-in address, or null when unknown. */
+/**
+Account id for a sign-in address, or null when unknown.
+*/
 export async function resolveUserId(deps: AccountLookupDeps, email: string): Promise<string | null> {
   const account = await resolveAccount(deps, email);
   return account?.id ?? null;

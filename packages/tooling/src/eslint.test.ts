@@ -12,11 +12,14 @@ import { defineRepoLintConfig } from './eslint.ts';
  * those is a config that silently stops gating something.
  */
 
-/** The only glob syntax the config uses: `**`, `*`, and `{a,b}` alternation. */
+/**
+The only glob syntax the config uses: `**`, `*`, and `{a,b}` alternation.
+*/
 function globToRegExp(pattern: string): RegExp {
   const escape = (char: string): string => char.replaceAll(/[$()+.?[\\\]^{|}]/g, String.raw`\$&`);
   let out = '';
-  for (let index = 0; index < pattern.length; index += 1) {
+  let index = 0;
+  while (index < pattern.length) {
     const char = pattern[index] as string;
     if (char === '*' && pattern[index + 1] === '*') {
       out += '.*';
@@ -35,11 +38,14 @@ function globToRegExp(pattern: string): RegExp {
     } else {
       out += escape(char);
     }
+    index += 1;
   }
   return new RegExp(`^${out}$`);
 }
 
-/** Every config object in the array, flattened through any nested arrays. */
+/**
+Every config object in the array, flattened through any nested arrays.
+*/
 function entries(config: unknown): Array<Record<string, unknown>> {
   const out: Array<Record<string, unknown>> = [];
   for (const entry of config as unknown[]) {
@@ -65,7 +71,9 @@ function covers(entry: Record<string, unknown>, path: string): boolean {
   return files.some((pattern) => typeof pattern === 'string' && globToRegExp(pattern).test(path));
 }
 
-/** Every rule that applies to `path`, later entries winning. */
+/**
+Every rule that applies to `path`, later entries winning.
+*/
 function rulesOf(config: unknown, path: string): Record<string, unknown> {
   const rules: Record<string, unknown> = {};
   for (const entry of entries(config)) {
@@ -74,7 +82,9 @@ function rulesOf(config: unknown, path: string): Record<string, unknown> {
   return rules;
 }
 
-/** JSON of every rule block in the config. Rules are plain data; plugins are not. */
+/**
+JSON of every rule block in the config. Rules are plain data; plugins are not.
+*/
 function rulesJson(config: unknown): string {
   return entries(config)
     .map((entry) => JSON.stringify(entry['rules'] ?? {}))
@@ -104,9 +114,9 @@ describe('defineRepoLintConfig', () => {
     // read as undefined globals — and the vitest web config runs those suites under
     // jsdom, so the lint environment disagreed with the execution environment.
     const webEntries = entries(config).filter((entry) => covers(entry, 'apps/web/src/main.tsx'));
-    const browser = webEntries
-      .map((entry) => Object.keys((entry as { languageOptions?: { globals?: Record<string, unknown> } }).languageOptions?.globals ?? {}))
-      .flat();
+    const browser = webEntries.flatMap((entry) =>
+      Object.keys((entry as { languageOptions?: { globals?: Record<string, unknown> } }).languageOptions?.globals ?? {}),
+    );
     expect(browser).toContain('window');
     expect(browser).toContain('document');
     // And the node globals survive: a shared file touching both still lints.

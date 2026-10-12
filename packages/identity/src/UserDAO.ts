@@ -82,7 +82,9 @@ export class UserDAO extends BaseDAO {
     ]);
   }
 
-  /** @param idOrEmail The stable account key, or an anchor address. */
+  /**
+  @param idOrEmail The stable account key, or an anchor address.
+  */
   public async setUsername(idOrEmail: string, username: string, now: number): Promise<void> {
     await this.run('UPDATE users SET username = ?, updated_at = ? WHERE id = ? OR email = ?', [
       normalizeUsername(username),
@@ -103,12 +105,16 @@ export class UserDAO extends BaseDAO {
     return this.first<UserRow>('SELECT * FROM users WHERE email = ? LIMIT 1', [email.toLowerCase()]);
   }
 
-  /** The account behind a stable key. Null on a pre-identity database. */
+  /**
+  The account behind a stable key. Null on a pre-identity database.
+  */
   public async getById(id: string): Promise<UserRow | null> {
     return this.first<UserRow>('SELECT * FROM users WHERE id = ? LIMIT 1', [id]);
   }
 
-  /** The account currently signing in with this address. Identity-era only. */
+  /**
+  The account currently signing in with this address. Identity-era only.
+  */
   public async getByCurrentEmail(email: string): Promise<UserRow | null> {
     return this.first<UserRow>('SELECT * FROM users WHERE current_email = ? LIMIT 1', [email.toLowerCase()]);
   }
@@ -125,11 +131,14 @@ export class UserDAO extends BaseDAO {
     await this.run('UPDATE users SET current_email = ?, updated_at = ? WHERE id = ?', [email.toLowerCase(), now, id]);
   }
 
-  /** Lookup by handle. */
+  /**
+  Lookup by handle.
+  */
   public async getByUsernameCi(usernameCi: string): Promise<UserRow | null> {
     return this.first<UserRow>('SELECT * FROM users WHERE username = ? LIMIT 1', [usernameCi.toLowerCase()]);
   }
 }
 
 export { normalizeUsername };
-export type { UserRow };
+
+export { type UserRow } from './ResolvedAccount.ts';

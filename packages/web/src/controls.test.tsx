@@ -11,17 +11,21 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** A clipboard double that resolves, so the success path is reachable. */
+/**
+A clipboard double that resolves, so the success path is reachable.
+*/
 function grantingClipboard(): void {
-  Object.defineProperty(globalThis.navigator, 'clipboard', {
+  Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
     value: { writeText: () => Promise.resolve() },
   });
 }
 
-/** A clipboard that rejects, as a denied permission does. */
+/**
+A clipboard that rejects, as a denied permission does.
+*/
 function denyingClipboard(): void {
-  Object.defineProperty(globalThis.navigator, 'clipboard', {
+  Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
     value: { writeText: () => Promise.reject(new Error('denied')) },
   });
@@ -37,17 +41,17 @@ describe('RefreshButton', () => {
 
   it('renders the caller label, not an English default', () => {
     // The four copies hard-coded `t('common.refresh', 'Refresh')`.
-    render(<RefreshButton onRefresh={() => undefined} label="Neu laden" />);
+    render(<RefreshButton onRefresh={() => {}} label="Neu laden" />);
     expect(screen.getByRole('button')).toHaveTextContent('Neu laden');
   });
 
   it('blocks activation while the caller work is in flight', () => {
-    render(<RefreshButton onRefresh={() => undefined} label="Refresh" loading />);
+    render(<RefreshButton onRefresh={() => {}} label="Refresh" loading />);
     expect(screen.getByRole('button')).toBeDisabled();
   });
 
   it('stays enabled when not loading', () => {
-    render(<RefreshButton onRefresh={() => undefined} label="Refresh" />);
+    render(<RefreshButton onRefresh={() => {}} label="Refresh" />);
     expect(screen.getByRole('button')).toBeEnabled();
   });
 });
@@ -73,7 +77,7 @@ describe('ReadOnlyField', () => {
     grantingClipboard();
     render(<ReadOnlyField label="Volume" value="prod" showCopy copyLabel="Copy" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
-    await waitFor(() => expect(screen.getByTitle('Copy').querySelector('.text-\\[var\\(--color-success-text\\)\\]')).toBeDefined());
+    await waitFor(() => expect(screen.getByTitle('Copy').querySelector(String.raw`.text-\[var\(--color-success-text\)\]`)).toBeDefined());
   });
 
   it('never confirms a copy that was denied', async () => {
@@ -83,12 +87,12 @@ describe('ReadOnlyField', () => {
     render(<ReadOnlyField label="Volume" value="prod" showCopy copyLabel="Copy" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
 
-    await waitFor(() => expect(globalThis.navigator.clipboard.writeText).toBeDefined());
-    expect(screen.getByTitle('Copy').querySelector('.text-\\[var\\(--color-success-text\\)\\]')).toBeNull();
+    await waitFor(() => expect(navigator.clipboard.writeText).toBeDefined());
+    expect(screen.getByTitle('Copy').querySelector(String.raw`.text-\[var\(--color-success-text\)\]`)).toBeNull();
   });
 
   it('does not throw on a deployment with no clipboard', () => {
-    Object.defineProperty(globalThis.navigator, 'clipboard', { configurable: true, value: undefined });
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
     render(<ReadOnlyField label="Volume" value="prod" showCopy copyLabel="Copy" />);
     expect(() => fireEvent.click(screen.getByRole('button', { name: 'Copy' }))).not.toThrow();
   });
@@ -106,7 +110,7 @@ describe('TypeToConfirmModal', () => {
   };
 
   it('keeps confirm disarmed until the name is typed exactly', () => {
-    render(<TypeToConfirmModal {...props} onConfirm={() => undefined} onCancel={() => undefined} />);
+    render(<TypeToConfirmModal {...props} onConfirm={() => {}} onCancel={() => {}} />);
     expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled();
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'prod' } });
@@ -114,20 +118,20 @@ describe('TypeToConfirmModal', () => {
   });
 
   it('trims the input, since that is invisible to the operator', () => {
-    render(<TypeToConfirmModal {...props} onConfirm={() => undefined} onCancel={() => undefined} />);
+    render(<TypeToConfirmModal {...props} onConfirm={() => {}} onCancel={() => {}} />);
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '  prod  ' } });
     expect(screen.getByRole('button', { name: 'Delete' })).toBeEnabled();
   });
 
   it('does not fold case, because a name differing in case may be a different resource', () => {
-    render(<TypeToConfirmModal {...props} onConfirm={() => undefined} onCancel={() => undefined} />);
+    render(<TypeToConfirmModal {...props} onConfirm={() => {}} onCancel={() => {}} />);
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'PROD' } });
     expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled();
   });
 
   it('confirms once armed', () => {
     const onConfirm = vi.fn();
-    render(<TypeToConfirmModal {...props} onConfirm={onConfirm} onCancel={() => undefined} />);
+    render(<TypeToConfirmModal {...props} onConfirm={onConfirm} onCancel={() => {}} />);
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'prod' } });
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
@@ -145,27 +149,27 @@ describe('TypeToConfirmModal', () => {
   it('does not name its close button the same as its cancel button', () => {
     // The regression that shipped when the corner close button borrowed the
     // cancel label: two buttons announced as "Cancel".
-    render(<TypeToConfirmModal {...props} onConfirm={() => undefined} onCancel={() => undefined} />);
+    render(<TypeToConfirmModal {...props} onConfirm={() => {}} onCancel={() => {}} />);
     expect(screen.getAllByRole('button', { name: 'Cancel' })).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Close' })).toBeDefined();
   });
 
   it('keeps a busy confirm from firing twice', () => {
     const onConfirm = vi.fn();
-    render(<TypeToConfirmModal {...props} onConfirm={onConfirm} onCancel={() => undefined} loading />);
+    render(<TypeToConfirmModal {...props} onConfirm={onConfirm} onCancel={() => {}} loading />);
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'prod' } });
     expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled();
   });
 
   it('copies the expected name', async () => {
     grantingClipboard();
-    render(<TypeToConfirmModal {...props} onConfirm={() => undefined} onCancel={() => undefined} />);
+    render(<TypeToConfirmModal {...props} onConfirm={() => {}} onCancel={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy name' }));
     await waitFor(() => expect(screen.getByTitle('Copy name')).toBeDefined());
   });
 
   it('is announced as a dialog named by its title', () => {
-    render(<TypeToConfirmModal {...props} onConfirm={() => undefined} onCancel={() => undefined} />);
+    render(<TypeToConfirmModal {...props} onConfirm={() => {}} onCancel={() => {}} />);
     expect(screen.getByRole('dialog', { name: 'Delete volume' })).toBeDefined();
   });
 });

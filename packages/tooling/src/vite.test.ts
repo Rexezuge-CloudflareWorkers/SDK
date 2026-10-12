@@ -1,13 +1,13 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { defineWebViteConfig, spaShellEmbedPlugin } from './vite.ts';
 
 const created: string[] = [];
 
 function tempRoot(): string {
-  const root = mkdtempSync(join(tmpdir(), 'vite-config-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'vite-config-'));
   created.push(root);
   return root;
 }
@@ -18,11 +18,22 @@ afterAll(() => {
 
 const REAL_HTML = `<!doctype html><html><head><meta charset="utf-8" /><title>Fixture</title><script type="module" src="/assets/index-abc123.js"></script></head><body><div id="root"></div><!-- padding so the shell is a real document --></body></html>`;
 
-/** A build output: `dist/index.html` plus the bundle it references. */
+/**
+Names of the object-form plugins, skipping the falsy entries a config may hold.
+*/
+function pluginNames(plugins: readonly unknown[] | undefined): string[] {
+  return (plugins ?? []).flatMap((plugin) =>
+    typeof plugin === 'object' && plugin !== null && 'name' in plugin ? [String(plugin.name)] : [],
+  );
+}
+
+/**
+A build output: `dist/index.html` plus the bundle it references.
+*/
 function writeBuild(root: string): void {
-  mkdirSync(join(root, 'dist', 'assets'), { recursive: true });
-  writeFileSync(join(root, 'dist', 'index.html'), REAL_HTML, 'utf8');
-  writeFileSync(join(root, 'dist', 'assets', 'index-abc123.js'), 'console.log(1)', 'utf8');
+  mkdirSync(path.join(root, 'dist', 'assets'), { recursive: true });
+  writeFileSync(path.join(root, 'dist', 'index.html'), REAL_HTML, 'utf8');
+  writeFileSync(path.join(root, 'dist', 'assets', 'index-abc123.js'), 'console.log(1)', 'utf8');
 }
 
 describe('defineWebViteConfig', () => {
@@ -40,8 +51,8 @@ describe('defineWebViteConfig', () => {
   it('registers the spa-shell plugin only when a target is given', () => {
     const withShell = defineWebViteConfig({ plugins: [], spaShell: { path: 'apps/api/src/generated/spa-shell.ts' } });
     const without = defineWebViteConfig({ plugins: [] });
-    expect(withShell.plugins?.map((plugin) => plugin.name)).toContain('spa-shell-embed');
-    expect(without.plugins ?? []).toStrictEqual([]);
+    expect(pluginNames(withShell.plugins)).toContain('spa-shell-embed');
+    expect(pluginNames(without.plugins)).toStrictEqual([]);
   });
 });
 
@@ -53,7 +64,7 @@ describe('spaShellEmbedPlugin', () => {
     const plugin = spaShellEmbedPlugin({ path: 'apps/api/src/generated/spa-shell.ts', root });
     await plugin.closeBundle?.();
 
-    const written = readFileSync(join(root, 'apps/api/src/generated/spa-shell.ts'), 'utf8');
+    const written = readFileSync(path.join(root, 'apps/api/src/generated/spa-shell.ts'), 'utf8');
     expect(written).toContain('export const SPA_HTML: string = ');
     expect(written).toContain('DO NOT EDIT');
     // A verbatim copy: verify-spa-shell compares the two byte for byte.
@@ -65,19 +76,19 @@ describe('spaShellEmbedPlugin', () => {
     const plugin = spaShellEmbedPlugin({ path: 'apps/api/src/generated/spa-shell.ts', root });
     // closeBundle runs on every build, including library builds with no HTML.
     expect(() => plugin.closeBundle?.()).not.toThrow();
-    expect(existsSync(join(root, 'apps/api/src/generated/spa-shell.ts'))).toBe(false);
+    expect(existsSync(path.join(root, 'apps/api/src/generated/spa-shell.ts'))).toBe(false);
   });
 
   it('resolves against the build directory, never against this module', async () => {
     const root = tempRoot();
     writeBuild(root);
-    mkdirSync(dirname(join(root, 'apps/api/src/generated')), { recursive: true });
+    mkdirSync(path.dirname(path.join(root, 'apps/api/src/generated')), { recursive: true });
 
     const plugin = spaShellEmbedPlugin({ path: 'apps/api/src/generated/spa-shell.ts', root });
     await plugin.closeBundle?.();
 
-    expect(existsSync(join(root, 'apps/api/src/generated/spa-shell.ts'))).toBe(true);
+    expect(existsSync(path.join(root, 'apps/api/src/generated/spa-shell.ts'))).toBe(true);
     // The kit's own directory must not gain a generated file from a consumer's build.
-    expect(existsSync(join(process.cwd(), 'apps/api/src/generated/spa-shell.ts'))).toBe(false);
+    expect(existsSync(path.join(process.cwd(), 'apps/api/src/generated/spa-shell.ts'))).toBe(false);
   });
 });

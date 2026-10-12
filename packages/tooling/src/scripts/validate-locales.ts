@@ -37,25 +37,33 @@
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { join } from 'node:path';
+import path from 'node:path';
 
-/** The bundle layouts the checker understands. */
+/**
+The bundle layouts the checker understands.
+*/
 type LocaleShape = 'auto' | 'dir' | 'file' | 'module';
 
-/** One defect, kept as a locale plus a message so a caller can group them. */
+/**
+One defect, kept as a locale plus a message so a caller can group them.
+*/
 interface LocaleProblem {
   locale: string;
   problem: string;
 }
 
-/** The outcome of one run. */
+/**
+The outcome of one run.
+*/
 interface LocaleReport {
   locales: string[];
   keys: number;
   problems: LocaleProblem[];
 }
 
-/** Every dotted key path in a bundle, depth first. */
+/**
+Every dotted key path in a bundle, depth first.
+*/
 function flatten(value: unknown, prefix = ''): string[] {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     return prefix ? [prefix] : [];
@@ -73,12 +81,12 @@ function flatten(value: unknown, prefix = ''): string[] {
  * the module is the point — a validator that imported the bundle would typecheck it
  * against the kit's own types, and therefore agree with whatever it was given.
  */
-function readBundle(path: string): unknown {
-  const source = readFileSync(path, 'utf8');
+function readBundle(file: string): unknown {
+  const source = readFileSync(file, 'utf8');
   // Decided by the file's extension, not by the caller's `shape`: under `auto` a
   // `.ts` bundle is found, and reading it as JSON would report a parse error for a
   // file that is perfectly well-formed.
-  return path.endsWith('.ts') ? parseObjectLiteral(source, path) : (JSON.parse(source) as unknown);
+  return file.endsWith('.ts') ? parseObjectLiteral(source, file) : (JSON.parse(source) as unknown);
 }
 
 /**
@@ -106,13 +114,13 @@ function objectLiteralStart(source: string): number {
   let inLineComment = false;
   let inBlockComment = false;
   for (let index = 0; index < source.length; index += 1) {
-    const char = source[index] as string;
-    const next = source[index + 1];
+    const char = source[index];
 
     if (inLineComment) {
       if (char === '\n') inLineComment = false;
       continue;
     }
+    const next = source[index + 1];
     if (inBlockComment) {
       if (char === '*' && next === '/') {
         inBlockComment = false;
@@ -151,10 +159,10 @@ function objectLiteralStart(source: string): number {
   return -1;
 }
 
-function parseObjectLiteral(source: string, path: string): unknown {
+function parseObjectLiteral(source: string, file: string): unknown {
   const start = objectLiteralStart(source);
   if (start === -1) {
-    throw new Error(`${path} has no object literal`);
+    throw new Error(`${file} has no object literal`);
   }
 
   let depth = 0;
@@ -163,13 +171,13 @@ function parseObjectLiteral(source: string, path: string): unknown {
   let inLineComment = false;
   let inBlockComment = false;
   for (let index = start; index < source.length; index += 1) {
-    const char = source[index] as string;
-    const next = source[index + 1];
+    const char = source[index];
 
     if (inLineComment) {
       if (char === '\n') inLineComment = false;
       continue;
     }
+    const next = source[index + 1];
     if (inBlockComment) {
       if (char === '*' && next === '/') {
         inBlockComment = false;
@@ -209,7 +217,7 @@ function parseObjectLiteral(source: string, path: string): unknown {
     }
   }
   if (end === -1) {
-    throw new Error(`${path} has an unterminated object literal`);
+    throw new Error(`${file} has an unterminated object literal`);
   }
 
   const literal = source.slice(start, end + 1);
@@ -219,17 +227,19 @@ function parseObjectLiteral(source: string, path: string): unknown {
   // commas are dropped. A translator file that needs more than that is not a
   // translator file.
   const doubleQuoted = literal.replaceAll(/'((?:[^'\\]|\\.)*)'/g, (_match, body: string) => JSON.stringify(unescapeLiteral(body)));
-  const quotedKeys = doubleQuoted.replaceAll(/([{,]\s*)([A-Za-z_$][\w$]*)(\s*:)/g, '$1"$2"$3');
+  const quotedKeys = doubleQuoted.replaceAll(/([{,]\s*)([A-Z_$][\w$]*)(\s*:)/gi, '$1"$2"$3');
   const withoutTrailingCommas = quotedKeys.replaceAll(/,(\s*[}\]])/g, '$1');
 
   try {
     return JSON.parse(withoutTrailingCommas) as unknown;
   } catch (error: unknown) {
-    throw new Error(`${path} object literal could not be parsed: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(`${file} object literal could not be parsed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
-/** The escapes a translator file actually uses; anything else is passed through. */
+/**
+The escapes a translator file actually uses; anything else is passed through.
+*/
 function unescapeLiteral(body: string): string {
   return body
     .replaceAll(String.raw`\'`, "'")
@@ -239,15 +249,21 @@ function unescapeLiteral(body: string): string {
     .replaceAll(String.raw`\\`, '\\');
 }
 
-/** The extensions a flat layout uses, keyed by shape. */
+/**
+The extensions a flat layout uses, keyed by shape.
+*/
 const FLAT_EXTENSION: Record<'file' | 'module', string> = { file: 'json', module: 'ts' };
 
-/** The layouts `shape` covers. `auto` covers all three, in the order they are tried. */
+/**
+The layouts `shape` covers. `auto` covers all three, in the order they are tried.
+*/
 function layouts(shape: LocaleShape): Array<'dir' | 'file' | 'module'> {
   return shape === 'auto' ? ['dir', 'file', 'module'] : [shape];
 }
 
-/** The tags on disk, in whichever layouts `shape` covers. */
+/**
+The tags on disk, in whichever layouts `shape` covers.
+*/
 function tagsOnDisk(localesDir: string, shape: LocaleShape): string[] {
   const tags: string[] = [];
   if (layouts(shape).includes('dir')) {
@@ -280,11 +296,11 @@ function tagsOnDisk(localesDir: string, shape: LocaleShape): string[] {
 function bundleFor(localesDir: string, locale: string, shape: LocaleShape): string | undefined {
   const candidates: string[] = [];
   if (layouts(shape).includes('dir')) {
-    candidates.push(join(localesDir, locale, 'translation.json'));
+    candidates.push(path.join(localesDir, locale, 'translation.json'));
   }
   for (const layout of layouts(shape)) {
     if (layout === 'dir') continue;
-    candidates.push(join(localesDir, `${locale}.${FLAT_EXTENSION[layout]}`));
+    candidates.push(path.join(localesDir, `${locale}.${FLAT_EXTENSION[layout]}`));
   }
   return candidates.find((candidate) => existsSync(candidate));
 }
@@ -324,7 +340,7 @@ function validateLocales(localesDir: string, baseLocale = 'en', shape: LocaleSha
     return { locales: [baseLocale], keys: 0, problems };
   }
 
-  const locales = [...new Set([...tagsOnDisk(localesDir, shape), baseLocale])].sort();
+  const locales = [...new Set([...tagsOnDisk(localesDir, shape), baseLocale])].sort((a, b) => a.localeCompare(b));
   for (const locale of locales) {
     const file = bundleFor(localesDir, locale, shape);
     if (file === undefined) {
@@ -349,7 +365,9 @@ function validateLocales(localesDir: string, baseLocale = 'en', shape: LocaleSha
   return { locales, keys: baseKeys.size, problems };
 }
 
-/** CLI entry: `validateLocalesCli(['[locales-dir]?', '--shape=auto|dir|file|module'?, '--base=<tag>'?])`. */
+/**
+CLI entry: `validateLocalesCli(['[locales-dir]?', '--shape=auto|dir|file|module'?, '--base=<tag>'?])`.
+*/
 function validateLocalesCli(argv: readonly string[] = process.argv.slice(2)): number {
   const dir = argv.find((arg) => !arg.startsWith('--')) ?? 'apps/web/src/locales';
   const shape = (argv.find((arg) => arg.startsWith('--shape='))?.slice('--shape='.length) ?? 'auto') as LocaleShape;

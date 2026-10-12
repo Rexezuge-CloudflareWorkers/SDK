@@ -6,7 +6,9 @@
  * Actions.
  */
 
-/** The environment the `check-secrets` job is given, as repository secrets. */
+/**
+The environment the `check-secrets` job is given, as repository secrets.
+*/
 export interface BackupSecretEnvironment {
   CLOUDFLARE_API_TOKEN?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;
@@ -19,23 +21,39 @@ export interface BackupSecretEnvironment {
   WEBDAV_PASSWORD?: string;
 }
 
-/** What is configured, and why the run cannot proceed when it is not. */
+/**
+What is configured, and why the run cannot proceed when it is not.
+*/
 export interface DestinationConfig {
-  /** Cloudflare credentials present, so the export job can run. */
+  /**
+  Cloudflare credentials present, so the export job can run.
+  */
   cloudflare: boolean;
-  /** An encryption passphrase is available. */
+  /**
+  An encryption passphrase is available.
+  */
   encryption: boolean;
-  /** At least one upload destination is configured. */
+  /**
+  At least one upload destination is configured.
+  */
   anyDestination: boolean;
-  /** The S3 destination is fully configured. */
+  /**
+  The S3 destination is fully configured.
+  */
   s3: boolean;
-  /** The WebDAV destination is fully configured. */
+  /**
+  The WebDAV destination is fully configured.
+  */
   webdav: boolean;
-  /** Human-readable reasons the run cannot proceed, empty when it can. */
+  /**
+  Human-readable reasons the run cannot proceed, empty when it can.
+  */
   errors: string[];
 }
 
-/** A secret counts as set only when it has non-whitespace content. */
+/**
+A secret counts as set only when it has non-whitespace content.
+*/
 function isSet(value: string | undefined): boolean {
   return typeof value === 'string' && value.trim().length > 0;
 }

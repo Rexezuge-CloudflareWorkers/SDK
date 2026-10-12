@@ -24,7 +24,9 @@ import type { BackendStrings } from './BackendStrings.ts';
  */
 type Leaf = [path: string, value: unknown];
 
-/** Flatten a bundle to dotted leaf paths, so `common.unauthorized` is one key. */
+/**
+Flatten a bundle to dotted leaf paths, so `common.unauthorized` is one key.
+*/
 function flatten(node: Record<string, unknown>, prefix = ''): Leaf[] {
   const out: Leaf[] = [];
   for (const [key, value] of Object.entries(node)) {
@@ -38,13 +40,17 @@ function flatten(node: Record<string, unknown>, prefix = ''): Leaf[] {
   return out;
 }
 
-/** Placeholders a value interpolates, sorted — the parity unit of the script. */
+/**
+Placeholders a value interpolates, sorted — the parity unit of the script.
+*/
 function placeholdersOf(value: unknown): string[] {
   if (typeof value !== 'string') return [];
-  return [...new Set(value.match(/\{\w+\}/g) ?? [])].sort();
+  return [...new Set(value.match(/\{\w+\}/g))].sort();
 }
 
-/** Leaves of one bundle. `BackendStrings` is narrow, so walk it as a record. */
+/**
+Leaves of one bundle. `BackendStrings` is narrow, so walk it as a record.
+*/
 function leavesOf(bundle: BackendStrings): Leaf[] {
   return flatten(bundle as unknown as Record<string, unknown>);
 }
@@ -171,7 +177,7 @@ describe('getLocalizedStrings', () => {
   });
 
   it('falls back to en for empty, missing, and non-string locales', () => {
-    for (const locale of ['', '   ', null, undefined]) {
+    for (const locale of ['', ' '.repeat(3), null, undefined]) {
       expect(getLocalizedStrings(locale)).toBe(LOCALE_STRINGS.en);
     }
   });
@@ -227,7 +233,7 @@ describe('canonicalizeLanguageTag', () => {
   });
 
   it('treats a tag of only separators as en', () => {
-    for (const tag of ['', '   ', '-', '--', '_', '-_']) {
+    for (const tag of ['', ' '.repeat(3), '-', '--', '_', '-_']) {
       expect(canonicalizeLanguageTag(tag)).toBe('en');
     }
   });

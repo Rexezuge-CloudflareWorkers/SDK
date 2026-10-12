@@ -30,22 +30,28 @@
  * builds the imperative one. Converging them would have meant picking a loser on a
  * decision that is not the kit's to make.
  */
-import { BadRequestError, ServiceError } from '@rexezuge/errors';
+import { BadRequestError } from '@rexezuge/errors';
 import { toErrorResponse } from './ErrorMapper.ts';
 
-/** The slice of a Hono context a route handler reads. */
+/**
+The slice of a Hono context a route handler reads.
+*/
 interface RouteContext {
   req: { json(): Promise<unknown>; raw: Request };
   env: unknown;
   json(body: unknown, status?: number, headers?: Record<string, string>): Response;
-  /** Optional request scope, when the repo uses DI. */
+  /**
+  Optional request scope, when the repo uses DI.
+  */
   get?(key: string): unknown;
 }
 
 type RouteHandler = (c: RouteContext) => Promise<Response>;
 
 interface RouteHandlerOptions {
-  /** A repo-specific mapper. Defaults to the canonical `{Exception:{…}}` dialect. */
+  /**
+  A repo-specific mapper. Defaults to the canonical `{Exception:{…}}` dialect.
+  */
   onError?(error: unknown, c: RouteContext): Response;
 }
 
@@ -77,7 +83,9 @@ const BaseRoute = {
     }
   },
 
-  /** A required string field, or the error that says which field was missing. */
+  /**
+  A required string field, or the error that says which field was missing.
+  */
   requireString(value: unknown, field: string): string {
     if (typeof value !== 'string' || value.trim() === '') {
       throw new BadRequestError(`\`${field}\` is required and must be a non-empty string.`);
@@ -85,7 +93,9 @@ const BaseRoute = {
     return value;
   },
 
-  /** Map a caught value to a response, using the repo's dialect if it declared one. */
+  /**
+  Map a caught value to a response, using the repo's dialect if it declared one.
+  */
   toErrorResponse(error: unknown, c: RouteContext, options?: RouteHandlerOptions): Response {
     return (options?.onError ?? defaultOnError)(error, c);
   },

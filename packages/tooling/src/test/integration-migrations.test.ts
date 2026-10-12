@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
   createMigrationHelper,
@@ -15,12 +15,12 @@ import {
 const created: string[] = [];
 
 function tempTree(files: Record<string, string>): string {
-  const root = mkdtempSync(join(tmpdir(), 'migrations-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'migrations-'));
   created.push(root);
   for (const [name, content] of Object.entries(files)) {
-    const path = join(root, name);
-    mkdirSync(join(path, '..'), { recursive: true });
-    writeFileSync(path, content, 'utf8');
+    const file = path.join(root, name);
+    mkdirSync(path.join(file, '..'), { recursive: true });
+    writeFileSync(file, content, 'utf8');
   }
   return root;
 }
@@ -144,7 +144,7 @@ describe('createMigrationHelper', () => {
     const dir = tempTree({ '0001_init.sql': 'CREATE TABLE a (id TEXT);' });
     const helper = createMigrationHelper({ migrationsDir: dir });
     const db: D1DatabaseLike = {
-      prepare: () => ({ run: async () => undefined }),
+      prepare: () => ({ run: async () => {} }),
       batch: async () => {
         throw new Error('no such table: a');
       },

@@ -38,30 +38,46 @@ import type { LanguageTag } from '@rexezuge/shared';
  * too, so a `LanguageSelector` does not need a second import to render the list.
  */
 
-/** The tags offered when a caller does not say. English-only is the safe default. */
+/**
+The tags offered when a caller does not say. English-only is the safe default.
+*/
 const DEFAULT_SUPPORTED_LANGUAGES: readonly LanguageTag[] = ['en'];
 
-/** The tag used when nothing supported can be resolved. */
+/**
+The tag used when nothing supported can be resolved.
+*/
 const DEFAULT_FALLBACK_LANGUAGE: LanguageTag = 'en';
 
-/** The `localStorage` key used when a caller does not say. */
+/**
+The `localStorage` key used when a caller does not say.
+*/
 const DEFAULT_LANGUAGE_STORAGE_KEY = 'language';
 
-/** One entry of the supported list, pre-canonicalized for comparison. */
+/**
+One entry of the supported list, pre-canonicalized for comparison.
+*/
 interface SupportedLanguage {
-  /** The tag as the caller spells it — what the hook returns. */
+  /**
+  The tag as the caller spells it — what the hook returns.
+  */
   tag: LanguageTag;
-  /** Its canonical form, for matching. */
+  /**
+  Its canonical form, for matching.
+  */
   key: string;
-  /** Its primary subtag (`zh` for `zh-CN`). */
+  /**
+  Its primary subtag (`zh` for `zh-CN`).
+  */
   primary: string;
 }
 
-/** The supported list in canonical form, computed once per render of the hook. */
+/**
+The supported list in canonical form, computed once per render of the hook.
+*/
 function describeSupported(supported: readonly LanguageTag[]): SupportedLanguage[] {
   return supported.map((tag) => {
     const key = canonicalizeLanguageTag(tag);
-    return { tag, key, primary: key.split('-')[0] ?? key };
+    return { tag, key, primary: key.split('-', 1)[0] ?? key };
   });
 }
 
@@ -81,7 +97,7 @@ function resolveLanguageTag(value: string | null | undefined, supported: readonl
   // above has to happen first — otherwise an empty stored value would silently
   // resolve to `en` instead of the caller's fallback.
   const key = canonicalizeLanguageTag(value);
-  const primary = key.split('-')[0] ?? key;
+  const primary = key.split('-', 1)[0] ?? key;
   let prefixMatch: LanguageTag | null = null;
   for (const entry of describeSupported(supported)) {
     if (entry.key === key) {
@@ -127,16 +143,24 @@ interface UseSpaLanguageOptions {
    * `null`/`undefined` while the profile is not known. Adopted when it changes.
    */
   preferred?: string | null;
-  /** The tags the app ships bundles for. Memoize it: it is a dependency. */
+  /**
+  The tags the app ships bundles for. Memoize it: it is a dependency.
+  */
   supported?: readonly LanguageTag[];
-  /** The `localStorage` key the choice is persisted under. */
+  /**
+  The `localStorage` key the choice is persisted under.
+  */
   storageKey?: string;
-  /** The tag used when nothing supported resolves. Defaults to `en`. */
+  /**
+  The tag used when nothing supported resolves. Defaults to `en`.
+  */
   fallbackLanguage?: LanguageTag;
 }
 
 interface UseSpaLanguageResult {
-  /** The tag currently in effect — a member of `supported`. */
+  /**
+  The tag currently in effect — a member of `supported`.
+  */
   language: LanguageTag;
   /**
    * Switches the language: resolves the tag, persists it, and syncs
@@ -144,7 +168,9 @@ interface UseSpaLanguageResult {
    * being ignored, so a mistake is visible instead of silent.
    */
   setLanguage: (tag: string) => void;
-  /** The tags offered, as resolved — render this list in a selector. */
+  /**
+  The tags offered, as resolved — render this list in a selector.
+  */
   supported: readonly LanguageTag[];
 }
 
@@ -161,7 +187,7 @@ function useSpaLanguage({
 
   const [language, setLanguageState] = useState<LanguageTag>(() =>
     // Precedence: backend > stored > navigator > fallback. The backend value is
-    // undefined on a first paint and arrives later, which is what the effect
+    // undefined on a first paint and arrives later, which is what the adoption
     // below is for.
     resolveLanguageTag(preferred ?? readStoredLanguage(storageKey) ?? readNavigatorLanguage(), supportedLanguages, fallbackLanguage),
   );
@@ -170,13 +196,20 @@ function useSpaLanguage({
   // authoritative source, so it overrides a value detection picked earlier —
   // which is also what makes a returning user land on the language they chose
   // on another device.
-  useEffect(() => {
-    if (preferred === undefined || preferred === null || preferred.trim() === '') {
-      return;
+  //
+  // Adjusted during render, not in an effect: the guarded `prevPreferred`
+  // comparison is React's documented derive-from-props pattern, and it adopts
+  // in the render the value arrives in rather than one render later.
+  const [prevPreferred, setPrevPreferred] = useState<string | null | undefined>(preferred);
+  if (preferred !== prevPreferred) {
+    setPrevPreferred(preferred);
+    if (preferred !== undefined && preferred !== null && preferred.trim() !== '') {
+      const next = resolveLanguageTag(preferred, supportedLanguages, fallbackLanguage);
+      if (next !== language) {
+        setLanguageState(next);
+      }
     }
-    const next = resolveLanguageTag(preferred, supportedLanguages, fallbackLanguage);
-    setLanguageState((current) => (current === next ? current : next));
-  }, [preferred, supportedLanguages, fallbackLanguage]);
+  }
 
   // `<html lang>` drives hyphenation, font choice and screen-reader
   // pronunciation, so it has to follow the tag even when the change came from
@@ -204,12 +237,7 @@ function useSpaLanguage({
   return { language, setLanguage, supported: supportedLanguages };
 }
 
-export {
-  canonicalizeLanguageTag,
-  DEFAULT_FALLBACK_LANGUAGE,
-  DEFAULT_LANGUAGE_STORAGE_KEY,
-  DEFAULT_SUPPORTED_LANGUAGES,
-  resolveLanguageTag,
-  useSpaLanguage,
-};
-export type { LanguageTag, UseSpaLanguageOptions, UseSpaLanguageResult };
+export { DEFAULT_FALLBACK_LANGUAGE, DEFAULT_LANGUAGE_STORAGE_KEY, DEFAULT_SUPPORTED_LANGUAGES, resolveLanguageTag, useSpaLanguage };
+export type { UseSpaLanguageOptions, UseSpaLanguageResult };
+
+export { canonicalizeLanguageTag, type LanguageTag } from '@rexezuge/shared';

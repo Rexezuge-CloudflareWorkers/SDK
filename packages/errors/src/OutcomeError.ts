@@ -22,7 +22,7 @@ class OutcomeError extends ServiceError {
  */
 class RetryableError extends OutcomeError {
   constructor(message: string, status?: number) {
-    super(message, { retryable: true, ...(status === undefined ? {} : { expose: status < 500 }) });
+    super(message, { retryable: true, ...(status !== undefined && { expose: status < 500 }) });
     if (status !== undefined) {
       this.status = status;
     }
@@ -36,7 +36,7 @@ class RetryableError extends OutcomeError {
  */
 class NonRetryableError extends OutcomeError {
   constructor(message: string, status?: number) {
-    super(message, { retryable: false, ...(status === undefined ? {} : { expose: status < 500 }) });
+    super(message, { retryable: false, ...(status !== undefined && { expose: status < 500 }) });
     if (status !== undefined) {
       this.status = status;
     }

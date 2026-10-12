@@ -15,14 +15,20 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { dirname, join, resolve } from 'node:path';
+import path from 'node:path';
 
 interface SpaShellPaths {
-  /** Repo root. */
+  /**
+  Repo root.
+  */
   root: string;
-  /** Generated TS module path, relative to root. */
+  /**
+  Generated TS module path, relative to root.
+  */
   shellPath?: string;
-  /** Built SPA index.html path, relative to root. */
+  /**
+  Built SPA index.html path, relative to root.
+  */
   distIndexPath?: string;
 }
 
@@ -35,14 +41,16 @@ const DEFAULT_DIST_INDEX = 'apps/web/dist/index.html';
 const STUB_CONTENT =
   "// Auto-generated stub - real content is produced by the build step via the Vite plugin.\nexport const SPA_HTML: string = '';\n";
 
-/** A built shell is a full Vite index.html; any small threshold rejects the stub. */
+/**
+A built shell is a full Vite index.html; any small threshold rejects the stub.
+*/
 const MIN_HTML_CHARS = 200;
 
 function resolvePaths(options: SpaShellPaths): { shell: string; distIndex: string; distAssets: string } {
-  const root = resolve(options.root);
-  const shell = join(root, options.shellPath ?? DEFAULT_SHELL);
-  const distIndex = join(root, options.distIndexPath ?? DEFAULT_DIST_INDEX);
-  return { shell, distIndex, distAssets: join(dirname(distIndex), 'assets') };
+  const root = path.resolve(options.root);
+  const shell = path.join(root, options.shellPath ?? DEFAULT_SHELL);
+  const distIndex = path.join(root, options.distIndexPath ?? DEFAULT_DIST_INDEX);
+  return { shell, distIndex, distAssets: path.join(path.dirname(distIndex), 'assets') };
 }
 
 /**
@@ -53,7 +61,7 @@ function resolvePaths(options: SpaShellPaths): { shell: string; distIndex: strin
  */
 function ensureSpaShellStub(options: SpaShellPaths): { created: boolean; path: string } {
   const { shell } = resolvePaths(options);
-  mkdirSync(dirname(shell), { recursive: true });
+  mkdirSync(path.dirname(shell), { recursive: true });
   try {
     writeFileSync(shell, STUB_CONTENT, { encoding: 'utf8', flag: 'wx' });
   } catch (error) {
@@ -65,7 +73,9 @@ function ensureSpaShellStub(options: SpaShellPaths): { created: boolean; path: s
   return { created: true, path: shell };
 }
 
-/** The `SPA_HTML` string literal, decoded from the generated TS module. */
+/**
+The `SPA_HTML` string literal, decoded from the generated TS module.
+*/
 function readEmbeddedHtml(shell: string, problems: string[]): string | null {
   if (!existsSync(shell)) {
     problems.push(`${shell} is missing — run the build (only apps/web has a build step).`);
@@ -120,12 +130,12 @@ function verifySpaShell(options: SpaShellPaths): VerifyResult {
   if (html === null) {
     return { problems };
   }
-  const referenced = [...html.matchAll(/(?:src|href)="\/assets\/([^"]+)"/g)].map((match) => match[1] as string);
+  const referenced = [...html.matchAll(/(?:src|href)="\/assets\/([^"]+)"/g)].map((match) => match[1]);
   if (referenced.length === 0) {
     problems.push('The embedded shell references no /assets/ bundles — it is not a real build output.');
   }
   for (const asset of new Set(referenced)) {
-    if (!existsSync(join(distAssets, asset))) {
+    if (!existsSync(path.join(distAssets, asset))) {
       problems.push(`The embedded shell references /assets/${asset}, which is not in ${distAssets} — run the build.`);
     }
   }
@@ -139,7 +149,9 @@ function verifySpaShell(options: SpaShellPaths): VerifyResult {
 
 const CLI_SHAPES = 'verify|ensure';
 
-/** CLI entry: `spaShellCli(['verify'|'ensure', 'repo-root?'])`. */
+/**
+CLI entry: `spaShellCli(['verify'|'ensure', 'repo-root?'])`.
+*/
 function spaShellCli(argv: readonly string[] = process.argv.slice(2)): number {
   const mode = argv[0] ?? 'verify';
   if (!CLI_SHAPES.split('|').includes(mode)) {

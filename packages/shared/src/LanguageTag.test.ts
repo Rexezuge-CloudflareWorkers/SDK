@@ -13,7 +13,7 @@ describe('canonicalizeLanguageTag', () => {
   });
 
   it('defaults to en for empty input', () => {
-    expect(canonicalizeLanguageTag('   ')).toBe('en');
+    expect(canonicalizeLanguageTag(' '.repeat(3))).toBe('en');
     expect(canonicalizeLanguageTag('--')).toBe('en');
   });
 

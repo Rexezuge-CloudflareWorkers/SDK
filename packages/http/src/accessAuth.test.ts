@@ -4,7 +4,9 @@ import type { AccessBinding, AccessJwtVerifier } from './accessAuth.ts';
 
 const request = (headers: Record<string, string> = {}): Request => new Request('https://example.com/user/me', { headers });
 
-/** A verifier that stands in for `jose` so the suite needs no key or network. */
+/**
+A verifier that stands in for `jose` so the suite needs no key or network.
+*/
 function verifierReturning(email: string): AccessJwtVerifier {
   return { verify: async () => email };
 }
@@ -84,7 +86,7 @@ describe('authenticateAccess', () => {
   });
 
   it('treats undefined — the platform "no identity" answer — as absent', async () => {
-    const binding: AccessBinding = { getIdentity: async () => undefined };
+    const binding: AccessBinding = { getIdentity: async () => {} };
     await expect(authenticateAccess(request(), binding, {})).rejects.toThrow(AccessAuthError);
   });
 

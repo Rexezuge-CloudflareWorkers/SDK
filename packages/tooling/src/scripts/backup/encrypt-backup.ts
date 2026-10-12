@@ -35,11 +35,13 @@
 import { encryptSecret } from '@rexezuge/d1';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { basename } from 'node:path';
+import path from 'node:path';
 import { fail, setOutput } from '../lib/github-actions.ts';
 import { backupFileName } from './naming.ts';
 
-/** The dump the export step leaves in the working directory. */
+/**
+The dump the export step leaves in the working directory.
+*/
 const SOURCE_FILE = 'backup.sql';
 
 /**
@@ -50,10 +52,6 @@ const SOURCE_FILE = 'backup.sql';
  */
 const XZ_ARGS = ['-T0', '-6'];
 
-function run(command: string, args: readonly string[]): void {
-  execFileSync(command, [...args], { stdio: ['ignore', 'inherit', 'inherit'] });
-}
-
 if (!process.env['BACKUP_ENCRYPTION_KEY']) {
   fail('BACKUP_ENCRYPTION_KEY is not set. Refusing to export an unencrypted database.');
 }
@@ -62,7 +60,7 @@ if (!existsSync(SOURCE_FILE)) {
   fail(`Expected ${SOURCE_FILE} from the export step, but it does not exist.`);
 }
 
-const key = process.env['BACKUP_ENCRYPTION_KEY'] as string;
+const key = process.env['BACKUP_ENCRYPTION_KEY'];
 const file = backupFileName(new Date());
 
 let plaintext: string;
@@ -86,6 +84,10 @@ if (plaintext === '') {
  */
 let compressed: Buffer;
 try {
+  // `xz` is resolved from PATH deliberately: the script runs wherever the
+  // operator compresses backups, and pinning an absolute path would break
+  // every platform but one.
+  // eslint-disable-next-line sonarjs/no-os-command-from-path
   compressed = execFileSync('xz', [...XZ_ARGS, '--keep', '--stdout', SOURCE_FILE], { maxBuffer: 512 * 1024 * 1024 });
 } catch (error: unknown) {
   fail(`xz failed on ${SOURCE_FILE}: ${error instanceof Error ? error.message : String(error)}`);
@@ -100,7 +102,7 @@ try {
   fail(`Could not encrypt the dump: ${error instanceof Error ? error.message : String(error)}`);
 }
 
-writeFileSync(file, `${JSON.stringify({ ...envelope, source: basename(SOURCE_FILE) }, null, 2)}\n`, 'utf8');
+writeFileSync(file, `${JSON.stringify({ ...envelope, source: path.basename(SOURCE_FILE) }, null, 2)}\n`, 'utf8');
 rmSync(SOURCE_FILE, { force: true });
 
 console.log(`Backup encrypted: ${file} (${compressed.byteLength} compressed bytes)`);

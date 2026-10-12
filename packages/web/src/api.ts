@@ -78,35 +78,51 @@ import {
  *   decides.
  */
 
-/** The `fetch` shape a client is built on: same-origin by default, no token in JavaScript. */
+/**
+The `fetch` shape a client is built on: same-origin by default, no token in JavaScript.
+*/
 type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
 
-/** A query-string value. `null`/`undefined`/`''` are omitted, as in every copy. */
+/**
+A query-string value. `null`/`undefined`/`''` are omitted, as in every copy.
+*/
 type QueryValue = string | number | boolean | null | undefined;
 
 type QueryParams = Record<string, QueryValue | readonly QueryValue[]>;
 
 interface ApiRequestInit {
   method?: string;
-  /** Serialized as JSON with a matching `Content-Type`. */
+  /**
+  Serialized as JSON with a matching `Content-Type`.
+  */
   body?: unknown;
   headers?: HeadersInit;
   signal?: AbortSignal | null;
 }
 
 interface CreateApiClientOptions {
-  /** Prepended to every path; `''` (the default) sends the path as given. */
+  /**
+  Prepended to every path; `''` (the default) sends the path as given.
+  */
   baseUrl?: string;
-  /** Headers merged into every request; a per-request header wins over these. */
+  /**
+  Headers merged into every request; a per-request header wins over these.
+  */
   headers?: HeadersInit;
-  /** Passed through to `fetch`; omitted leaves the browser default. */
+  /**
+  Passed through to `fetch`; omitted leaves the browser default.
+  */
   credentials?: RequestCredentials;
-  /** Truncation limit for a server-provided error message. Defaults to 500. */
+  /**
+  Truncation limit for a server-provided error message. Defaults to 500.
+  */
   maxErrorMessageLength?: number;
 }
 
 interface ApiClient {
-  /** One request. Throws a `ServiceError`; resolves to the parsed JSON body. */
+  /**
+  One request. Throws a `ServiceError`; resolves to the parsed JSON body.
+  */
   request<T>(path: string, init?: ApiRequestInit): Promise<T>;
   get<T>(path: string, params?: QueryParams): Promise<T>;
   post<T>(path: string, body?: unknown): Promise<T>;
@@ -115,7 +131,9 @@ interface ApiClient {
   delete<T>(path: string, body?: unknown): Promise<T>;
 }
 
-/** Default truncation for a server-provided message. */
+/**
+Default truncation for a server-provided message.
+*/
 const MAX_ERROR_MESSAGE_LENGTH = 500;
 
 /**
@@ -158,9 +176,13 @@ class HttpStatusError extends ServiceError {
 }
 
 interface DecodedErrorBody {
-  /** What the server said, or `null` when it said nothing usable. */
+  /**
+  What the server said, or `null` when it said nothing usable.
+  */
   message: string | null;
-  /** The server's machine-readable code, when it sent one. */
+  /**
+  The server's machine-readable code, when it sent one.
+  */
   type: string | null;
 }
 
@@ -172,7 +194,9 @@ function truncate(value: string, maxLength: number): string {
   return value.length > maxLength ? `${value.slice(0, maxLength)}…` : value;
 }
 
-/** Rejects control characters: that is what separates text from a binary or a document. */
+/**
+Rejects control characters: that is what separates text from a binary or a document.
+*/
 // eslint-disable-next-line no-control-regex -- rejecting control characters IS the test
 const CONTROL_CHARACTER = /[\u0000-\u001F\u007F]/;
 
@@ -356,8 +380,8 @@ function createApiClient(fetchFn: FetchFn, options: CreateApiClientOptions = {})
       // default message says more than anything this could invent.
     }
     const decoded = decodeErrorBody(text, response.status, maxErrorMessageLength);
-    const ErrorClass = HTTP_ERROR_CLASSES[response.status];
-    if (ErrorClass !== undefined) {
+    if (Object.hasOwn(HTTP_ERROR_CLASSES, response.status)) {
+      const ErrorClass = HTTP_ERROR_CLASSES[response.status];
       // A `null` message leaves the catalog's default in place, which is a
       // better sentence than anything the client could invent.
       return new ErrorClass(decoded.message ?? undefined);

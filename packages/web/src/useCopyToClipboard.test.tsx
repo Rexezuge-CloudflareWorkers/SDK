@@ -9,17 +9,21 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-/** Replace `navigator.clipboard` with a controllable double. */
+/**
+Replace `navigator.clipboard` with a controllable double.
+*/
 function withClipboard(writeText: (text: string) => Promise<void>): void {
-  Object.defineProperty(globalThis.navigator, 'clipboard', {
+  Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
     value: { writeText },
   });
 }
 
-/** Remove the clipboard entirely, as an insecure context has it. */
+/**
+Remove the clipboard entirely, as an insecure context has it.
+*/
 function withoutClipboard(): void {
-  Object.defineProperty(globalThis.navigator, 'clipboard', {
+  Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
     value: undefined,
   });
@@ -76,7 +80,7 @@ describe('useCopyToClipboard', () => {
   });
 
   it('does not throw when `navigator` itself is absent', () => {
-    const original = globalThis.navigator;
+    const original = navigator;
     Object.defineProperty(globalThis, 'navigator', { configurable: true, value: undefined });
 
     try {

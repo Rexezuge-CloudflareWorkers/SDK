@@ -14,10 +14,14 @@
 
 import path from 'node:path';
 
-/** The config the deploy targets. */
+/**
+The config the deploy targets.
+*/
 export const CONFIG_PATH = process.env['WRANGLER_CONFIG_PATH'] ?? path.join(process.cwd(), 'wrangler.jsonc');
 
-/** The committed template the config is materialized from. */
+/**
+The committed template the config is materialized from.
+*/
 export const TEMPLATE_PATH = process.env['WRANGLER_TEMPLATE_PATH'] ?? path.join(process.cwd(), 'apps/api/wrangler.template.jsonc');
 
 /**
@@ -29,10 +33,14 @@ export const TEMPLATE_PATH = process.env['WRANGLER_TEMPLATE_PATH'] ?? path.join(
  */
 export const DEFAULT_UUID = '00000000-0000-0000-0000-000000000000';
 
-/** The placeholder for a KV namespace id and for a Secrets Store id. */
+/**
+The placeholder for a KV namespace id and for a Secrets Store id.
+*/
 export const DEFAULT_HEX_ID = '00000000000000000000000000000000';
 
-/** The Secrets Store name a deployment uses. */
+/**
+The Secrets Store name a deployment uses.
+*/
 export const DEFAULT_SECRET_STORE_NAME = 'default';
 
 /**
@@ -53,7 +61,9 @@ export const DEFAULT_KV_NAMESPACE_NAMES: Record<string, string> = {
   CACHE: `${DEFAULT_WORKER_NAME}-cache`,
 };
 
-/** Dimensions of a Vectorize index this kit provisions. */
+/**
+Dimensions of a Vectorize index this kit provisions.
+*/
 export const VECTORIZE_DIMENSIONS = 1024;
 
 /**
@@ -91,7 +101,9 @@ export interface WranglerConfig {
   }>;
 }
 
-/** A D1 database as `wrangler d1 list --json` reports one. */
+/**
+A D1 database as `wrangler d1 list --json` reports one.
+*/
 export interface D1Database {
   name?: string;
   uuid?: string;
@@ -99,14 +111,18 @@ export interface D1Database {
   database_id?: string;
 }
 
-/** A KV namespace as `wrangler kv namespace list` reports one. */
+/**
+A KV namespace as `wrangler kv namespace list` reports one.
+*/
 export interface KVNamespace {
   title?: string;
   name?: string;
   id?: string;
 }
 
-/** A Secrets Store as `wrangler secrets-store store list` reports one. */
+/**
+A Secrets Store as `wrangler secrets-store store list` reports one.
+*/
 export interface SecretStore {
   name: string;
   id: string;

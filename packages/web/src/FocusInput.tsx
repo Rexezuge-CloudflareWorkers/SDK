@@ -28,7 +28,7 @@ import { theme } from './theme.ts';
  * focus management for no gain.
  */
 
-interface FocusInputProps extends InputHTMLAttributes<HTMLInputElement> {}
+type FocusInputProps = InputHTMLAttributes<HTMLInputElement>;
 
 function FocusInput({ style, onFocus, onBlur, ...rest }: Readonly<FocusInputProps>): ReactElement {
   const [focused, setFocused] = useState(false);

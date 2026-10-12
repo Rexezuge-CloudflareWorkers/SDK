@@ -45,14 +45,16 @@ jobs:
   # sequence. A failure names the gate that broke instead of arriving three
   # steps deep in a log, and a re-run re-runs only that half.
   #
-  # `typecheck` and `test` consume `build`'s output rather than producing their
-  # own. Cross-package imports resolve through the workspace symlinks in
-  # `node_modules` to `dist/` — `tsconfig.base.json` declares no `paths` and
-  # every package's `exports` points at `./dist/index.js` — so a fresh checkout
-  # with no `dist/` cannot resolve `@rexezuge/errors`, and cannot resolve any
-  # package that depends on it. `build` publishes the eight `dist/` directories
-  # as one artifact and the other two restore it, which is what lets the gates
-  # run in parallel instead of serially.
+  # `typecheck`, `lint` and `test` consume `build`'s output rather than
+  # producing their own. Cross-package imports resolve through the workspace
+  # symlinks in `node_modules` to `dist/` — `tsconfig.base.json` declares no
+  # `paths` and every package's `exports` points at `./dist/index.js` — so a
+  # fresh checkout with no `dist/` cannot resolve `@rexezuge/errors`, and
+  # cannot resolve any package that depends on it. The lint gate needs it too:
+  # `eslint.config.mjs` imports the factory from `@rexezuge/tooling`'s built
+  # output. `build` publishes the nine `dist/` directories as one artifact and
+  # the other three restore it, which is what lets the gates run in parallel
+  # instead of serially.
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -108,6 +110,41 @@ jobs:
         uses: ./.github/actions/retry-step
         with:
           command: pnpm -r --if-present typecheck
+          max_attempts: '2'
+
+  # The lint gate, converged from AWS-AccessBridge's `eslint.config.mjs` through
+  # the kit's own factory: `eslint.config.mjs` is `defineRepoLintConfig` with
+  # `scope: '@rexezuge'` plus the kit's dependency boundaries as `extraLayers`.
+  #
+  # `lint:check` is the enforceable half. `lint` repairs, and a repair that
+  # passes is a repair whose diff the runner throws away with the checkout —
+  # the same reason the `format` job runs `format:check`.
+  lint:
+    name: Lint
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Download Build Output
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          # The lint config itself imports `@rexezuge/tooling`'s factory from
+          # its built output, so this job restores `dist/` exactly as
+          # `typecheck` does. Downloaded after `setup-env` so `pnpm install`
+          # cannot prune the restored tree.
+          path: packages
+
+      - name: Run Lint
+        uses: ./.github/actions/retry-step
+        with:
+          command: pnpm run lint:check
           max_attempts: '2'
 
   # "Unit Tests" because every test in this job is one: the suite is hermetic —

@@ -29,7 +29,9 @@ interface StatementEnvelope<T> extends D1Result {
 abstract class BaseDAO {
   protected constructor(protected readonly database: D1Queryable) {}
 
-  /** A prepared statement with its bindings applied. Bindings are always parameters, never interpolation. */
+  /**
+  A prepared statement with its bindings applied. Bindings are always parameters, never interpolation.
+  */
   protected statement(sql: string, bindings: unknown[] = []): D1PreparedStatement {
     return bindings.length > 0 ? this.database.prepare(sql).bind(...bindings) : this.database.prepare(sql);
   }
@@ -61,7 +63,9 @@ abstract class BaseDAO {
     return envelope.value;
   }
 
-  /** A list read. `.all()` returning `[]` is a success like `first()`'s null. */
+  /**
+  A list read. `.all()` returning `[]` is a success like `first()`'s null.
+  */
   protected async all<T>(sql: string, bindings: unknown[] = []): Promise<T[]> {
     const envelope = await executeWithRetry(async (): Promise<StatementEnvelope<T[]>> => {
       const rows = await this.statement(sql, bindings).all<T>();
@@ -70,7 +74,9 @@ abstract class BaseDAO {
     return envelope.value;
   }
 
-  /** A scalar count from a `SELECT count(*)` row; 0 when absent. */
+  /**
+  A scalar count from a `SELECT count(*)` row; 0 when absent.
+  */
   protected async count(sql: string, bindings: unknown[] = []): Promise<number> {
     const row = await this.first<{ count: number }>(sql, bindings);
     return row?.count ?? 0;
@@ -129,7 +135,9 @@ abstract class BaseDAO {
     return (result.meta as { changes?: number })?.changes ?? 0;
   }
 
-  /** The retry schedule, for callers that surface it (health checks, tests). */
+  /**
+  The retry schedule, for callers that surface it (health checks, tests).
+  */
   protected static get retryDefaults(): typeof D1_RETRY_DEFAULTS {
     return D1_RETRY_DEFAULTS;
   }
@@ -141,7 +149,7 @@ abstract class BaseDAO {
  * parameter binding cannot express.
  */
 function assertSqlIdentifier(value: string, label: string): void {
-  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
+  if (!/^[A-Z_]\w*$/i.test(value)) {
     throw new Error(`Unsafe SQL identifier for ${label}: ${JSON.stringify(value)}`);
   }
 }

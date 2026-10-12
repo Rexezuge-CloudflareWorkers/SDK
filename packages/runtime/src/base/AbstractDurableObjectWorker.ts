@@ -32,7 +32,7 @@ abstract class AbstractDurableObjectWorker<TEnv = Env> extends DurableObject<TEn
     return {
       waitUntil: (promise: Promise<unknown>): void => this.ctx.waitUntil(promise),
       passThroughOnException: (): void => undefined,
-    } as unknown as ExecutionContext;
+    };
   }
 
   protected abstract onRequest(request: Request): Promise<Response>;

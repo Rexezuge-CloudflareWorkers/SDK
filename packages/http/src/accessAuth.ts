@@ -36,7 +36,9 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { isValidEmailFormat } from '@rexezuge/shared';
 
-/** The identity the `ACCESS` binding reports. */
+/**
+The identity the `ACCESS` binding reports.
+*/
 interface AccessIdentity {
   email?: string | null;
   emailVerified?: boolean | null;
@@ -52,7 +54,9 @@ interface AccessBinding {
   getIdentity(): Promise<AccessIdentity | undefined>;
 }
 
-/** A JWT verifier, so a test can inject one instead of reaching for `jose`. */
+/**
+A JWT verifier, so a test can inject one instead of reaching for `jose`.
+*/
 interface AccessJwtVerifier {
   verify(token: string, teamDomain: string, policyAud: string): Promise<string>;
 }
@@ -66,17 +70,23 @@ interface AccessAuthOptions {
    * misspelled `prodcution`.
    */
   bypassAllowed?: boolean;
-  /** The demo user, consulted when `bypassAllowed` and demo mode is on. */
+  /**
+  The demo user, consulted when `bypassAllowed` and demo mode is on.
+  */
   demoUserEmail?: string | null;
   isDemoMode?: boolean;
-  /** The dev identity, consulted after demo mode. */
+  /**
+  The dev identity, consulted after demo mode.
+  */
   devAuthEmail?: string | null;
   teamDomain?: string | null;
   policyAud?: string | null;
   verifier?: AccessJwtVerifier;
 }
 
-/** A rejected address. Local rather than an `Error`, so it cannot be caught as one. */
+/**
+A rejected address. Local rather than an `Error`, so it cannot be caught as one.
+*/
 class AccessAuthError extends Error {
   public constructor(message: string) {
     super(message);
@@ -189,7 +199,7 @@ async function authenticateAccess(request: Request, binding: AccessBinding | und
  * than an unhandled rejection in the auth middleware.
  */
 async function identityFromBinding(binding: AccessBinding | undefined): Promise<string | null> {
-  const identity = await binding?.getIdentity().catch(() => undefined);
+  const identity = await binding?.getIdentity().catch(() => {});
   if (identity?.emailVerified === false || identity?.email_verified === false) return null;
   const email = identity?.email?.trim().toLowerCase() ?? '';
   return isValidAuthEmail(email) ? email : null;

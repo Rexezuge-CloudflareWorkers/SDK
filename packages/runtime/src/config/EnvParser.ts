@@ -54,7 +54,9 @@ class EnvParser {
     return (this.readString(env, key) ?? defaultValue) === 'true';
   }
 
-  /** The raw value, or undefined when unset. Public because presence checks (validate) need it. */
+  /**
+  The raw value, or undefined when unset. Public because presence checks (validate) need it.
+  */
   public static readString(env: unknown, key: string): string | undefined {
     return (env as Record<string, string | undefined>)[key];
   }

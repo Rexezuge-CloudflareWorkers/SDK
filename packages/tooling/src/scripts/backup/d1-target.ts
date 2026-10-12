@@ -8,20 +8,30 @@
 
 import { DEFAULT_UUID } from '../wrangler-config/types.ts';
 
-/** A D1 binding as a parsed wrangler config carries one. */
+/**
+A D1 binding as a parsed wrangler config carries one.
+*/
 export interface D1DatabaseBinding {
   binding?: string;
   database_id?: string;
   database_name?: string;
 }
 
-/** The resolved export target. */
+/**
+The resolved export target.
+*/
 export interface D1Target {
-  /** The binding name, used for log output and as the export fallback. */
+  /**
+  The binding name, used for log output and as the export fallback.
+  */
   binding: string;
-  /** The database id, verified against Cloudflare by the caller. */
+  /**
+  The database id, verified against Cloudflare by the caller.
+  */
   databaseId: string;
-  /** What `wrangler d1 export` should be pointed at. */
+  /**
+  What `wrangler d1 export` should be pointed at.
+  */
   target: string;
 }
 

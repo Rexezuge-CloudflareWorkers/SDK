@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DatabaseError } from '@rexezuge/errors';
+import { bytesToBase64 } from '@rexezuge/shared';
 import { AesGcmKeyError, BaseDAO, assertSqlIdentifier, decryptSecret, encryptSecret, roundTripSecret } from './index.ts';
 import { D1_RETRY_DEFAULTS } from './D1Retry.ts';
 import { isD1ErrorRetryable } from './D1ErrorClassifier.ts';
@@ -40,7 +40,9 @@ class FakeDb implements D1Queryable {
 
   public constructor(
     private readonly behavior: (() => Promise<D1Result>) | D1Result = { success: true },
-    /** The row every `first`/`all` reads back; null means "no row". */
+    /**
+    The row every `first`/`all` reads back; null means "no row".
+    */
     private readonly row: unknown = null,
   ) {}
 
@@ -133,7 +135,7 @@ describe('executeWithRetry (via BaseDAO)', () => {
   it('retries a retryable failure with backoff, then succeeds', async () => {
     vi.useFakeTimers();
     let attempts = 0;
-    const db = new FakeDb((): D1Result => {
+    const db = new FakeDb(async (): Promise<D1Result> => {
       attempts += 1;
       return attempts < 3 ? { success: false, error: 'D1_ERROR: database is busy' } : { success: true };
     });
@@ -148,7 +150,7 @@ describe('executeWithRetry (via BaseDAO)', () => {
   it('gives up after the scheduled attempts and reports the classified failure', async () => {
     vi.useFakeTimers();
     let attempts = 0;
-    const db = new FakeDb((): D1Result => {
+    const db = new FakeDb(async (): Promise<D1Result> => {
       attempts += 1;
       return { success: false, error: 'database is locked' };
     });
@@ -165,7 +167,7 @@ describe('executeWithRetry (via BaseDAO)', () => {
 
   it('does not retry a permanent failure and reports it non-retryable', async () => {
     let attempts = 0;
-    const db = new FakeDb((): D1Result => {
+    const db = new FakeDb(async (): Promise<D1Result> => {
       attempts += 1;
       return { success: false, error: 'UNIQUE constraint failed: users.email' };
     });
@@ -237,14 +239,16 @@ describe('BaseDAO', () => {
   });
 
   it('exposes the retry schedule', () => {
-    expect(TestDAO.retryDefaults).toStrictEqual(D1_RETRY_DEFAULTS);
+    // `protected static`, read through a structural cast — the same idiom as
+    // the `deleteOlderThan` case above: the suite may observe it, not widen it.
+    expect((TestDAO as unknown as { retryDefaults: typeof D1_RETRY_DEFAULTS }).retryDefaults).toStrictEqual(D1_RETRY_DEFAULTS);
   });
 });
 
 // ---------- aes-gcm ----------
 
 describe('aes-gcm', () => {
-  const key: string = Buffer.from(new Uint8Array(32).fill(7)).toString('base64');
+  const key: string = bytesToBase64(new Uint8Array(32).fill(7));
 
   it('round-trips a secret', async () => {
     const envelope = await encryptSecret('s3cr3t-value', key);
@@ -263,13 +267,13 @@ describe('aes-gcm', () => {
 
   it('fails closed on a missing or wrong-sized key', async () => {
     await expect(encryptSecret('x', undefined)).rejects.toThrow(/not configured/);
-    await expect(encryptSecret('x', Buffer.alloc(16).toString('base64'))).rejects.toThrow(/32 bytes/);
+    await expect(encryptSecret('x', bytesToBase64(new Uint8Array(16)))).rejects.toThrow(/32 bytes/);
     await expect(encryptSecret('x', 'not base64!!')).rejects.toThrow(/base64/);
   });
 
   it('fails closed on a wrong key or tampered ciphertext', async () => {
     const envelope = await encryptSecret('tamper me', key);
-    const otherKey: string = Buffer.from(new Uint8Array(32).fill(9)).toString('base64');
+    const otherKey: string = bytesToBase64(new Uint8Array(32).fill(9));
     // The typed error, not merely "rejects": a bare `rejects.toThrow()` let the
     // platform's raw `OperationError` escape as the documented behavior, and
     // every consumer catching `AesGcmKeyError` — the contract the module

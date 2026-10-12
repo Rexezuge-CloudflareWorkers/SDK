@@ -13,7 +13,9 @@ import { ModalShell } from './ModalShell.tsx';
  * to render a spinner.
  */
 
-/** The shared spinner. `label` is announced, so it should say what is loading. */
+/**
+The shared spinner. `label` is announced, so it should say what is loading.
+*/
 function LoadingSpinner({ label = 'Loading…' }: { label?: string }) {
   return (
     <div className="min-h-64 flex items-center justify-center" role="status" aria-label={label}>
@@ -22,7 +24,9 @@ function LoadingSpinner({ label = 'Loading…' }: { label?: string }) {
   );
 }
 
-/** The shared centered empty message, with an optional icon above it. */
+/**
+The shared centered empty message, with an optional icon above it.
+*/
 function EmptyState({ icon, message }: { icon?: ReactNode; message: ReactNode }) {
   return (
     <div className="text-center text-[var(--color-text-muted)] py-10 text-sm">
@@ -55,7 +59,9 @@ function ConfirmDeleteModal({
   onConfirm,
   onCancel,
 }: {
-  /** The full question, naming what will be deleted. */
+  /**
+  The full question, naming what will be deleted.
+  */
   message: ReactNode;
   confirmLabel: string;
   cancelLabel: string;

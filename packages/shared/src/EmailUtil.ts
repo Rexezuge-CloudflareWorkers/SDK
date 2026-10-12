@@ -1,5 +1,3 @@
-import { isValidEmailFormat, MAX_EMAIL_LENGTH } from './Identity.ts';
-
 /**
  * Email address value helpers.
  *
@@ -29,4 +27,6 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-export { normalizeEmail, isValidEmailFormat, MAX_EMAIL_LENGTH };
+export { normalizeEmail };
+
+export { isValidEmailFormat, MAX_EMAIL_LENGTH } from './Identity.ts';

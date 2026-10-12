@@ -38,10 +38,14 @@
  * kit package — the tag grammar is small, fixed, and testable here.
  */
 
-/** Every locale the bundle ships. `en` is the fallback and is never empty. */
+/**
+Every locale the bundle ships. `en` is the fallback and is never empty.
+*/
 const SUPPORTED_LOCALES = ['en', 'de', 'fr', 'es', 'it', 'nl', 'pt', 'pl', 'ja', 'zh-CN', 'zh-TW', 'ko'] as const;
 
-/** A locale tag that has a bundle. Anything else resolves through `normalizeLocale`. */
+/**
+A locale tag that has a bundle. Anything else resolves through `normalizeLocale`.
+*/
 type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
 /**

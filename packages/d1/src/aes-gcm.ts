@@ -95,7 +95,9 @@ async function decryptSecret(envelope: EncryptedEnvelope, encodedKey: string | u
   return new TextDecoder().decode(opened);
 }
 
-/** Round-trip helper for tests and one-shot migrations. */
+/**
+Round-trip helper for tests and one-shot migrations.
+*/
 async function roundTripSecret(plaintext: string, encodedKey: string): Promise<string> {
   const envelope: EncryptedEnvelope = await encryptSecret(plaintext, encodedKey);
   return decryptSecret(envelope, encodedKey);

@@ -78,7 +78,7 @@ describe('Button', () => {
 
   it('shows its loading state', () => {
     const { container } = render(
-      <Button loading onClick={() => undefined}>
+      <Button loading onClick={() => {}}>
         Save
       </Button>,
     );

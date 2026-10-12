@@ -9,7 +9,7 @@ afterEach(cleanup);
 
 describe('LoadingButton', () => {
   it('renders its children as a primary button by default', () => {
-    render(<LoadingButton onClick={() => undefined}>Revoke</LoadingButton>);
+    render(<LoadingButton onClick={() => {}}>Revoke</LoadingButton>);
     const button = screen.getByRole('button', { name: 'Revoke' });
     expect(button).toHaveClass('bg-[var(--color-accent)]');
     expect(button).toBeEnabled();
@@ -79,7 +79,7 @@ describe('LoadingButton', () => {
 
   it('passes the variant, size and type through', () => {
     render(
-      <LoadingButton variant="danger" size="sm" type="submit" onClick={() => undefined}>
+      <LoadingButton variant="danger" size="sm" type="submit" onClick={() => {}}>
         Delete
       </LoadingButton>,
     );

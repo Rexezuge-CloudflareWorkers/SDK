@@ -30,13 +30,19 @@ import { useEffect, type ReactNode } from 'react';
  * passes `t('common.close')` when it wants them translated.
  */
 
-/** Escape closes, and the initial focus lands on the dialog. */
+/**
+Escape closes, and the initial focus lands on the dialog.
+*/
 interface ModalShellProps {
   onClose: () => void;
   children: ReactNode;
-  /** Width utility class. Kept as a class so a repo themes it without forking. */
+  /**
+  Width utility class. Kept as a class so a repo themes it without forking.
+  */
   widthClass?: string;
-  /** Announced to assistive tech; there is no visible title in the frame itself. */
+  /**
+  Announced to assistive tech; there is no visible title in the frame itself.
+  */
   ariaLabel: string;
   /**
    * Accessible name for the corner close button.
@@ -46,20 +52,22 @@ interface ModalShellProps {
    * buttons, and the operator has to guess which one they are on.
    */
   closeLabel?: string;
-  /** Close on Escape. Defaults to true. */
+  /**
+  Close on Escape. Defaults to true.
+  */
   closeOnEscape?: boolean;
 }
 
 function ModalShell({ onClose, children, widthClass = 'w-80', ariaLabel, closeLabel = 'Close', closeOnEscape = true }: ModalShellProps) {
   useEffect(() => {
-    if (!closeOnEscape) return undefined;
+    if (!closeOnEscape) return;
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') onClose();
     };
-    globalThis.addEventListener('keydown', onKeyDown);
+    addEventListener('keydown', onKeyDown);
     // Removed on unmount: a dialog that closed by leaving a listener behind
     // would close its replacement too, on the next Escape anywhere.
-    return (): void => globalThis.removeEventListener('keydown', onKeyDown);
+    return (): void => removeEventListener('keydown', onKeyDown);
   }, [closeOnEscape, onClose]);
 
   return (

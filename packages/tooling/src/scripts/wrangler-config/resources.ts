@@ -12,11 +12,9 @@
  * that fails later with no link back to the reason.
  */
 
-import { writeFileSync } from 'node:fs';
 import { parse } from 'jsonc-parser';
 import { parseWranglerTableRows } from '../lib/wrangler-table.ts';
 import {
-  CONFIG_PATH,
   DEFAULT_HEX_ID,
   DEFAULT_KV_NAMESPACE_NAMES,
   DEFAULT_SECRET_STORE_NAME,
@@ -31,13 +29,17 @@ import {
 import { parseJsonArray, runWrangler } from './cli.ts';
 import { readConfig, writeConfig, writeConfigValue } from './patches.ts';
 
-/** What `ensure*` did, so a caller can act on the difference. */
+/**
+What `ensure*` did, so a caller can act on the difference.
+*/
 export interface Provisioned {
   id: string;
   created: boolean;
 }
 
-/** The id a D1 database is reported under, whichever key the CLI used. */
+/**
+The id a D1 database is reported under, whichever key the CLI used.
+*/
 export function getD1Id(database: D1Database): string | undefined {
   return database.uuid ?? database.database_id ?? database.id;
 }
@@ -74,7 +76,9 @@ export function listKVNamespaces(): KVNamespace[] {
   return parseJsonArray<KVNamespace>(runWrangler(['kv', 'namespace', 'list']), 'wrangler kv namespace list');
 }
 
-/** The namespace name a binding's namespace is created under. */
+/**
+The namespace name a binding's namespace is created under.
+*/
 export function getKVNamespaceName(config: WranglerConfig, binding: string): string {
   return DEFAULT_KV_NAMESPACE_NAMES[binding] ?? `${config.name ?? DEFAULT_WORKER_NAME}-${binding.toLowerCase()}`;
 }
@@ -99,7 +103,9 @@ export function ensureKVNamespace(config: WranglerConfig, binding: string): Prov
   return { id: namespace.id, created };
 }
 
-/** The bindings a deployment always needs, whether or not a custom config lists them. */
+/**
+The bindings a deployment always needs, whether or not a custom config lists them.
+*/
 export function getRequiredKvBindings(): string[] {
   return Object.keys(DEFAULT_KV_NAMESPACE_NAMES);
 }
@@ -124,7 +130,9 @@ export function ensureRequiredKvBindings(content: string, config: WranglerConfig
   return writeConfigValue(content, ['kv_namespaces'], next);
 }
 
-/** The stores in a `secrets-store store list` table. */
+/**
+The stores in a `secrets-store store list` table.
+*/
 export function parseSecretStoresTable(output: string): SecretStore[] {
   const stores: SecretStore[] = [];
   // Through the shared table parser rather than a second inline split: `wrangler`
@@ -133,8 +141,10 @@ export function parseSecretStoresTable(output: string): SecretStore[] {
   // — which reads as "the store does not exist" and makes provisioning create a
   // duplicate.
   for (const row of parseWranglerTableRows(output)) {
-    const name = row[0];
-    const id = row[1];
+    // `.at()` rather than indexing: a short row is possible when the table
+    // shape drifts, and the guards below are what skip it.
+    const name = row.at(0);
+    const id = row.at(1);
     // Store ids are 32 hex characters; a row without one is a header, a border, or
     // an unrelated column, and is skipped rather than stored with an undefined id.
     if (name !== undefined && id !== undefined && /^[a-f0-9]{32}$/i.test(id)) {
@@ -156,7 +166,7 @@ export function listSecretStores(): SecretStore[] {
 
 export function ensureSecretStore(): string {
   const stores = listSecretStores();
-  const existing = stores.find((candidate) => candidate.name === DEFAULT_SECRET_STORE_NAME) ?? stores[0];
+  const existing = stores.find((candidate) => candidate.name === DEFAULT_SECRET_STORE_NAME) ?? stores.at(0);
   if (existing !== undefined) {
     return existing.id;
   }
@@ -168,14 +178,16 @@ export function ensureSecretStore(): string {
   }
   // The create output did not name the id, so read it back rather than guessing.
   const refreshed = listSecretStores();
-  const store = refreshed.find((candidate) => candidate.name === DEFAULT_SECRET_STORE_NAME) ?? refreshed[0];
+  const store = refreshed.find((candidate) => candidate.name === DEFAULT_SECRET_STORE_NAME) ?? refreshed.at(0);
   if (store?.id === undefined) {
     throw new Error(`Unable to discover Secrets Store ID for ${DEFAULT_SECRET_STORE_NAME}.`);
   }
   return store.id;
 }
 
-/** Create a queue when it is absent, reporting whether it had to be created. */
+/**
+Create a queue when it is absent, reporting whether it had to be created.
+*/
 export function ensureQueue(queueName: string): boolean {
   try {
     runWrangler(['queues', 'info', queueName]);
@@ -221,7 +233,9 @@ export function ensureVectorizeIndex(indexName: string, dimensions: number): voi
   }
 }
 
-/** Replace each placeholder D1 `database_id` with a real one. */
+/**
+Replace each placeholder D1 `database_id` with a real one.
+*/
 function provisionD1Databases(content: string, config: WranglerConfig, created: string[]): string {
   let patched = content;
   for (const [index, database] of config.d1_databases?.entries() ?? []) {
@@ -239,7 +253,9 @@ function provisionD1Databases(content: string, config: WranglerConfig, created: 
   return patched;
 }
 
-/** Replace each placeholder KV namespace id with a real one. */
+/**
+Replace each placeholder KV namespace id with a real one.
+*/
 function provisionKvNamespaces(content: string, config: WranglerConfig, created: string[]): string {
   let patched = content;
   for (const [index, namespace] of config.kv_namespaces?.entries() ?? []) {

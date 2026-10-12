@@ -23,7 +23,9 @@ declare module 'cloudflare:workers' {
     constructor(ctx: DurableObjectState, env: TEnv);
   }
 
-  /** The per-DO state object, narrowed to what the kit reads. */
+  /**
+  The per-DO state object, narrowed to what the kit reads.
+  */
   export interface DurableObjectState {
     readonly id: { toString(): string; readonly name?: string };
     waitUntil(promise: Promise<unknown>): void;

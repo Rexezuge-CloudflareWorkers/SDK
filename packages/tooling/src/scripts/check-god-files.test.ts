@@ -1,15 +1,15 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { checkGodFiles, checkGodFilesCli, readAllowlist, HARD_LIMIT, SOFT_LIMIT } from './check-god-files.ts';
 
 function tempTree(files: Record<string, string>): string {
-  const root = mkdtempSync(join(tmpdir(), 'god-files-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'god-files-'));
   for (const [name, content] of Object.entries(files)) {
-    const path = join(root, name);
-    mkdirSync(join(path, '..'), { recursive: true });
-    writeFileSync(path, content, 'utf8');
+    const file = path.join(root, name);
+    mkdirSync(path.join(file, '..'), { recursive: true });
+    writeFileSync(file, content, 'utf8');
   }
   return root;
 }
@@ -84,24 +84,24 @@ describe('readAllowlist', () => {
   });
 
   it('rejects a malformed allowlist rather than reading it as empty', () => {
-    const root = mkdtempSync(join(tmpdir(), 'god-allow-'));
-    const path = join(root, 'allowlist.json');
-    writeFileSync(path, '{ not: an array }', 'utf8');
-    expect(() => readAllowlist(path)).toThrow(/not valid JSON/);
+    const root = mkdtempSync(path.join(tmpdir(), 'god-allow-'));
+    const file = path.join(root, 'allowlist.json');
+    writeFileSync(file, '{ not: an array }', 'utf8');
+    expect(() => readAllowlist(file)).toThrow(/not valid JSON/);
   });
 
   it('rejects a non-array allowlist', () => {
-    const root = mkdtempSync(join(tmpdir(), 'god-allow-'));
-    const path = join(root, 'allowlist.json');
-    writeFileSync(path, '{"src/a.ts": 400}', 'utf8');
-    expect(() => readAllowlist(path)).toThrow(/JSON array of repo-relative path strings/);
+    const root = mkdtempSync(path.join(tmpdir(), 'god-allow-'));
+    const file = path.join(root, 'allowlist.json');
+    writeFileSync(file, '{"src/a.ts": 400}', 'utf8');
+    expect(() => readAllowlist(file)).toThrow(/JSON array of repo-relative path strings/);
   });
 
   it('reads a valid allowlist', () => {
-    const root = mkdtempSync(join(tmpdir(), 'god-allow-'));
-    const path = join(root, 'allowlist.json');
-    writeFileSync(path, '["a.ts", "b.ts"]', 'utf8');
-    expect(readAllowlist(path)).toStrictEqual(['a.ts', 'b.ts']);
+    const root = mkdtempSync(path.join(tmpdir(), 'god-allow-'));
+    const file = path.join(root, 'allowlist.json');
+    writeFileSync(file, '["a.ts", "b.ts"]', 'utf8');
+    expect(readAllowlist(file)).toStrictEqual(['a.ts', 'b.ts']);
   });
 });
 
@@ -112,7 +112,7 @@ describe('checkGodFilesCli', () => {
   });
 
   it('exits non-zero with --fail-on-hard over the hard limit', () => {
-    const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as never);
     const root = tempTree({ 'src/huge.ts': pad(450) });
     checkGodFilesCli(['--root', root, '--fail-on-hard']);
     expect(exit).toHaveBeenCalledWith(1);

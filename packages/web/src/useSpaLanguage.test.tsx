@@ -28,7 +28,7 @@ describe('canonicalizeLanguageTag', () => {
     // documented choice. `resolveLanguageTag` is what maps a blank/unsupported
     // value to the caller's fallback, so this is the hook's contract, not the
     // canonicalizer's.
-    expect(canonicalizeLanguageTag('   ')).toBe('en');
+    expect(canonicalizeLanguageTag(' '.repeat(3))).toBe('en');
   });
 });
 
@@ -69,16 +69,16 @@ describe('useSpaLanguage', () => {
     expect(result.current.language).toBe('en');
 
     // A browser language nothing supports leaves the fallback in place.
-    const descriptor = Object.getOwnPropertyDescriptor(globalThis.navigator, 'language');
-    Object.defineProperty(globalThis.navigator, 'language', { value: 'ja', configurable: true });
+    const descriptor = Object.getOwnPropertyDescriptor(navigator, 'language');
+    Object.defineProperty(navigator, 'language', { value: 'ja', configurable: true });
     try {
       const japanese = renderHook(() => useSpaLanguage({ supported: SUPPORTED, fallbackLanguage: 'de' }));
       expect(japanese.result.current.language).toBe('de');
     } finally {
       if (descriptor === undefined) {
-        delete (globalThis.navigator as { language?: string }).language;
+        delete (navigator as { language?: string }).language;
       } else {
-        Object.defineProperty(globalThis.navigator, 'language', descriptor);
+        Object.defineProperty(navigator, 'language', descriptor);
       }
     }
   });

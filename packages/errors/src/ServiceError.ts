@@ -1,11 +1,17 @@
 import type { ErrorResponse } from './ErrorResponse.ts';
 
 interface ServiceErrorOptions {
-  /** Marks a transient failure: a caller retrying is meaningful. */
+  /**
+  Marks a transient failure: a caller retrying is meaningful.
+  */
   retryable?: boolean;
-  /** Whether the raw message may reach a client. Defaults to `status < 500`. */
+  /**
+  Whether the raw message may reach a client. Defaults to `status < 500`.
+  */
   expose?: boolean;
-  /** Underlying cause, preserved for operator-facing logs. */
+  /**
+  Underlying cause, preserved for operator-facing logs.
+  */
   cause?: unknown;
 }
 
@@ -29,16 +35,24 @@ const INTERNAL_SERVER_MESSAGE = 'The server encountered an internal error and wa
  * than they were ever written.
  */
 abstract class ServiceError extends Error {
-  /** The HTTP status. Defaults from the catalog; a subclass may refine it. */
+  /**
+  The HTTP status. Defaults from the catalog; a subclass may refine it.
+  */
   public status: number;
 
-  /** Overridable by subclasses whose identity differs from the HTTP class name. */
+  /**
+  Overridable by subclasses whose identity differs from the HTTP class name.
+  */
   public type: string;
 
-  /** False by default: retrying is the exception, not the rule. */
+  /**
+  False by default: retrying is the exception, not the rule.
+  */
   public retryable: boolean;
 
-  /** Whether the raw message may reach a client. Defaults to `status < 500`. */
+  /**
+  Whether the raw message may reach a client. Defaults to `status < 500`.
+  */
   public expose: boolean;
 
   constructor(status: number, type: string, message: string, options?: ServiceErrorOptions) {

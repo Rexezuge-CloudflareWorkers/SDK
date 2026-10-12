@@ -61,7 +61,9 @@ class FakeDb {
     return Promise.all(statements.map((statement) => statement.run()));
   }
 
-  /** The dispatch table. An unhandled statement is a failing test, by design. */
+  /**
+  The dispatch table. An unhandled statement is a failing test, by design.
+  */
   public execute(sql: string, params: unknown[]): unknown[] {
     const normalized = sql.replaceAll(/\s+/g, ' ').trim();
     if (normalized.startsWith('INSERT INTO users')) return [this.insertUser(params)];
@@ -138,10 +140,12 @@ class FakeDb {
   private setUsername(params: unknown[], coalesce: boolean): unknown {
     const idOrEmail = params[2] as string;
     for (const row of this.users.values()) {
-      if (row.id === idOrEmail || row.email === idOrEmail) {
-        row.username = coalesce ? (row.username ?? (params[0] as string)) : (params[0] as string);
-        row.updated_at = coalesce ? (row.updated_at ?? (params[1] as number)) : (params[1] as number);
+      if (!(row.id === idOrEmail || row.email === idOrEmail)) {
+        continue;
       }
+
+      row.username = coalesce ? (row.username ?? (params[0] as string)) : (params[0] as string);
+      row.updated_at = coalesce ? (row.updated_at ?? (params[1] as number)) : (params[1] as number);
     }
     return { success: true };
   }
@@ -149,10 +153,12 @@ class FakeDb {
   private setCurrentEmail(params: unknown[]): unknown {
     const [email, , id] = params as [string, number, string];
     for (const row of this.users.values()) {
-      if (row.id === id) {
-        row.current_email = email;
-        row.updated_at = params[1] as number;
+      if (row.id !== id) {
+        continue;
       }
+
+      row.current_email = email;
+      row.updated_at = params[1] as number;
     }
     return { success: true };
   }

@@ -40,17 +40,19 @@ import { cn } from './utils.ts';
  * passes the class itself (`className={error ? 'border-[var(--color-error-text)]' : undefined}`).
  */
 
-/** The shared look of every text-entry control. */
+/**
+The shared look of every text-entry control.
+*/
 const fieldClass =
   'w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-base)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none disabled:opacity-60';
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {}
+type InputProps = InputHTMLAttributes<HTMLInputElement>;
 
 function Input({ className, ...rest }: Readonly<InputProps>): ReactElement {
   return <input className={cn(fieldClass, className)} {...rest} />;
 }
 
-interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {}
+type SelectProps = SelectHTMLAttributes<HTMLSelectElement>;
 
 function Select({ className, children, ...rest }: Readonly<SelectProps>): ReactElement {
   return (
@@ -60,14 +62,16 @@ function Select({ className, children, ...rest }: Readonly<SelectProps>): ReactE
   );
 }
 
-interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {}
+type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement>;
 
 function Textarea({ className, ...rest }: Readonly<TextareaProps>): ReactElement {
   return <textarea className={cn(fieldClass, 'min-h-20 resize-y', className)} {...rest} />;
 }
 
 interface LabelProps extends Omit<LabelHTMLAttributes<HTMLLabelElement>, 'htmlFor'> {
-  /** The `id` of the control this label names. */
+  /**
+  The `id` of the control this label names.
+  */
   htmlFor?: string;
   children: ReactNode;
 }

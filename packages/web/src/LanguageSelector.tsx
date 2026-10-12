@@ -41,9 +41,13 @@ interface LanguageSelectorProps {
    */
   value: string | null;
   onChange: (languageTag: string) => void;
-  /** The control's accessible name. Required — a bare `<select>` has none. */
+  /**
+  The control's accessible name. Required — a bare `<select>` has none.
+  */
   label: string;
-  /** Shown instead of the language list when `value` is `null`. */
+  /**
+  Shown instead of the language list when `value` is `null`.
+  */
   unknownLabel: string;
   /**
    * The offered tags.
@@ -66,7 +70,7 @@ function LanguageSelector({
 }: Readonly<LanguageSelectorProps>) {
   if (value === null) {
     return (
-      <Select aria-label={label} value="" disabled onChange={() => undefined}>
+      <Select aria-label={label} value="" disabled onChange={() => {}}>
         <option value="">{unknownLabel}</option>
       </Select>
     );

@@ -115,7 +115,9 @@ const CLIENT_FORWARDING_HEADERS: readonly string[] = [
   'X-Real-Ip',
 ];
 
-/** The header Cloudflare sets with the socket's peer address. */
+/**
+The header Cloudflare sets with the socket's peer address.
+*/
 const CF_CONNECTING_IP_HEADER = 'CF-Connecting-IP';
 
 /**
@@ -180,7 +182,7 @@ export function createPagesProxy(options: PagesProxyOptions = {}): PagesFunction
       // worse answer than one assertion.
       ...(hasBody && { duplex: 'half' }),
       redirect: request.redirect,
-    } as RequestInit);
+    });
 
     return env.API_WORKER.fetch(proxyRequest);
   };

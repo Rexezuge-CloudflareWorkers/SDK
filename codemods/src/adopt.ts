@@ -21,11 +21,10 @@
  * `--dry-run` (the default in CI) writes nothing.
  */
 import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { renameImports } from './rename-imports';
 import { renameSymbols } from './rename-symbols';
-import { SUBPATH_RULES, WHOLE_PACKAGE_MAP } from './mapping';
 import { rewriteComponentImports } from './web-components';
 
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts'];
@@ -36,7 +35,9 @@ interface AdoptReport {
   filesChanged: number;
   importChanges: number;
   symbolChanges: number;
-  /** Component files this run moved onto `@rexezuge/web`. */
+  /**
+  Component files this run moved onto `@rexezuge/web`.
+  */
   componentChanges: number;
   unmappedImports: string[];
   unmappedComponents: string[];
@@ -53,29 +54,30 @@ interface AdoptReport {
  */
 function collectWorkspacePackages(root: string, scope: string): Map<string, { dir: string; references: number }> {
   const packages = new Map<string, { dir: string; references: number }>();
-  const packagesDir = join(root, 'packages');
+  const packagesDir = path.join(root, 'packages');
   if (!existsSync(packagesDir)) return packages;
   for (const entry of readdirSync(packagesDir)) {
-    const dir = join(packagesDir, entry);
+    const dir = path.join(packagesDir, entry);
     if (!statSync(dir).isDirectory()) continue;
-    if (existsSync(join(dir, 'package.json'))) {
+    if (existsSync(path.join(dir, 'package.json'))) {
       packages.set(`${scope}/${entry}`, { dir, references: 0 });
     }
   }
   return packages;
 }
 
-/** Count the imports in `source` that name each tracked workspace package. */
+/**
+Count the imports in `source` that name each tracked workspace package.
+*/
 function countReferences(source: string, scope: string, packages: Map<string, { dir: string; references: number }>): void {
   for (const name of packages.keys()) {
     // Matches `@scope/pkg` and `@scope/pkg/sub` but not `@scope/pkg-extra`,
     // which is a different package whose name merely starts with the same text.
     const pattern = new RegExp(`from\\s+['"\`]${escapeRegExp(name)}(?:['"\`/])`);
     const matches = source.match(pattern);
-    if (matches) {
-      const entry = packages.get(name);
-      if (entry) entry.references += matches.length;
-    }
+    if (!matches) continue;
+    const entry = packages.get(name);
+    if (entry) entry.references += matches.length;
   }
 }
 
@@ -86,7 +88,7 @@ function escapeRegExp(value: string): string {
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     if (SKIP_DIRS.has(entry)) continue;
-    const full = join(dir, entry);
+    const full = path.join(dir, entry);
     const stat = statSync(full);
     if (stat.isDirectory()) walk(full, out);
     else if (SOURCE_EXTENSIONS.some((extension) => entry.endsWith(extension))) out.push(full);
@@ -98,12 +100,12 @@ function main(): void {
   const argv = process.argv.slice(2);
   const root = argv.find((argument) => !argument.startsWith('--'));
   const scope = flagValue(argv, '--scope');
-  const dryRun = !argv.includes('--write');
-  const removePackages = argv.includes('--remove-packages');
   if (!root || !scope) {
     console.error('Usage: tsx src/adopt.ts <consumer-root> --scope @my-app [--write] [--remove-packages]');
     process.exit(1);
   }
+  const dryRun = !argv.includes('--write');
+  const removePackages = argv.includes('--remove-packages');
 
   const report: AdoptReport = {
     filesScanned: 0,
@@ -132,14 +134,6 @@ function main(): void {
     // a specifier whose identifier no longer matches what the file uses.
     const components = rewriteComponentImports(imports.output);
     const symbols = renameSymbols(components.output);
-    const changed = imports.changes.length > 0 || symbols.changes > 0 || components.changed.length > 0;
-    if (changed) {
-      report.filesChanged += 1;
-      report.importChanges += imports.changes.length;
-      report.symbolChanges += symbols.changes;
-      report.componentChanges += components.changed.length;
-      if (!dryRun) writeFileSync(file, symbols.output, 'utf8');
-    }
     countReferences(symbols.output, scope, packages);
     for (const specifier of imports.unmapped) {
       if (!report.unmappedImports.includes(specifier)) report.unmappedImports.push(specifier);
@@ -147,10 +141,17 @@ function main(): void {
     for (const component of components.unmapped) {
       if (!report.unmappedComponents.includes(component)) report.unmappedComponents.push(component);
     }
+    const changed = imports.changes.length > 0 || symbols.changes > 0 || components.changed.length > 0;
+    if (!changed) continue;
+    report.filesChanged += 1;
+    report.importChanges += imports.changes.length;
+    report.symbolChanges += symbols.changes;
+    report.componentChanges += components.changed.length;
+    if (!dryRun) writeFileSync(file, symbols.output, 'utf8');
   }
 
-  const stillReferenced = [...packages.entries()].filter(([, value]) => value.references > 0);
-  const unreferenced = [...packages.entries()].filter(([, value]) => value.references === 0);
+  const stillReferenced = [...packages].filter(([, value]) => value.references > 0);
+  const unreferenced = [...packages].filter(([, value]) => value.references === 0);
   report.removablePackages = unreferenced.map(([name]) => name);
 
   console.log(`scanned ${report.filesScanned} source files (${dryRun ? 'dry run' : 'written'})`);

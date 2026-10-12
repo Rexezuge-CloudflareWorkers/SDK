@@ -195,8 +195,8 @@ describe('AbstractEntrypointWorker', () => {
 
 describe('createLogger', () => {
   it('emits at or above the floor and suppresses below it', () => {
-    const debug = vi.spyOn(console, 'debug').mockImplementation(() => undefined);
-    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const debug = vi.spyOn(console, 'debug').mockImplementation(() => {});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     const logger = createLogger('svc', 'repo', { LOG_LEVEL: 'error' });
     logger.debug('nope');
     logger.error('yep');
@@ -207,8 +207,8 @@ describe('createLogger', () => {
   });
 
   it('falls back to info on an unknown level', () => {
-    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
-    const debug = vi.spyOn(console, 'debug').mockImplementation(() => undefined);
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const debug = vi.spyOn(console, 'debug').mockImplementation(() => {});
     createLogger(undefined, undefined, { LOG_LEVEL: 'verbose' }).debug('x');
     createLogger(undefined, undefined, { LOG_LEVEL: 'verbose' }).info('y');
     expect(debug).not.toHaveBeenCalled();
@@ -224,9 +224,16 @@ class FakeNamespace {
   public readonly store = new Map<string, { value: string | ArrayBuffer; options?: { expirationTtl?: number; metadata?: unknown } }>();
   public failNext = false;
 
-  public async get(key: string): Promise<string | null> {
+  public async get(key: string): Promise<string | null>;
+  public async get(key: string, type: 'text'): Promise<string | null>;
+  public async get(key: string, type: 'arrayBuffer'): Promise<ArrayBuffer | null>;
+  public async get(key: string, type?: 'text' | 'arrayBuffer'): Promise<string | ArrayBuffer | null> {
     const entry = this.store.get(key);
-    return entry === undefined ? null : typeof entry.value === 'string' ? entry.value : null;
+    if (entry === undefined) return null;
+    if (type === 'arrayBuffer') {
+      return typeof entry.value === 'string' ? (new TextEncoder().encode(entry.value).buffer as ArrayBuffer) : entry.value;
+    }
+    return typeof entry.value === 'string' ? entry.value : null;
   }
 
   public async getWithMetadata(key: string): Promise<{ value: string | ArrayBuffer | null; metadata: unknown }> {
