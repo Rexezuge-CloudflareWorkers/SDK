@@ -65,11 +65,14 @@ function mapSpecifier(specifier: string, scope: string): SpecifierMapping {
     const hasDefault = Object.hasOwn(rules, 'default');
     const fallback = rules['default'];
     if (!hasDefault || fallback === undefined) {
-      // The one-to-one tail: an unmapped *utils* file in shared maps onto the
-      // kit's same-named dist module (the kit preserves the src tree).
-      if (packageName === 'shared' && subpath.startsWith('/utils/')) {
-        return { specifier: `${KIT_PACKAGE_FOR.shared}${subpath.slice('/utils'.length)}`, outcome: 'rewritten' };
-      }
+      // No tail. A one-to-one tail used to rewrite any `shared/utils/X` onto
+      // `@rexezuge/shared/X`, on the theory that the kit preserves the src
+      // tree. It does — but only for the files it actually converged. Edge-Git
+      // ships `BranchValidation`, `ConcurrencyUtil`, `GitOids`,
+      // `SlugValidation` and `SsrfHosts` there and the kit has none of them, so
+      // the tail rewrote live imports onto modules that do not exist and the
+      // build failed at resolution rather than at review. An unmapped file is
+      // a fact the operator can see in this report; a wrong rewrite is not.
       return { specifier, outcome: 'unruled' };
     }
     if (fallback === null) return { specifier, outcome: 'local' };

@@ -136,11 +136,20 @@ export const DAO_RENAMES: Readonly<Record<string, string>> = {
  * `ConfigurationManager` is deliberately absent: it is a *static namespace* the
  * repos that kept it call as `ConfigurationManager.oauth2.*`, not a class the
  * kit replaces — only `AppConfig` (a class rename) moves.
+ *
+ * `Provider` and `ServiceContext` were once mapped here to `RequestScope`.
+ * That was wrong and has been removed: `@rexezuge/runtime` exports **no**
+ * symbol named `RequestScope` — `di/RequestScope.ts` is a *module*, whose
+ * exports are the `setRequestScope` / `getRequestScope` / `asScopedContext`
+ * functions. Renaming to it produced imports of a non-existent export, and
+ * neither name has a kit counterpart anyway: `Provider<T>` is a lazy memoized
+ * DAO thunk (`() => Promise<T>`, so `scope.get(Tokens.X)()`), and
+ * `ServiceContext` is the `{ env, logger, clock }` value object the repo's
+ * scope middleware installs. Both stay local in the consumer. A mapping row
+ * may only name a symbol the target package actually exports.
  */
 export const CONFIG_RENAMES: Readonly<Record<string, string>> = {
   AppConfig: 'AppConfiguration',
-  Provider: 'RequestScope',
-  ServiceContext: 'RequestScope',
 };
 
 /**
