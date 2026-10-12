@@ -35,9 +35,25 @@ describe('renameImports', () => {
     expect(result.output).toBe("import { SUPPORTED_LOCALES } from '@rexezuge/i18n';");
   });
 
-  it('moves a shared utils subpath onto the kit dist tree', () => {
-    const result = renameImports("import { X } from '@dav/shared/utils/X';", '@dav');
-    expect(result.output).toBe("import { X } from '@rexezuge/shared/X';");
+  it('moves a shared utils subpath the kit converged', () => {
+    // Only files the kit actually ships may move. The rules table names them
+    // one by one, so this is a mapped row rather than a tail.
+    const result = renameImports("import { UUIDUtil } from '@dav/shared/utils/UUIDUtil';", '@dav');
+    expect(result.output).toBe("import { UUIDUtil } from '@rexezuge/shared';");
+  });
+
+  it('reports a shared utils file the kit has NOT converged instead of rewriting it', () => {
+    // Regression: a one-to-one tail used to map every `shared/utils/X` onto
+    // `@rexezuge/shared/X`. Edge-Git ships BranchValidation, ConcurrencyUtil,
+    // GitOids, SlugValidation and SsrfHosts there; the kit has none of them, so
+    // the tail produced imports of modules that do not exist.
+    for (const local of ['BranchValidation', 'ConcurrencyUtil', 'GitOids', 'SlugValidation', 'SsrfHosts']) {
+      const source = `import { X } from '@dav/shared/utils/${local}';`;
+      const result = renameImports(source, '@dav');
+      expect(result.output).toBe(source);
+      expect(result.changes).toStrictEqual([]);
+      expect(result.unmapped).toStrictEqual([`@dav/shared/utils/${local}`]);
+    }
   });
 
   it('moves runtime kernel files and keeps ConfigurationManager, http and constants', () => {
@@ -141,5 +157,19 @@ describe('renameSymbols', () => {
 
   it('counts what it rewrote', () => {
     expect(renameSymbols('this.withRetry(a); this.allWithRetry(b);').changes).toBe(2);
+  });
+
+  it('leaves the local DI vocabulary alone', () => {
+    // Regression: `Provider` and `ServiceContext` were once mapped to
+    // `RequestScope`, which `@rexezuge/runtime` does not export — it exports the
+    // setRequestScope/getRequestScope/asScopedContext *functions*. Both names
+    // are a consumer's own DI types and stay local.
+    const source = [
+      "import { Provider } from './Provider';",
+      'function build(): Provider<Dao> { return async () => new Dao(); }',
+      "import type { ServiceContext } from './ServiceContext';",
+      'const ctx: ServiceContext = createServiceContext(env);',
+    ].join('\n');
+    expect(renameSymbols(source).output).toBe(source);
   });
 });
