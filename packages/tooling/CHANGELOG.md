@@ -1,5 +1,12 @@
 # @rexezuge/tooling
 
+## 1.5.1
+
+### Patch Changes
+
+- cbbffa1: Fix `defineRepoLintConfig` ordering: the sonarjs `recommended` preset was assembled between `UNICORN_RULES` and the rules it relaxes, re-enabling six deliberate family offs (`void-use`, `different-types-comparison`, `use-type-alias`, `redundant-type-aliases`, `no-nested-assignment`, `no-all-duplicated-branches`) as errors in every consumer. Both presets now assemble before the off-blocks.
+- @rexezuge/d1@1.5.1
+
 ## 1.5.0
 
 ### Patch Changes
