@@ -47,6 +47,12 @@ Nine packages now, not eight.
 - **`codemods`** — `adopt.ts` implements `--remove-packages` (it was documented
   as step 3 and read `void removePackages;`), and `flagValue` no longer returns
   the positional root as the scope when `--scope` is missing.
+- **`codemods`** — `adopt.ts` takes `--rules <file>`, merging operator-supplied
+  departures over the shipped tables per-row (the documented override escape
+  hatch now exists); identity renames are member-scoped, so `resolveUserId`
+  imports no longer rewrite onto a symbol the kit does not export; the
+  `Provider`/`ServiceContext` → `RequestScope` rows and the `shared/utils/*`
+  rewrite tail are removed for the same reason.
 
 ## 1.0.0
 

@@ -9,6 +9,13 @@ on:
     branches:
       - main
 
+# Version runs race when several pushes to main land close together (a version
+# PR merge followed by a feature merge): serialize them so two runs never open
+# competing `changeset-release/main` pull requests.
+concurrency:
+  group: version-packages-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   version:
     name: Version Packages
@@ -30,8 +37,23 @@ jobs:
       - name: Install
         run: pnpm install --no-frozen-lockfile
 
+      - name: Check For Releasable Changesets
+        id: check
+        run: |
+          # `status --output` exits non-zero when the release plan itself is
+          # broken (e.g. a changeset mixing ignored and releasable packages),
+          # which must stay loud. An empty `releases` list means nothing
+          # releasable is pending (only ignored/private changesets, or none at
+          # all): skip the version PR so the action never pushes an empty
+          # branch and fails PR creation with "No commits between main and
+          # changeset-release/main".
+          pnpm changeset status --output "$RUNNER_TEMP/changeset-status.json"
+          HAS_RELEASABLE=$(node -e "console.log(require(process.env.RUNNER_TEMP + '/changeset-status.json').releases.length > 0 ? 'true' : 'false')")
+          echo "has_releasable=$HAS_RELEASABLE" >> "$GITHUB_OUTPUT"
+
       - name: Create Version Pull Request
         id: changesets
+        if: steps.check.outputs.has_releasable == 'true'
         uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1
         with:
           version: pnpm version-packages
@@ -55,7 +77,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin changeset-release/main
-          git checkout changeset-release/main
+          git checkout -B changeset-release/main FETCH_HEAD
           VERSION=$(node -p "require('./packages/errors/package.json').version")
           MSG="CHORE: Version Packages v$VERSION"
           CURRENT=$(git log -1 --format=%s)
