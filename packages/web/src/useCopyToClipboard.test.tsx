@@ -184,7 +184,7 @@ describe('useCopyToClipboard', () => {
 
 describe('useCopyToClipboard reset', () => {
   it('clears the feedback early and cancels the pending timer', async () => {
-    const writeText = vi.fn(async () => undefined);
+    const writeText = vi.fn(async () => {});
     withClipboard(writeText);
     const { result } = renderHook(() => useCopyToClipboard());
 
