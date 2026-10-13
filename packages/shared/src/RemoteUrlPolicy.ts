@@ -204,6 +204,12 @@ function stripTrailingDot(host: string): string {
 
 /**
  * Host names that mean "this machine or a local suffix", not an internet peer.
+ *
+ * Exported because `isPrivateOrInternalHost` deliberately answers about
+ * *resolved addresses* and a caller holding a bare hostname has to ask both
+ * questions. It was module-private, which left one consumer re-implementing this
+ * exact line beside a kit call that answered the other half — two predicates for
+ * one decision, in the same function, free to drift.
  */
 function isLocalhostName(host: string): boolean {
   return BLOCKED_HOSTNAMES.has(host) || host.endsWith('.localhost');
@@ -338,6 +344,7 @@ export {
   normalizeRemoteUrl,
   resolveRedirectUrl,
   parseAllowedHosts,
+  isLocalhostName,
   isPrivateOrInternalHost,
   stripBrackets,
   stripTrailingDot,

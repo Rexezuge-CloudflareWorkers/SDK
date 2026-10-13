@@ -19,6 +19,18 @@
     "./*": {
       "types": "./dist/*.d.ts",
       "default": "./dist/*.js"
+    },
+    "./src/*": {
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
+    },
+    "./src/*/*": {
+      "types": "./src/*/*.ts",
+      "default": "./src/*/*.ts"
+    },
+    "./src/*/*/*": {
+      "types": "./src/*/*/*.ts",
+      "default": "./src/*/*/*.ts"
     }
   },
   "files": [

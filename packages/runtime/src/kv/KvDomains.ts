@@ -3,16 +3,24 @@
  *
  * Converged from `backend-runtime/src/kv/KvDomains.ts` (Durable-DAV,
  * Durable-DAV-Router, Edge-Sonic, Mail-Otter — the same table under four sets
- * of names). The domains are generalized to the three the whole family shares;
- * a consumer with a different cache vocabulary renames its call sites (clients
- * adapt) rather than extending the registry, because an open registry is how
- * prefix collisions start.
+ * of names). The names here are the three the family shares, and they are the
+ * **default**, not a requirement: a repo whose cache vocabulary is genuinely
+ * different supplies its own table, because the TTL and size policy below is
+ * per-repo by definition — a cache holding album artwork keyed by a file's mtime
+ * and a cache holding session profiles cannot share a lifetime, and renaming
+ * call sites to fit a shared table would silently change when a library is
+ * re-read from its origin.
+ *
+ * What does **not** become open is the *union*: a consumer's registry is still a
+ * closed `Record<D, KvDomainDef>` over its own names, so a typo cannot create a
+ * new keyspace, and prefix collisions still start the way the family has always
+ * assumed they do.
  *
  * Rationale: D1 and the Durable Object stay the source of truth. KV is a
  * loss-tolerant, read-heavy cache only — a miss or eviction must always be
  * recoverable by recompute. Call sites never touch `env.CACHE` directly; they
- * go through `KvCache` with a closed `KvDomainName` registry so prefixes cannot
- * collide and TTL/size policy lives in one table.
+ * go through `KvCache` with a registry so prefixes cannot collide and TTL/size
+ * policy lives in one table.
  */
 const KV_KEY_VERSION = 'v1';
 const KV_MAX_KEY_LENGTH = 512;
@@ -26,7 +34,17 @@ interface KvDomainDef {
   description: string;
 }
 
-const KV_DOMAINS: Record<KvDomainName, KvDomainDef> = {
+/**
+ * A keyspace's whole policy, closed over its own domain names.
+ *
+ * `D` is the consumer's union, so `KV_DOMAINS` satisfies `KvDomains<KvDomainName>`
+ * and a repo's own table satisfies `KvDomains<'songMeta' | 'albumArt'>` — with
+ * both keeping the "this name exists" check that makes a typo a throw rather than
+ * a new prefix.
+ */
+type KvDomains<D extends string = KvDomainName> = Readonly<Record<D, KvDomainDef>>;
+
+const KV_DOMAINS: KvDomains = {
   session: {
     ttlSeconds: 300,
     maxValueBytes: 65_536,
@@ -79,9 +97,22 @@ function sanitizeSegment(segment: string): string {
   return encodeURIComponent(trimmed);
 }
 
-function buildKvKey(domain: KvDomainName, parts: readonly string[]): string {
-  const def = KV_DOMAINS[domain];
-  if (!def) throw new Error(`Unknown KV domain: ${domain}.`);
+/**
+ * The key for a value.
+ *
+ * `domains` is an optional trailing argument rather than a required one so the
+ * common case — the kit's own vocabulary — reads as two arguments. It is the
+ * **same registry** a `KvCache` holds: a key built against one table and a TTL
+ * resolved against another is a cache that reads and writes under one policy and
+ * reports another, which is the failure this threading exists to make impossible
+ * rather than to document.
+ */
+function buildKvKey<D extends string = KvDomainName>(
+  domain: D,
+  parts: readonly string[],
+  domains: KvDomains<D> = KV_DOMAINS as KvDomains<D>,
+): string {
+  if (!domains[domain]) throw new Error(`Unknown KV domain: ${domain}.`);
   if (parts.length === 0) throw new Error(`KV domain ${domain} requires at least one key part.`);
   const prefix = `${domain}:${KV_KEY_VERSION}:`;
   const joined = parts.map((part) => sanitizeSegment(part)).join(':');
@@ -103,10 +134,25 @@ function utf8ByteLength(value: string): number {
  * Resolve a TTL, defaulting to the domain's own. Every domain declares a
  * required `ttlSeconds`, so there is no "no TTL" case to represent.
  */
-function clampTtl(ttlSeconds: number | undefined, domain: KvDomainName): number {
-  const effective = ttlSeconds ?? KV_DOMAINS[domain].ttlSeconds;
-  return Number.isFinite(effective) ? Math.max(KV_MIN_TTL_SECONDS, Math.floor(effective)) : KV_DOMAINS[domain].ttlSeconds;
+function clampTtl<D extends string = KvDomainName>(
+  ttlSeconds: number | undefined,
+  domain: D,
+  domains: KvDomains<D> = KV_DOMAINS as KvDomains<D>,
+): number {
+  const fallback = domains[domain]?.ttlSeconds ?? KV_DOMAINS.session.ttlSeconds;
+  const effective = ttlSeconds ?? fallback;
+  return Number.isFinite(effective) ? Math.max(KV_MIN_TTL_SECONDS, Math.floor(effective)) : fallback;
 }
 
-export { KV_DOMAINS, KV_MAX_KEY_LENGTH, KV_MIN_TTL_SECONDS, buildKvKey, clampTtl, digest128, sanitizeSegment, utf8ByteLength };
-export type { KvDomainDef, KvDomainName };
+export {
+  KV_DOMAINS,
+  KV_KEY_VERSION,
+  KV_MAX_KEY_LENGTH,
+  KV_MIN_TTL_SECONDS,
+  buildKvKey,
+  clampTtl,
+  digest128,
+  sanitizeSegment,
+  utf8ByteLength,
+};
+export type { KvDomainDef, KvDomainName, KvDomains };

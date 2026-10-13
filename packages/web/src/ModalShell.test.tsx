@@ -38,13 +38,31 @@ describe('ModalShell', () => {
 
   it('closes on the backdrop element itself', () => {
     const onClose = vi.fn();
-    const { container } = render(
+    render(
       <ModalShell ariaLabel="Confirm" onClose={onClose}>
         <p>body</p>
       </ModalShell>,
     );
-    fireEvent.click(container.firstElementChild as Element);
+    // The frame is portalled to `document.body`, so the backdrop is found there
+    // rather than in the render container — which is the whole point of the portal
+    // and the reason this test cannot reach through `container` any more.
+    const frame = document.body.querySelector('[role="presentation"]') as Element;
+    expect(frame).not.toBeNull();
+    fireEvent.click(frame);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders into a portal on document.body, not in place', () => {
+    const { container } = render(
+      <ModalShell ariaLabel="Confirm" onClose={vi.fn()}>
+        <p>body</p>
+      </ModalShell>,
+    );
+    // The defect this guards: a dialog nested in a scrolling container is clipped by
+    // it, and one nested inside a `position: fixed` ancestor is positioned by that
+    // ancestor rather than the viewport. In-place rendering produced both.
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
   });
 
   it('closes on Escape', () => {

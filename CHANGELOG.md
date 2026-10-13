@@ -7,6 +7,19 @@ curated overview.
 
 ## Unreleased
 
+### The consumer kernel
+
+Eight changes, each one either a behaviour a consumer copy had measurably better
+or a place this repo's own documentation described something the code did not do.
+`@rexezuge/d1`'s `BaseDAO` now accepts the subrequest meter its doc comment
+already claimed — which is what unblocked the largest fork in the family.
+`@rexezuge/http`'s `AccessAuthError` is a 401 rather than a bare `Error`, so a
+signed-out operator stops reading as a server fault. `KvCache` grew the circuit
+breaker and the meter. `createLogger` reads its level per emit, so
+`LOG_LEVEL=debug` is no longer inert for a module-scope logger. `validate-locales`
+implements the three checks its header advertised. Full detail in
+`.changeset/consumer-kernel-convergence.md`.
+
 ### `@rexezuge/web`
 
 - **Nine more components converged** from the family's copies: `AppPage`,

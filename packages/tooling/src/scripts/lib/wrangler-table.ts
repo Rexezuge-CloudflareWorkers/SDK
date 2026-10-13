@@ -59,9 +59,13 @@ export function parseWranglerTableRows(output: string): string[][] {
     if (cells.length < 2) {
       continue;
     }
-    const firstCell = cells[0];
-    // The header row and the horizontal rules are frame, not data.
-    if (firstCell === HEADER_FIRST_CELL || firstCell.includes(RULE_CHARACTER)) {
+    // The header row and the horizontal rules are frame, not data; an empty row is
+    // frame too. Destructured rather than indexed so it is total under
+    // `noUncheckedIndexedAccess` as well as without it — a consuming repo enables
+    // that flag and this package does not, and a script that only typechecks in its
+    // author's repository is a script a consumer cannot adopt.
+    const [firstCell] = cells;
+    if (firstCell === undefined || firstCell === HEADER_FIRST_CELL || firstCell.includes(RULE_CHARACTER)) {
       continue;
     }
     rows.push(cells);

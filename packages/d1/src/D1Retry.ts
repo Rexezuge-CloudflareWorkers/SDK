@@ -68,7 +68,19 @@ async function executeWithRetry<T extends D1Result>(operation: () => Promise<T>,
     const isLastAttempt = attempt === maxRetries;
     try {
       const result: T = await operation();
-      if (result.success) return result;
+      // A result with **no** `success` member is a success, not a failed one. That
+      // is not a hypothetical: `first()` answers `null` when there is no row, and
+      // `null` is the platform's own "no row, not an error" — the convention this
+      // package, `KvCache` and every layer above them share. Reading `.success`
+      // off it threw `Cannot read properties of null`, which turned a missing row
+      // into a `DatabaseError` and made every optional lookup look like a fault.
+      //
+      // So the test is for a result that *says* it failed, not for one that lacks
+      // the word. `undefined` and `null` therefore pass straight through, and so
+      // does a plain value a caller wrapped the statement in.
+      if (result === null || result === undefined || typeof result !== 'object' || !('success' in result) || result.success) {
+        return result;
+      }
       const errorMessage: string = result.error ?? 'Unknown database error';
       const failure = toDatabaseError(errorMessage, context);
       if (!isLastAttempt && failure.retryable) {

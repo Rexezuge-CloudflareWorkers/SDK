@@ -47,6 +47,7 @@ export {
   normalizeRemoteUrl,
   resolveRedirectUrl,
   parseAllowedHosts,
+  isLocalhostName,
   isPrivateOrInternalHost,
   stripBrackets,
   stripTrailingDot,
@@ -57,6 +58,8 @@ export {
   BLOCKED_HOSTNAMES,
 } from './RemoteUrlPolicy.ts';
 export type { UrlPolicyOptions } from './RemoteUrlPolicy.ts';
+
+export { timingSafeEqualStrings } from './TimingSafe.ts';
 
 // Pagination.
 export { CursorCodec } from './CursorCodec.ts';

@@ -2,10 +2,10 @@
  * Shared statics for Hono route handlers.
  *
  * Converged from `endpoints/IBaseRoute.ts` / `endpoints/BaseRoute.ts` in the
- * nine full-framework repos, which currently hold **three incompatible shapes**:
- * a chanfana `OpenAPIRoute` subclass, a Hono `Response`-returning base class, and
- * a namespace of statics. All three survive here, because the decision of which
- * to use is genuinely per-repo — but the *parts* they share no longer do.
+ * nine full-framework repos, which hold **two incompatible shapes**: a Hono
+ * `Response`-returning base class, and a namespace of statics. Both survive here,
+ * because the decision of which to use is genuinely per-repo — but the *parts*
+ * they share no longer do.
  *
  * ## Why a namespace and not a base class
  *
@@ -19,16 +19,20 @@
  * Method takes {@link createRouteHandler}; a repo that does not takes the statics
  * directly. Neither pays for the other's abstraction.
  *
- * ## Why both route bases ship
+ * ## What this does not ship, and why that is not a gap
  *
  * Six of the nine repos build routes as chanfana `OpenAPIRoute` subclasses with
- * file-based routing and a zod schema registry. Edge-Git, Edge-Sonic and
- * Durable-DAV-Router register handlers imperatively against a `Hono` app and
- * return `Response` themselves.
+ * file-based routing and a zod schema registry. This header used to claim
+ * "both are here — `IBaseRoute` is the chanfana shape". There is no
+ * `IBaseRoute` in this package: not exported, not defined, not in the barrel.
+ * Nothing chanfana-shaped was ever converged, so the paragraph named a symbol a
+ * consumer could not import and would have spent an afternoon looking for.
  *
- * Both are here. `IBaseRoute` is the chanfana shape; {@link createRouteHandler}
- * builds the imperative one. Converging them would have meant picking a loser on a
- * decision that is not the kit's to make.
+ * It is recorded here rather than dropped so the next repo to read this knows the
+ * chanfana half is genuinely **unconverged** and not something it missed. A
+ * shared statics block genuinely can be adopted underneath an `OpenAPIRoute`
+ * subclass — `readJson`/`requireString` are framework-free — so the shape is
+ * available to those six repos without a base class they would have to extend.
  */
 import { BadRequestError } from '@rexezuge/errors';
 import { toErrorResponse } from './ErrorMapper.ts';

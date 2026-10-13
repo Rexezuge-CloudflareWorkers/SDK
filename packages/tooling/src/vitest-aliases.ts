@@ -67,6 +67,23 @@ export const DEFAULT_CLOUDFLARE_MOCKS: readonly string[] = ['workers', 'sockets'
 export const KIT_NO_EXTERNAL: readonly RegExp[] = [/(^|[/\\])@rexezuge\//];
 
 /**
+ * Bare specifiers the kit and its consumer must resolve to **one** copy.
+ *
+ * Every entry is a peer of a kit package rather than a dependency, which is
+ * exactly why it is needed: a peer is not installed twice under a registry
+ * install, so the two sides already agree. A `link:` install breaks that
+ * agreement — the symlinked package directory carries its own `node_modules`, and
+ * with `@rexezuge/*` inlined into Vite's pipeline (see {@link KIT_NO_EXTERNAL})
+ * the kit's copy wins for its own imports while the consumer's wins for the app's.
+ *
+ * Two Reacts is not a warning: `useState` is read off a module-level hook
+ * dispatcher that only one of them initialises, so every hook inside a kit
+ * component throws `Cannot read properties of null (reading 'useState')`. The
+ * failure names the kit, and the cause is the install layout.
+ */
+export const KIT_DEDUPE: readonly string[] = ['react', 'react-dom', 'react/jsx-runtime', 'lucide-react'];
+
+/**
  * What `workspaceAliases` accepts.
  */
 export interface WorkspaceAliasesOptions {

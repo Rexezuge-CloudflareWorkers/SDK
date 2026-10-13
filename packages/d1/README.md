@@ -60,7 +60,7 @@ try {
 import { decryptSecret, encryptSecret } from '@rexezuge/d1';
 
 const { ciphertext, iv } = await encryptSecret(clientSecret, env.BACKUP_ENCRYPTION_KEY); // store the pair
-const cleartext = await decryptSecret(ciphertext, iv, env.BACKUP_ENCRYPTION_KEY);
+const cleartext = await decryptSecret({ ciphertext, iv }, env.BACKUP_ENCRYPTION_KEY);
 ```
 
 Key material is base64 of exactly 32 bytes; a missing or wrong-sized key throws `AesGcmKeyError` rather than storing the secret in the clear. The IV is random per call — reusing one under a key destroys GCM's guarantees, which is why it is returned alongside the ciphertext instead of being internal.

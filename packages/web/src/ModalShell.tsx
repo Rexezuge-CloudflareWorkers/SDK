@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 /**
  * The modal frame every confirm dialog in the family sits inside.
@@ -12,7 +13,11 @@ import { useEffect, type ReactNode } from 'react';
  * **It renders in a portal.** A dialog nested in a scrolling container is
  * clipped by it, and one nested inside a `position: fixed` ancestor is
  * positioned by that ancestor rather than the viewport. The portal is what makes
- * "centre of the screen" mean the same thing everywhere.
+ * "centre of the screen" mean the same thing everywhere. The header claimed this
+ * and the component did not do it — `createPortal(…, document.body)` was in
+ * four of the five copies it converged from and was dropped on the way in, so a
+ * consumer inside a scrolling card got a clipped dialog from a file whose own
+ * documentation promised it would not.
  *
  * **It closes on the backdrop but not on the panel.** The backdrop click closes;
  * a click inside the panel stops propagating so that selecting text in a
@@ -70,7 +75,13 @@ function ModalShell({ onClose, children, widthClass = 'w-80', ariaLabel, closeLa
     return (): void => removeEventListener('keydown', onKeyDown);
   }, [closeOnEscape, onClose]);
 
-  return (
+  // Guarded for a document-less render — a server-side pass or a test that has
+  // not installed jsdom. The fallback is an inline render, which is exactly the
+  // behaviour this component had before the portal was restored, so nothing
+  // crashes where it previously worked.
+  const container = typeof document === 'undefined' ? null : document.body;
+
+  const dialog = (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose} role="presentation">
       <div className="fixed inset-0 bg-black/60 animate-backdrop-in" aria-hidden="true" />
       <div
@@ -95,6 +106,8 @@ function ModalShell({ onClose, children, widthClass = 'w-80', ariaLabel, closeLa
       </div>
     </div>
   );
+
+  return container ? createPortal(dialog, container) : dialog;
 }
 
 export { ModalShell };
