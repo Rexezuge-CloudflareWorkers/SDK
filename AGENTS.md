@@ -91,6 +91,11 @@ one direction that never looks like a bug. Use truthiness or `== null`.
   Every PR touching `packages/*` must add one changeset file (`pnpm changeset`,
   `minor` for features, `major` for breaking). Highest bump wins; all nine move
   together.
+- Never write a changeset for an ignored or private package (`ignore` in
+  `.changeset/config.json`, `private: true`): it can never version or publish,
+  it lingers forever unconsumed, and one file mixing ignored and releasable
+  packages makes `changeset status` fail. Document those changes in the PR and
+  the curated `CHANGELOG.md` overview instead.
 - Flow: merge PRs with changesets → merge the automated `CHORE: Version Packages vX.Y.Z`
   PR (opened by `version.yml` running `pnpm version-packages`, which stamps the
   new lockstep version into the title and closes superseded version PRs) → `Publish`
