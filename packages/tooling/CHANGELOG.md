@@ -1,5 +1,12 @@
 # @rexezuge/tooling
 
+## 1.7.1
+
+### Patch Changes
+
+- Updated dependencies [6da3828]
+  - @rexezuge/d1@1.7.1
+
 ## 1.7.0
 
 ### Minor Changes

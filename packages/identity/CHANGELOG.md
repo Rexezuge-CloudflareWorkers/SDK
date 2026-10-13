@@ -1,5 +1,14 @@
 # @rexezuge/identity
 
+## 1.7.1
+
+### Patch Changes
+
+- Updated dependencies [6da3828]
+  - @rexezuge/d1@1.7.1
+  - @rexezuge/errors@1.7.1
+  - @rexezuge/shared@1.7.1
+
 ## 1.7.0
 
 ### Minor Changes

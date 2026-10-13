@@ -1,5 +1,12 @@
 # @rexezuge/web
 
+## 1.7.1
+
+### Patch Changes
+
+- @rexezuge/errors@1.7.1
+  - @rexezuge/shared@1.7.1
+
 ## 1.7.0
 
 ### Minor Changes
