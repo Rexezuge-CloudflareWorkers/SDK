@@ -47,9 +47,9 @@ One class per row of `CATALOG`, so a status can never disagree with its code or 
 | `NotImplementedError`       | 501    | no              |
 | `BadGatewayError`           | 502    | no              |
 | `ServiceUnavailableError`   | 503    | yes             |
-| `DatabaseError`             | 502    | no              |
+| `DatabaseError`             | 500    | no              |
 
-`HttpServiceError` is the generic carrier when only a catalog entry is needed. `DatabaseError` carries the D1 classifier's verdict in its `retryable` flag.
+`HttpServiceError` is the generic carrier when only a catalog entry is needed. `DatabaseError` carries the D1 classifier's verdict in its `retryable` flag. Its status is **500**, inherited from the `InternalServerError` catalog entry rather than restated — the whole point of the catalog is that status, code and default message cannot drift apart, so a row that re-declared its own status would be the one entry that could disagree with the table.
 
 ## 3. Outcome errors
 

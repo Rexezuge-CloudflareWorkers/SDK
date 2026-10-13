@@ -9,6 +9,7 @@ import { KvCache } from './kv/KvCache.ts';
 import { buildKvKey, digest128 } from './kv/KvDomains.ts';
 import { AbstractEntrypointWorker } from './base/AbstractEntrypointWorker.ts';
 import type { WorkerExecutionContext } from './base/AbstractEntrypointWorker.ts';
+import { BASE_WORKER_MESSAGES } from './base/baseWorkerError.ts';
 
 // ---------- DI container ----------
 
@@ -188,6 +189,50 @@ describe('AbstractEntrypointWorker', () => {
     const worker = new OkWorker();
     await worker.scheduled({ cron: '*/10 * * * *', scheduledTime: 0, noRetry: (): void => undefined }, {}, ctx);
     expect(worker.lastScheduled).toBe('*/10 * * * *');
+  });
+});
+
+class RedactingWorker extends AbstractEntrypointWorker {
+  public seen: Array<[string, unknown]> = [];
+
+  protected async onRequest(): Promise<Response> {
+    throw new Error('token=ya29.abcdef leaked');
+  }
+
+  protected async onScheduled(): Promise<void> {
+    throw new Error('scheduled leak');
+  }
+
+  protected reportUnhandled(message: string, error: unknown): void {
+    this.seen.push([message, error]);
+  }
+}
+
+describe('AbstractEntrypointWorker error reporting', () => {
+  it('reports through console.error by default', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await new BoomWorker().fetch(new Request('https://x/'), {}, ctx);
+    expect(error).toHaveBeenCalledWith(BASE_WORKER_MESSAGES.fetch, expect.any(Error));
+  });
+
+  it('routes the caught value to an override instead, with the static message intact', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // `spyOn` returns the existing spy when one is already installed, so without
+    // this the assertion below would still be holding the previous test's call.
+    error.mockClear();
+    const worker = new RedactingWorker();
+    await worker.fetch(new Request('https://x/'), {}, ctx);
+    // The override is what a consumer uses to redact: it must receive the
+    // caught value (not a pre-stringified one, which could not be scrubbed)
+    // alongside the message the base chose.
+    expect(worker.seen).toEqual([[BASE_WORKER_MESSAGES.fetch, expect.any(Error)]]);
+    expect(error).not.toHaveBeenCalled();
+  });
+
+  it('keeps every base message a static literal', () => {
+    for (const message of Object.values(BASE_WORKER_MESSAGES)) {
+      expect(message).toMatch(/^Unhandled error in [a-zA-Z ()]+:$/);
+    }
   });
 });
 

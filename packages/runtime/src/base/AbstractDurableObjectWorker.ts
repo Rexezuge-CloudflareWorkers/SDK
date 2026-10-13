@@ -1,4 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
+import { BASE_WORKER_MESSAGES } from './baseWorkerError.ts';
 
 /**
  * The Durable Object base: one `fetch` entry, error containment inside it.
@@ -19,9 +20,18 @@ abstract class AbstractDurableObjectWorker<TEnv = Env> extends DurableObject<TEn
     try {
       return await this.onRequest(request);
     } catch (err: unknown) {
-      console.error('Unhandled error in durable object fetch():', err);
+      this.reportUnhandled(BASE_WORKER_MESSAGES.durableObjectFetch, err);
       return Response.json({ error: 'Internal Error' }, { status: 500 });
     }
+  }
+
+  /**
+   * The sink for an unhandled rejection at this base's boundary. See
+   * `AbstractEntrypointWorker.reportUnhandled` — the base owns the static
+   * message, the consumer owns whether the caught value may be logged as-is.
+   */
+  protected reportUnhandled(message: string, error: unknown): void {
+    console.error(message, error);
   }
 
   /**

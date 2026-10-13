@@ -1,32 +1,42 @@
+import { WorkflowEntrypoint } from 'cloudflare:workers';
+import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
+import { BASE_WORKER_MESSAGES } from './baseWorkerError.ts';
+
 /**
- * The Workflow base, converged verbatim from `AbstractWorkflowWorker.ts`
- * (identical in Edge-Git and Mail-Otter; Edge-Sonic ships the same shape as
- * `runWorkflow.ts` with a `WorkflowEntrypoint` wrapper around it).
+ * The Workflow base, converged from the `AbstractWorkflowWorker` copies in
+ * Edge-Git and Mail-Otter (Edge-Sonic ships the same shape as `runWorkflow.ts`
+ * with a `WorkflowEntrypoint` wrapper around it).
  *
- * `WorkflowStepLike` is the minimal `step.do` surface: a workflow whose steps
- * are not retried by the platform is just a coroutine, and the wrapper exists
- * to keep the retry semantics visible in one place.
+ * It extends the platform `WorkflowEntrypoint` because a workflow handler needs
+ * `this.env` — it is where the bindings come from, and every step in a real
+ * workflow builds a request scope from it. An earlier version of this file
+ * modelled `WorkflowEventLike`/`WorkflowStepLike` as standalone structural
+ * types and dropped the parent class, which removed `this.env` and reduced
+ * `step.do` to `(name, callback)`. That is not a stricter shape, it is a lossy
+ * one: it took away the per-step `retries`/`timeout` config that makes a step
+ * retryable under the platform rather than a bare coroutine call. Both are
+ * restored here, and the structural types are gone with them — the platform
+ * types are the ones that were correct all along.
  */
-interface WorkflowEventLike<T = unknown> {
-  payload: T;
-}
-
-interface WorkflowStepLike {
-  do<T>(name: string, callback: () => Promise<T>): Promise<T>;
-}
-
-abstract class AbstractWorkflowWorker<TPayload = unknown, TResult = unknown> {
-  public async run(event: Readonly<WorkflowEventLike<TPayload>>, step: WorkflowStepLike): Promise<TResult> {
+abstract class AbstractWorkflowWorker<TEnv = Env, TPayload = unknown, TResult = unknown> extends WorkflowEntrypoint<TEnv, TPayload> {
+  public async run(event: Readonly<WorkflowEvent<TPayload>>, step: WorkflowStep): Promise<TResult> {
     try {
       return await this.onWorkflow(event, step);
     } catch (err: unknown) {
-      console.error('Unhandled error in workflow run():', err);
+      this.reportUnhandled(BASE_WORKER_MESSAGES.workflow, err);
       throw err;
     }
   }
 
-  protected abstract onWorkflow(event: Readonly<WorkflowEventLike<TPayload>>, step: WorkflowStepLike): Promise<TResult>;
+  /**
+   * The sink for an unhandled rejection at this base's boundary. See
+   * `AbstractEntrypointWorker.reportUnhandled`.
+   */
+  protected reportUnhandled(message: string, error: unknown): void {
+    console.error(message, error);
+  }
+
+  protected abstract onWorkflow(event: Readonly<WorkflowEvent<TPayload>>, step: WorkflowStep): Promise<TResult>;
 }
 
 export { AbstractWorkflowWorker };
-export type { WorkflowEventLike, WorkflowStepLike };

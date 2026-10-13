@@ -1,3 +1,5 @@
+import { BASE_WORKER_MESSAGES } from './baseWorkerError.ts';
+
 /**
  * Minimal Workers-compatible context types so backend-runtime typechecks
  * without @cloudflare/workers-types. Apps pass the real ExecutionContext /
@@ -36,7 +38,7 @@ abstract class AbstractEntrypointWorker {
     try {
       return await this.onRequest(request, env, ctx);
     } catch (err: unknown) {
-      console.error('Unhandled error in fetch():', err);
+      this.reportUnhandled(BASE_WORKER_MESSAGES.fetch, err);
       return new Response('Internal Error', { status: 500 });
     }
   }
@@ -45,8 +47,21 @@ abstract class AbstractEntrypointWorker {
     try {
       await this.onScheduled(event, env, ctx);
     } catch (err: unknown) {
-      console.error('Unhandled error in scheduled():', err);
+      this.reportUnhandled(BASE_WORKER_MESSAGES.scheduled, err);
     }
+  }
+
+  /**
+   * The sink for an unhandled rejection at this base's boundaries.
+   *
+   * Overridable because the default hands the caught value to `console.error`
+   * verbatim, which is only safe when nothing in the call path can carry a
+   * secret. A consumer whose entrypoint can transitively carry one overrides
+   * this to a redacting sink, and keeps the static message as the argument, so
+   * the redaction decision stays in the consumer where the threat model lives.
+   */
+  protected reportUnhandled(message: string, error: unknown): void {
+    console.error(message, error);
   }
 
   protected abstract onRequest(request: Request, env: Env, ctx: WorkerExecutionContext): Promise<Response>;
