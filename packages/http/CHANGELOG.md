@@ -1,5 +1,12 @@
 # @rexezuge/http
 
+## 1.6.0
+
+### Patch Changes
+
+- @rexezuge/errors@1.6.0
+  - @rexezuge/shared@1.6.0
+
 ## 1.5.2
 
 ### Patch Changes
