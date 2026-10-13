@@ -12,8 +12,17 @@
  * that no longer exists. So the import pass *collects* what it renamed, and a
  * second pass rewrites exactly those identifiers — the set a file that imports
  * them, so a same-named local elsewhere is never touched.
+ *
+ * Two scopes, because some identifiers mean different things in different
+ * positions. `rules.symbolRenames` applies everywhere (a `this.x(` call, a
+ * `new X(`, an import clause, and every follow-up use). `rules.memberRenames`
+ * applies **only** at `this.x(` / `await this.x(` / `super.x(` — see
+ * `IDENTITY_MEMBER_RENAMES`, where `resolveUserId` is a method to rename and a
+ * free function to leave alone. Running a member rename through the import pass
+ * would rewrite an import of a symbol the kit does not export, which fails at
+ * module resolution rather than at review.
  */
-import { CONFIG_RENAMES, DAO_RENAMES, I18N_RENAMES, IDENTITY_RENAMES } from './mapping';
+import { DEFAULT_RULES, type MergedRules } from './mapping';
 
 export interface SymbolRenameResult {
   output: string;
@@ -22,12 +31,9 @@ export interface SymbolRenameResult {
 
 const CALL_PREFIXES = ['this.', 'await this.', 'super.'];
 
-/**
-Every rename table, composed once: the DAO/config/identity/i18n surfaces.
-*/
-const RENAMES: Record<string, string> = { ...DAO_RENAMES, ...CONFIG_RENAMES, ...IDENTITY_RENAMES, ...I18N_RENAMES };
-
-export function renameSymbols(source: string): SymbolRenameResult {
+export function renameSymbols(source: string, rules: MergedRules = DEFAULT_RULES): SymbolRenameResult {
+  const RENAMES = rules.symbolRenames;
+  const MEMBER_RENAMES = rules.memberRenames;
   let changes = 0;
 
   // The lookbehind is the whole safety property: without it, `"this.withRetry("`
@@ -35,6 +41,10 @@ export function renameSymbols(source: string): SymbolRenameResult {
   // character anywhere in its prefix is left alone.
   const member = new RegExp(
     String.raw`(?<!["'])(?:${CALL_PREFIXES.map((prefix) => prefix.replace('.', String.raw`\.`)).join('|')})\b(${Object.keys(RENAMES).join('|')})\b\(`,
+    'g',
+  );
+  const memberOnly = new RegExp(
+    String.raw`(?<!["'])(?:${CALL_PREFIXES.map((prefix) => prefix.replace('.', String.raw`\.`)).join('|')})\b(${Object.keys(MEMBER_RENAMES).join('|')})\b\(`,
     'g',
   );
   const constructed = new RegExp(String.raw`\bnew\s+(${Object.keys(RENAMES).join('|')})\b\(`, 'g');
@@ -49,6 +59,10 @@ export function renameSymbols(source: string): SymbolRenameResult {
     // re-scanned for `$` patterns, so a future rename containing one renames
     // literally instead of interpolating the match.
     return match.replace(name, () => RENAMES[name]);
+  });
+  output = output.replace(memberOnly, (match, name: string) => {
+    changes += 1;
+    return match.replace(name, () => MEMBER_RENAMES[name]);
   });
   output = output.replace(constructed, (match, name: string) => {
     changes += 1;

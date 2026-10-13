@@ -253,3 +253,42 @@ describe('adopt: flags', () => {
     expect(() => execFileSync('npx', ['tsx', ADOPT], { encoding: 'utf8', stdio: 'pipe' })).toThrow();
   });
 });
+
+describe('adopt: --rules overrides', () => {
+  it('parks a divergent subtree locally instead of moving it', () => {
+    const root = fixture({ 'apps/api/src/index.ts': "import { getBackendStrings } from '@dav/shared/i18n';\n" });
+    const rulesPath = path.join(root, 'overrides.json');
+    writeFileSync(rulesPath, JSON.stringify({ subpathRules: { shared: { '/i18n': null } } }));
+
+    adopt(root, ['--write', '--rules', rulesPath]);
+
+    const written = readFileSync(path.join(root, 'apps/api/src/index.ts'), 'utf8');
+    // The specifier stays put…
+    expect(written).toContain("from '@dav/shared/i18n'");
+    // …but the canonical *name* is still applied, which is the point of parking
+    // rather than skipping: the bundle keeps its own keys while adopting the
+    // kit's vocabulary, so it stops being a second dialect of the same thing.
+    expect(written).toContain('getLocalizedStrings');
+  });
+
+  it('still applies the rows the override did not touch', () => {
+    const root = fixture({ 'apps/api/src/index.ts': "import { UUIDUtil } from '@dav/shared/utils';\n" });
+    const rulesPath = path.join(root, 'overrides.json');
+    writeFileSync(rulesPath, JSON.stringify({ subpathRules: { shared: { '/i18n': null } } }));
+
+    adopt(root, ['--write', '--rules', rulesPath]);
+
+    expect(readFileSync(path.join(root, 'apps/api/src/index.ts'), 'utf8')).toContain('@rexezuge/shared');
+  });
+
+  it('fails loudly on an unreadable rules file rather than falling back', () => {
+    const root = fixture({ 'apps/api/src/index.ts': "import { UUIDUtil } from '@dav/shared/utils';\n" });
+
+    // Degrading to the shipped table here would rewrite the repo against a
+    // mapping the operator did not ask for, and surface the mistake as
+    // unresolved imports several steps later instead of naming the bad flag.
+    const badRules = path.join(root, 'nope.json');
+    // eslint-disable-next-line sonarjs/no-os-command-from-path
+    expect(() => execFileSync('npx', ['tsx', ADOPT, root, '--scope', '@dav', '--rules', badRules], { stdio: 'pipe' })).toThrow();
+  });
+});

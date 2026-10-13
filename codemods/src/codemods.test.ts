@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { mergeRules } from './mapping';
 import { renameImports } from './rename-imports';
 import { renameSymbols } from './rename-symbols';
 
@@ -171,5 +172,64 @@ describe('renameSymbols', () => {
       'const ctx: ServiceContext = createServiceContext(env);',
     ].join('\n');
     expect(renameSymbols(source).output).toBe(source);
+  });
+
+  it('renames the identity service methods onto their account-named forms', () => {
+    const source = 'const a = await this.resolveUserId(email);\nconst b = await this.resolveUserById(id);';
+    const result = renameSymbols(source);
+    expect(result.output).toContain('this.resolveAccountId(email)');
+    expect(result.output).toContain('this.resolveAccountById(id)');
+  });
+
+  it('leaves the identity free function named resolveUserId', () => {
+    // Regression: `IDENTITY_RENAMES` mapped `resolveUserId` to
+    // `resolveAccountId` un-scoped, so an `import { resolveUserId }` became an
+    // import of a symbol `@rexezuge/identity` does not export — the free
+    // function keeps its name, and only the *method* is renamed. The member-only
+    // table is what tells the two apart.
+    const source = [
+      "import { resolveUserId } from '@rexezuge/identity';",
+      'const id = await resolveUserId(this.lookupDeps(), email);',
+    ].join('\n');
+    expect(renameSymbols(source).output).toBe(source);
+  });
+});
+
+describe('consumer rule overrides', () => {
+  it('parks a divergent subtree locally while keeping every other row', () => {
+    // Mail-Otter's i18n bundle is ~130 product keys; the kit's locales carry a
+    // 3-key `common` group, so moving the bundle would delete the product's
+    // strings. The override parks that one row and inherits the rest.
+    const rules = mergeRules({ subpathRules: { shared: { '/i18n': null } } });
+    const result = renameImports("import { getBackendStrings } from '@ot/shared/i18n';", '@ot', rules);
+    expect(result.output).toBe("import { getBackendStrings } from '@ot/shared/i18n';");
+    // …and the package's other rows still apply.
+    expect(renameImports("import { UUIDUtil } from '@ot/shared/utils';", '@ot', rules).output).toContain('@rexezuge/shared');
+  });
+
+  it('parks an identity DAO locally for a users table the kit does not model', () => {
+    const rules = mergeRules({ identityDaoSubpaths: { '/dao/UserDAO': null } });
+    const kept = renameImports("import { UserDAO } from '@ot/backend-data/dao/UserDAO';", '@ot', rules);
+    expect(kept.output).toBe("import { UserDAO } from '@ot/backend-data/dao/UserDAO';");
+    // The DAO that *does* match still moves.
+    expect(renameImports("import { UserEmailDAO } from '@ot/backend-data/dao/UserEmailDAO';", '@ot', rules).output).toContain(
+      '@rexezuge/identity',
+    );
+  });
+
+  it('accepts a package the shipped tables have never heard of', () => {
+    const rules = mergeRules({ subpathRules: { 'new-kernel': { '/base': '@rexezuge/runtime' } } });
+    expect(renameImports("import { Base } from '@ot/new-kernel/base';", '@ot', rules).output).toContain('@rexezuge/runtime');
+  });
+
+  it('leaves the shipped tables untouched when a rule is merged', () => {
+    mergeRules({ subpathRules: { shared: { '/i18n': null } } });
+    // Second repo, no overrides: the default still moves the bundle.
+    expect(renameImports("import { getBackendStrings } from '@ot/shared/i18n';", '@ot').output).toContain('@rexezuge/i18n');
+  });
+
+  it('honours a repo-specific symbol rename', () => {
+    const rules = mergeRules({ symbolRenames: { getBaseUrl: 'origin' } });
+    expect(renameSymbols("import { getBaseUrl } from './base';", rules).output).toContain('origin');
   });
 });

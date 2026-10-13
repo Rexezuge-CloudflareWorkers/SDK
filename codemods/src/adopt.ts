@@ -18,11 +18,18 @@
  *   5. Reports the package.json dependency edits to make (never edits them: a
  *      lockfile change wants the human's `pnpm install` in the loop).
  *
+ * `--rules <file>` loads a JSON object of per-repo departures from the shipped
+ * mapping tables — see `ConsumerRules` in `mapping.ts`. It exists because a repo
+ * whose divergence is legitimate and permanent (a product i18n bundle the kit has
+ * no keys for, a `users` table carrying a column the kit's DAO does not model)
+ * otherwise has to fork the kit's tables to migrate at all.
+ *
  * `--dry-run` (the default in CI) writes nothing.
  */
 import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { mergeRules, type ConsumerRules } from './mapping';
 import { renameImports } from './rename-imports';
 import { renameSymbols } from './rename-symbols';
 import { rewriteComponentImports } from './web-components';
@@ -101,11 +108,23 @@ function main(): void {
   const root = argv.find((argument) => !argument.startsWith('--'));
   const scope = flagValue(argv, '--scope');
   if (!root || !scope) {
-    console.error('Usage: tsx src/adopt.ts <consumer-root> --scope @my-app [--write] [--remove-packages]');
+    console.error('Usage: tsx src/adopt.ts <consumer-root> --scope @my-app [--rules overrides.json] [--write] [--remove-packages]');
     process.exit(1);
   }
   const dryRun = !argv.includes('--write');
   const removePackages = argv.includes('--remove-packages');
+
+  let rules;
+  try {
+    rules = mergeRules(loadRules(flagValue(argv, '--rules')));
+  } catch (error: unknown) {
+    // A malformed rules file must stop the run, not degrade into a default-table
+    // migration: the operator asked for specific departures and would get the
+    // shipped table instead, with the rewrite failures landing at `pnpm -r
+    // typecheck` rather than here where the file is named.
+    console.error(`Could not read --rules: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
 
   const report: AdoptReport = {
     filesScanned: 0,
@@ -127,13 +146,13 @@ function main(): void {
   for (const file of walk(root)) {
     const source = readFileSync(file, 'utf8');
     report.filesScanned += 1;
-    const imports = renameImports(source, scope);
+    const imports = renameImports(source, scope, rules);
     // Component imports are relative, not `@scope/pkg`, so the kernel rename
     // cannot see them. This runs after it because `renameSymbols` may have
     // changed a component name on the way past — running it first would rewrite
     // a specifier whose identifier no longer matches what the file uses.
     const components = rewriteComponentImports(imports.output);
-    const symbols = renameSymbols(components.output);
+    const symbols = renameSymbols(components.output, rules);
     countReferences(symbols.output, scope, packages);
     for (const specifier of imports.unmapped) {
       if (!report.unmappedImports.includes(specifier)) report.unmappedImports.push(specifier);
@@ -198,6 +217,25 @@ function main(): void {
   }
 
   console.log('  next: run `pnpm add` for each kit package, then `pnpm -r typecheck`.');
+}
+
+/**
+ * Read the `--rules` override file, if one was given.
+ *
+ * Returns `undefined` for an absent flag (the common case) and **throws** for a
+ * present-but-unreadable one. Silently degrading to the shipped tables on a
+ * typo would rewrite a repo against a mapping the operator did not ask for, and
+ * the failure would surface as unresolved imports several steps later.
+ */
+function loadRules(rulesPath: string | undefined): ConsumerRules | undefined {
+  if (rulesPath === undefined) return undefined;
+  const resolved = path.resolve(rulesPath);
+  if (!existsSync(resolved)) throw new Error(`no such file: ${resolved}`);
+  const parsed: unknown = JSON.parse(readFileSync(resolved, 'utf8'));
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error('expected a JSON object of rule overrides');
+  }
+  return parsed;
 }
 
 /**

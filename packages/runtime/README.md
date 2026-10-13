@@ -37,7 +37,7 @@ import { AppConfiguration, EnvParser } from '@rexezuge/runtime';
 
 class MyConfig extends AppConfiguration {
   public getPageSize(): number {
-    return EnvParser.number(this.raw(), 'PAGE_SIZE', 50);
+    return EnvParser.positiveInt(this.raw(), 'PAGE_SIZE', '50');
   }
 }
 
@@ -57,6 +57,26 @@ for (const warning of config.validate()) console.warn(warning); // warnings, nev
 | `AbstractWorkflowWorker`      | Workflows                                             |
 
 `fetch()` / `scheduled()` log-and-contain: an unhandled throw is a 500 response or a logged cron failure, never a platform crash. There is deliberately no `/__scheduled` HTTP branch — cron runs through the wrangler `triggers.crons` binding. The structural `WorkerExecutionContext` / `WorkerScheduledController` types mean this package typechecks without `@cloudflare/workers-types`.
+
+`AbstractQueueWorker` and `AbstractWorkflowWorker` use the platform's own `MessageBatch` / `WorkflowEntrypoint` types rather than structural stand-ins, so a handler gets `batch.queue`, `message.ack()` / `retry()`, `this.env` and three-argument `step.do(name, { retries, timeout }, fn)` without a cast. Pass your platform batch as the type parameter:
+
+```ts
+class DispatcherWorker extends AbstractQueueWorker<MessageBatch<EmailQueueMessage>> {
+  protected async onQueue(batch: MessageBatch<EmailQueueMessage>): Promise<void> {
+    for (const message of batch.messages) message.ack();
+  }
+}
+```
+
+**Redacting the error log.** Every base's catch reports through a `reportUnhandled(message, error)` hook that defaults to `console.error`. That default hands the caught value to the log verbatim, which is only safe when nothing in the call path can carry a secret. Override it where that is not true — the message stays a literal from `BASE_WORKER_MESSAGES`, so the override never has to interpolate untrusted text into a log line:
+
+```ts
+class TokenRefresher extends AbstractDurableObjectWorker<Env> {
+  protected override reportUnhandled(message: string, error: unknown): void {
+    logTokenAdjacentError('error', message); // never interpolates `error`
+  }
+}
+```
 
 ## 4. Logger and KV cache
 
