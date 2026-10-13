@@ -64,13 +64,47 @@ interface LocaleReport {
 /**
 Every dotted key path in a bundle, depth first.
 */
-function flatten(value: unknown, prefix = ''): string[] {
+function flatten(value: unknown, prefix = '', out: Map<string, unknown> = new Map()): Map<string, unknown> {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    return prefix ? [prefix] : [];
+    if (prefix) out.set(prefix, value);
+    return out;
   }
   const entries = Object.entries(value as Record<string, unknown>);
-  if (entries.length === 0) return prefix ? [prefix] : [];
-  return entries.flatMap(([key, child]) => flatten(child, prefix ? `${prefix}.${key}` : key));
+  if (entries.length === 0) {
+    if (prefix) out.set(prefix, value);
+    return out;
+  }
+  for (const [key, child] of entries) {
+    flatten(child, prefix ? `${prefix}.${key}` : key, out);
+  }
+  return out;
+}
+
+/**
+ * The interpolation tokens in a value, sorted.
+ *
+ * Sorted so two values carrying the same tokens in different orders compare equal —
+ * substitution is by name, so order carries no meaning. `localeCompare` rather than
+ * the default comparator so a reported mismatch does not change with the machine's
+ * locale.
+ */
+function placeholdersOf(value: unknown): string[] {
+  if (typeof value !== 'string') return [];
+  return [...new Set(value.match(/\{\{[^{}]+\}\}/g))].sort((left: string, right: string) => left.localeCompare(right));
+}
+
+/**
+ * A source file to check `t()` call sites under, and how far down to look.
+ */
+interface CallSiteScope {
+  /**
+  Directory walked for source files.
+  */
+  dir: string;
+  /**
+  Extensions treated as source.
+  */
+  extensions: readonly string[];
 }
 
 /**
@@ -306,6 +340,21 @@ function bundleFor(localesDir: string, locale: string, shape: LocaleShape): stri
 }
 
 /**
+ * The base bundle, flattened, for a scope that checks the application against it.
+ *
+ * @throws when the bundle cannot be found or parsed — the caller reports that as a
+ *   problem rather than reporting "all clear" against an empty key set, which is
+ *   the one outcome a locale gate must never produce silently.
+ */
+function bundleAt(localesDir: string, baseLocale: string, shape: LocaleShape): Map<string, unknown> {
+  const file = bundleFor(localesDir, baseLocale, shape);
+  if (file === undefined) {
+    throw new Error(`no bundle found for the base locale (expected ${baseLocale}/translation.json)`);
+  }
+  return flatten(readBundle(file));
+}
+
+/**
  * Validate a directory of locale bundles against `baseLocale`'s key set.
  *
  * Two-way parity: a key the base has and a bundle lacks renders the fallback, and
@@ -324,13 +373,14 @@ function validateLocales(localesDir: string, baseLocale = 'en', shape: LocaleSha
     return { locales: [], keys: 0, problems };
   }
 
-  let baseKeys: Set<string>;
+  let baseBundle: Map<string, unknown>;
   try {
-    baseKeys = new Set(flatten(readBundle(baseFile)));
+    baseBundle = flatten(readBundle(baseFile));
   } catch (error: unknown) {
     problems.push({ locale: baseLocale, problem: `${baseFile}: ${error instanceof Error ? error.message : String(error)}` });
     return { locales: [], keys: 0, problems };
   }
+  const baseKeys = new Set(baseBundle.keys());
 
   if (baseKeys.size === 0) {
     // An empty base is the one defect that reaches the most users: it is the fallback
@@ -347,18 +397,40 @@ function validateLocales(localesDir: string, baseLocale = 'en', shape: LocaleSha
       problems.push({ locale, problem: 'no bundle found' });
       continue;
     }
-    let keys: Set<string>;
+    let bundle: Map<string, unknown>;
     try {
-      keys = new Set(flatten(readBundle(file)));
+      bundle = flatten(readBundle(file));
     } catch (error: unknown) {
       problems.push({ locale, problem: `${file}: ${error instanceof Error ? error.message : String(error)}` });
       continue;
     }
     for (const key of baseKeys) {
-      if (!keys.has(key)) problems.push({ locale, problem: `missing key: ${key}` });
+      if (!bundle.has(key)) problems.push({ locale, problem: `missing key: ${key}` });
     }
-    for (const key of keys) {
-      if (!baseKeys.has(key)) problems.push({ locale, problem: `extra key not in ${baseLocale}: ${key}` });
+    for (const [key, value] of bundle) {
+      if (!baseKeys.has(key)) {
+        problems.push({ locale, problem: `extra key not in ${baseLocale}: ${key}` });
+        continue;
+      }
+      // An empty value is reported for the base too. i18next renders `''` for a key
+      // whose value is empty and for a key that is absent, so the two are the same
+      // blank screen — which is why a "translated" locale can look complete in a
+      // diff and be missing on the page.
+      if (typeof value !== 'string' || value === '') {
+        problems.push({ locale, problem: `empty value: ${key} — indistinguishable from a missing key at runtime` });
+        continue;
+      }
+      // Placeholder parity. Substitution is by name, so a translation that drops
+      // `{{count}}` renders the sentence with a hole in it and no error anywhere.
+      const expected = placeholdersOf(baseBundle.get(key));
+      if (expected.length === 0) continue;
+      const actual = placeholdersOf(value);
+      if (expected.length !== actual.length || expected.some((token, index) => token !== actual[index])) {
+        problems.push({
+          locale,
+          problem: `placeholder mismatch at ${key}: ${locale} has ${JSON.stringify(actual)}, ${baseLocale} has ${JSON.stringify(expected)}`,
+        });
+      }
     }
   }
 
@@ -366,17 +438,148 @@ function validateLocales(localesDir: string, baseLocale = 'en', shape: LocaleSha
 }
 
 /**
-CLI entry: `validateLocalesCli(['[locales-dir]?', '--shape=auto|dir|file|module'?, '--base=<tag>'?])`.
+ * Every `t('key')` call site under a scope, with its inline default if it has one.
+ *
+ * This is the only part of the check that reaches the application rather than the
+ * bundles: the rest compare bundle to bundle, so with one shipped language the whole
+ * per-tag body is skipped and the script reports `ALL OK` having checked nothing
+ * about the product — it cannot see that a key was used and absent, because the
+ * string in the bundle did not exist to be wrong *about* anything.
+ *
+ * Dynamic keys cannot be resolved statically and are skipped rather than guessed:
+ * a computed key that happens to start with a literal is a finding nobody can act
+ * on, and one finding nobody can act on trains people to ignore the report.
+ */
+function collectCallSites(scope: CallSiteScope, baseKeys: Set<string>, baseBundle: Map<string, unknown>): LocaleProblem[] {
+  const problems: LocaleProblem[] = [];
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === 'coverage') continue;
+        walk(full);
+        continue;
+      }
+      if (scope.extensions.every((extension) => !entry.name.endsWith(extension))) continue;
+      const source = readFileSync(full, 'utf8');
+      // `t('…')` / `t("…")` with a string literal first argument. The key is the
+      // single source of truth for what is rendered, so anything else is out of scope.
+      const pattern = /\bt\(\s*(['"])((?:[^'"\\]|\\.)*)\1\s*(,)?/g;
+      for (const match of source.matchAll(pattern)) {
+        const key = match[2];
+        if (key.includes('${') || key.includes('{{')) continue;
+        const where = path.relative(process.cwd(), full) || full;
+        if (!baseKeys.has(key)) {
+          problems.push({
+            locale: 'call-site',
+            problem: `${where}: t('${key}') is not in the bundle — it renders as the inline default and is untranslatable`,
+          });
+          continue;
+        }
+        // A default that disagrees with the shipped bundle **fails**: one of the two
+        // is a bug, and the default is the one that renders verbatim the day the key
+        // goes missing — which is the fallback path the whole check is about.
+        if (!match[3]) continue;
+        const inline = readDefault(source, match.index + match[0].length);
+        if (inline === null) continue;
+        const bundled = baseBundle.get(key);
+        if (inline !== bundled) {
+          problems.push({
+            locale: 'call-site',
+            problem: `${where}: t('${key}', …) default disagrees with the bundle — bundle=${JSON.stringify(bundled)} default=${JSON.stringify(inline)}`,
+          });
+        }
+      }
+    }
+  };
+  walk(scope.dir);
+  return problems;
+}
+
+/**
+ * The first string literal at `from`, or `null` when the next token is not one.
+ *
+ * The terminator is the literal's **own** quote character and never the other one.
+ * A default that contains an apostrophe is the ordinary case here — these bundles
+ * say things like `D1's daily write allowance` — so a scan that accepts either
+ * quote stops at the apostrophe and reports `D1` as the whole default, turning a
+ * correct file into a "default disagrees" failure on every line that quotes an
+ * English possessive.
+ */
+function readDefault(source: string, from: number): string | null {
+  const rest = source.slice(from).replace(/^\s+/, '');
+  const quote = rest[0];
+  if (quote !== "'" && quote !== '"') return null;
+  const body = rest.slice(1);
+  const closer = quote === "'" ? /^(?:[^'\\]|\\.)*'/ : /^(?:[^"\\]|\\.)*"/;
+  const match = closer.exec(body);
+  if (!match) return null;
+  return decodeStringLiteral(body.slice(0, match[0].length - 1));
+}
+
+/**
+ * Decode a JS string literal as written in source, escapes and all.
+ *
+ * Only the escapes these bundles use are handled. An unrecognised one is passed
+ * through as the backslash plus the character rather than throwing: a validator
+ * that crashes on an unfamiliar escape reports nothing at all, which is worse than
+ * reporting a value it had to guess at.
+ */
+function decodeStringLiteral(raw: string): string {
+  return raw.replaceAll(/\\(.)/gs, (whole, char: string) => {
+    switch (char) {
+      case 'n': {
+        return '\n';
+      }
+      case 't': {
+        return '\t';
+      }
+      case 'r': {
+        return '\r';
+      }
+      case '\\':
+      case "'":
+      case '"':
+      case '`': {
+        return char;
+      }
+      default: {
+        return whole;
+      }
+    }
+  });
+}
+
+/**
+CLI entry: `validateLocalesCli(['[locales-dir]?', '--shape=auto|dir|file|module'?, '--base=<tag>'?, '--call-sites=<src-dir>'?])`.
+
+`--call-sites=<dir>` opts into the application-side checks: every `t('key')` under
+`<dir>` must resolve against the base bundle, and any inline default must equal the
+bundled value. Without the flag the script stays bundle-to-bundle, because that is
+the only part it can answer for a repo whose bundles are consumed by something
+other than `t()` — a backend string table, for instance.
 */
 function validateLocalesCli(argv: readonly string[] = process.argv.slice(2)): number {
   const dir = argv.find((arg) => !arg.startsWith('--')) ?? 'apps/web/src/locales';
   const shape = (argv.find((arg) => arg.startsWith('--shape='))?.slice('--shape='.length) ?? 'auto') as LocaleShape;
   const base = argv.find((arg) => arg.startsWith('--base='))?.slice('--base='.length) ?? 'en';
+  const callSiteDir = argv.find((arg) => arg.startsWith('--call-sites='))?.slice('--call-sites='.length);
 
   const report = validateLocales(dir, base, shape);
-  if (report.problems.length > 0) {
-    console.error(`Locale validation failed for ${dir} (${report.problems.length} problem(s)):`);
-    for (const problem of report.problems) console.error(`  - ${problem.locale}: ${problem.problem}`);
+  const problems = [...report.problems];
+
+  if (callSiteDir !== undefined && existsSync(callSiteDir)) {
+    try {
+      const baseBundle = bundleAt(dir, base, shape);
+      problems.push(...collectCallSites({ dir: callSiteDir, extensions: ['.ts', '.tsx'] }, new Set(baseBundle.keys()), baseBundle));
+    } catch (error: unknown) {
+      problems.push({ locale: 'call-site', problem: `${callSiteDir}: ${error instanceof Error ? error.message : String(error)}` });
+    }
+  }
+
+  if (problems.length > 0) {
+    console.error(`Locale validation failed for ${dir} (${problems.length} problem(s)):`);
+    for (const problem of problems) console.error(`  - ${problem.locale}: ${problem.problem}`);
     return 1;
   }
   console.log(`Locale validation passed (${report.locales.length} locales, ${report.keys} keys each, shape ${shape}).`);

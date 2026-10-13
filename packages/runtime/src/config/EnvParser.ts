@@ -50,15 +50,38 @@ class EnvParser {
     return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : Number(defaultValue);
   }
 
+  /**
+   * Whether an explicitly-set numeric var is a usable non-negative integer.
+   *
+   * The `nonNegativeInt` counterpart of {@link isValidPositiveInt}, for the same
+   * reason and with zero admitted. Two repos carried this and the kit did not,
+   * so a repo adopting it would have had to re-add it locally to keep its
+   * `validate()` checks whole.
+   */
+  public static isValidNonNegativeInt(env: unknown, key: string): boolean {
+    const value = this.readString(env, key);
+    if (value === undefined) return true;
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) && parsed >= 0;
+  }
+
   public static boolean(env: unknown, key: string, defaultValue: string): boolean {
     return (this.readString(env, key) ?? defaultValue) === 'true';
   }
 
   /**
   The raw value, or undefined when unset. Public because presence checks (validate) need it.
+
+  Guards its input rather than casting it. `AppConfiguration` takes `env: unknown`
+  precisely so a caller can hand it whatever the platform produced, and the cast
+  this replaced threw a `TypeError` on `null`/`undefined` instead of answering
+  "unset" — so the one moment a config check needs to be most forgiving (a
+  binding missing entirely) was the one that could not be asked.
   */
   public static readString(env: unknown, key: string): string | undefined {
-    return (env as Record<string, string | undefined>)[key];
+    if (env === null || typeof env !== 'object') return undefined;
+    const value = (env as Record<string, unknown>)[key];
+    return typeof value === 'string' ? value : undefined;
   }
 }
 

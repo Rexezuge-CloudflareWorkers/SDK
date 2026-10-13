@@ -72,27 +72,44 @@
  * derivation.
  */
 interface RateLimitContext {
-  req: { header(name: string): string | undefined };
+  req: {
+    header(name: string): string | undefined;
+    /**
+     * A query parameter, for a caller answering in a dialect its own clients parse.
+     *
+     * The Subsonic envelope is chosen by `?f=` and its callback name by
+     * `?callback=`, so a `onThrottled` that builds one has to read both. Without
+     * this the only way to answer in a protocol dialect was to cast the context —
+     * which is how the one caller that needed it ended up keeping a fork of the
+     * whole limiter.
+     */
+    query?(name: string): string | undefined;
+  };
   get?(key: string): unknown;
+  /**
+   * The request's bindings.
+   *
+   * Present because `max` is a **resolver** over this same context: a limiter whose
+   * budget comes from configuration — and a per-stream or per-tenant budget has to
+   * come from configuration — has nowhere else to read it from. Without `env` the
+   * only way to size such a limit was to close over an ambient, or to cast.
+   */
+  env?: unknown;
   json(body: unknown, status?: number, headers?: Record<string, string>): Response;
 }
-
-type RateLimitSurface = 'rest' | 'user';
 
 interface RateLimitOptions {
   windowMs: number;
   max: number | ((c: RateLimitContext) => number);
   keyPrefix: string;
   /**
-   * Which error dialect a 429 answers in. One surface, one dialect: a client
-   * that parses a Subsonic envelope cannot read the user API's body, so a 429
-   * carrying it renders as "server error" and the client retries immediately —
-   * the opposite of what a throttle is for.
-   */
-  surface?: RateLimitSurface;
-  /**
    * Builds the 429 for a surface that has its own envelope. Defaults to the
    * `{Exception:{Type,Message}}` shape from `@rexezuge/errors`.
+   *
+   * This is how one surface, one dialect is enforced. A client that parses a
+   * Subsonic envelope cannot read the user API's body, so a 429 carrying the
+   * wrong one renders as "server error" and the client retries immediately —
+   * the opposite of what a throttle is for.
    */
   onThrottled?(retryAfter: number, c: RateLimitContext): Response;
 }
@@ -146,7 +163,21 @@ The sweep runs at most this often, regardless of bucket count.
 */
 const CLEANUP_INTERVAL_MS = 30_000;
 
-let lastCleanupAt = 0;
+/**
+ * One limiter's buckets, plus when it last swept.
+ *
+ * The timestamp lives **beside** the map rather than at module scope. It used to
+ * be a module-level `let` next to a per-limiter `Map`, and the two disagreed:
+ * limiter A's sweep set the timestamp and suppressed limiter B's for the next
+ * 30 seconds, so a map B owned was left holding expired keys while A's map —
+ * swept on the same clock — was clean. Two limiters with the same shape have
+ * different traffic; the shared clock made one of them's memory bound the
+ * other's.
+ */
+interface LimiterState {
+  buckets: Map<string, Bucket>;
+  lastCleanupAt: number;
+}
 
 function evictOldestBucket(buckets: Map<string, Bucket>): void {
   let oldestReset = Infinity;
@@ -161,7 +192,8 @@ function evictOldestBucket(buckets: Map<string, Bucket>): void {
   }
 }
 
-function cleanup(buckets: Map<string, Bucket>, now: number): void {
+function cleanup(state: LimiterState, now: number): void {
+  const { buckets } = state;
   // The cap is enforced here, on **every** request, and only the sweep is
   // deferred. Evicting *down* rather than clearing, so an attacker flooding new
   // keys cannot wipe out everyone else's buckets — and down to `MAX_BUCKETS - 1`
@@ -176,8 +208,8 @@ function cleanup(buckets: Map<string, Bucket>, now: number): void {
   // the request path, so the sweep only reclaims memory — and memory is what the
   // cap above already bounds. The cost moves from per-request to a fixed rate.
   if (buckets.size < CLEANUP_THRESHOLD) return;
-  if (now - lastCleanupAt < CLEANUP_INTERVAL_MS) return;
-  lastCleanupAt = now;
+  if (now - state.lastCleanupAt < CLEANUP_INTERVAL_MS) return;
+  state.lastCleanupAt = now;
   for (const [key, bucket] of buckets) {
     if (bucket.resetAt <= now) buckets.delete(key);
   }
@@ -199,6 +231,37 @@ function resolveBudget(max: number | ((c: RateLimitContext) => number), c: RateL
   return resolved;
 }
 
+/**
+ * Every limiter registered in this isolate, for the test seams below.
+ *
+ * The bucket map is a closure local, so there was nothing outside `rateLimit()`
+ * that could observe the cap or reset it — and a cap nothing measures is a cap
+ * nothing has tested. A consumer asserting "the bucket map never exceeded
+ * {@link MAX_BUCKETS}" had no way to.
+ */
+const registeredLimiters: LimiterState[] = [];
+
+/**
+ * Test seam: forget every bucket every limiter is holding, and re-arm their
+ * sweeps.
+ */
+function resetRateLimitForTests(): void {
+  for (const state of registeredLimiters) {
+    state.buckets.clear();
+    state.lastCleanupAt = 0;
+  }
+}
+
+/**
+ * Test seam: how many buckets are tracked across every limiter, so a consumer
+ * can assert the cap rather than infer it.
+ */
+function getRateLimitBucketCountForTests(): number {
+  let total = 0;
+  for (const state of registeredLimiters) total += state.buckets.size;
+  return total;
+}
+
 function rateLimit(opts: RateLimitOptions): RateLimitHandler {
   // Misconfiguration throws at registration rather than silently installing an
   // unlimited or immediately-tripping bucket. A resolver is exempt: an
@@ -214,14 +277,15 @@ function rateLimit(opts: RateLimitOptions): RateLimitHandler {
     throw new Error('Invalid rateLimit keyPrefix: must be a non-empty string');
   }
 
-  const buckets = new Map<string, Bucket>();
+  const state: LimiterState = { buckets: new Map<string, Bucket>(), lastCleanupAt: 0 };
+  registeredLimiters.push(state);
 
   return async (c: RateLimitContext, next: () => Promise<Response | void>): Promise<Response | void> => {
     // The limiter's own work, and **only** the limiter's own work, is inside
     // this `try`. `next()` runs from here or from a path below, never from both.
     try {
       const now = Date.now();
-      cleanup(buckets, now);
+      cleanup(state, now);
       const max = resolveBudget(opts.max, c);
 
       // Prefer a resolved identity over the client address, so a bucket is per
@@ -237,9 +301,9 @@ function rateLimit(opts: RateLimitOptions): RateLimitHandler {
       }
 
       const key = `${opts.keyPrefix}:${identity}`;
-      const existing = buckets.get(key);
+      const existing = state.buckets.get(key);
       if (!existing || existing.resetAt <= now) {
-        buckets.set(key, { count: 1, resetAt: now + opts.windowMs });
+        state.buckets.set(key, { count: 1, resetAt: now + opts.windowMs });
         return await next();
       }
 
@@ -264,17 +328,29 @@ function rateLimit(opts: RateLimitOptions): RateLimitHandler {
  * `Retry-After` travels on the header as well as in the message: a client that
  * only reads the status has no other way to know how long to wait, and one that
  * retries immediately is the failure a throttle exists to prevent.
+ *
+ * The header is applied on **both** paths, including the `onThrottled` one. It
+ * was computed and then discarded when a custom dialect was supplied, so a
+ * limiter that had installed `onThrottled` to answer in a protocol envelope
+ * silently dropped the one header the client's backoff depends on — and the
+ * failure looks like the client ignoring a throttle rather than the server
+ * forgetting to say when to resume. A custom body that cannot carry headers gets
+ * them attached afterwards; nothing here can now forget to.
  */
 function throttled(retryAfter: number, c: RateLimitContext, opts: RateLimitOptions): Response {
   const headers = { 'Retry-After': String(retryAfter) };
-  if (opts.onThrottled) return opts.onThrottled(retryAfter, c);
+  const response = opts.onThrottled
+    ? opts.onThrottled(retryAfter, c)
+    : // The family's canonical dialect, without importing the error taxonomy into
+      // the limiter's hot path: a rate-limited request is a 429 carrying a
+      // `RateLimited` type and the retry hint in its message.
+      c.json({ Exception: { Type: 'RateLimited', Message: `Too many requests. Retry after ${retryAfter}s.` } }, 429, headers);
 
-  // The family's canonical dialect, without importing the error taxonomy into the
-  // limiter's hot path: a rate-limited request is a 429 carrying a `RateLimited`
-  // type and the retry hint in its message.
-  const response = c.json({ Exception: { Type: 'RateLimited', Message: `Too many requests. Retry after ${retryAfter}s.` } }, 429, headers);
+  if (!response.headers.has('Retry-After')) {
+    response.headers.set('Retry-After', String(retryAfter));
+  }
   return response;
 }
 
-export { clientIp, rateLimit };
-export type { RateLimitContext, RateLimitHandler, RateLimitOptions, RateLimitSurface };
+export { clientIp, getRateLimitBucketCountForTests, rateLimit, resetRateLimitForTests, MAX_BUCKETS };
+export type { RateLimitContext, RateLimitHandler, RateLimitOptions };

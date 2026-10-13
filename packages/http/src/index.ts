@@ -31,8 +31,8 @@
  * double usable without a framework import.
  */
 
-export { clientIp, rateLimit } from './rateLimit.ts';
-export type { RateLimitContext, RateLimitHandler, RateLimitOptions, RateLimitSurface } from './rateLimit.ts';
+export { clientIp, getRateLimitBucketCountForTests, MAX_BUCKETS, rateLimit, resetRateLimitForTests } from './rateLimit.ts';
+export type { RateLimitContext, RateLimitHandler, RateLimitOptions } from './rateLimit.ts';
 
 export {
   applySecurityHeaders,

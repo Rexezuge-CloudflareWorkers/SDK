@@ -35,6 +35,7 @@
  */
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { isValidEmailFormat } from '@rexezuge/shared';
+import { UnauthorizedError } from '@rexezuge/errors';
 
 /**
 The identity the `ACCESS` binding reports.
@@ -85,9 +86,22 @@ interface AccessAuthOptions {
 }
 
 /**
-A rejected address. Local rather than an `Error`, so it cannot be caught as one.
+A rejected address.
+
+A `ServiceError` with `status: 401`, not a bare `Error`. Every error boundary
+in the family asks `error instanceof ServiceError` before deciding what to do,
+so an authentication failure that is *not* one arrives as an unexpected 500: a
+signed-out operator is told the server broke, the boundary logs every ordinary
+sign-out as a bug, and the client's "am I signed in?" probe cannot distinguish
+the two. This class extended `Error` and the comment above it claimed it did
+not, which is how a 401 became a 500 without either statement being wrong about
+itself.
+
+`expose` is inherited: a 401 is a status the message is safe to show, and every
+message here is a single fixed sentence that tells an unauthenticated caller
+nothing about how far their token got.
 */
-class AccessAuthError extends Error {
+class AccessAuthError extends UnauthorizedError {
   public constructor(message: string) {
     super(message);
     this.name = 'AccessAuthError';
@@ -140,6 +154,15 @@ const joseVerifier: AccessJwtVerifier = {
   async verify(token: string, teamDomain: string, policyAud: string): Promise<string> {
     const issuer = normalizeTeamDomain(teamDomain);
     const { payload } = await jwtVerify(token, jwksFor(issuer), { issuer, audience: policyAud });
+    // A signature that verifies over `email_verified: false` is a correctly
+    // signed assertion that the address is *not* verified. Returning the address
+    // anyway authenticates the exact case the claim exists to refuse. The
+    // binding path below already refused it; this closed the JWT path only, so
+    // a repo that authenticated by assertion while its sibling authenticated by
+    // binding had one right answer and one wrong.
+    if (payload.email_verified === false) {
+      throw new AccessAuthError('Cloudflare Access authentication failed.');
+    }
     return typeof payload.email === 'string' ? payload.email : '';
   },
 };
@@ -197,9 +220,18 @@ async function authenticateAccess(request: Request, binding: AccessBinding | und
  * optional chain as a throw: a rejected `getIdentity` resolves to `undefined` and
  * falls through to the single throw site, so a broken binding is a 401 rather
  * than an unhandled rejection in the auth middleware.
+ *
+ * The rejection is **logged** at debug. The status is right either way — a
+ * binding that cannot answer is not an identity — but a silently swallowed
+ * rejection makes a misconfigured `ACCESS` binding and a genuinely signed-out
+ * caller indistinguishable in the logs, and the first is an outage an operator
+ * can fix in a minute.
  */
 async function identityFromBinding(binding: AccessBinding | undefined): Promise<string | null> {
-  const identity = await binding?.getIdentity().catch(() => {});
+  const logRejected = (error: unknown): void => {
+    console.debug('[accessAuth] the ACCESS binding getIdentity() rejected; treating it as no identity:', error);
+  };
+  const identity = await binding?.getIdentity().catch(logRejected);
   if (identity?.emailVerified === false || identity?.email_verified === false) return null;
   const email = identity?.email?.trim().toLowerCase() ?? '';
   return isValidAuthEmail(email) ? email : null;

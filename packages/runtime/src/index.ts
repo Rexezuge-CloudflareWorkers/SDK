@@ -6,7 +6,7 @@
 
 export { Container } from './di/Container.ts';
 export type { Factory, Token } from './di/Container.ts';
-export { asScopedContext, getRequestScope, setRequestScope } from './di/RequestScope.ts';
+export { asScopedContext, getRequestScope, tryGetRequestScope, setRequestScope, SCOPE_MISSING_MESSAGE } from './di/RequestScope.ts';
 export type { ScopedContext } from './di/RequestScope.ts';
 export { AppConfiguration } from './config/AppConfiguration.ts';
 export { EnvParser } from './config/EnvParser.ts';
@@ -18,9 +18,26 @@ export { AbstractQueueWorker } from './base/AbstractQueueWorker.ts';
 export { AbstractWorkflowWorker } from './base/AbstractWorkflowWorker.ts';
 export { BASE_WORKER_MESSAGES } from './base/baseWorkerError.ts';
 export type { BaseWorkerOperation } from './base/baseWorkerError.ts';
-export { createLogger, isLogLevel, resolveLogLevel } from './logger.ts';
+export { createLogger, isLogLevel, resetLogLevelForTests, resolveLogLevel, setLogLevel } from './logger.ts';
 export type { LogLevel, Logger } from './logger.ts';
-export { KvCache, KV_DOMAINS, buildKvKey, clampTtl, digest128 } from './kv/index.ts';
-export type { KvDomainDef, KvDomainName, KvNamespaceLike } from './kv/index.ts';
+export {
+  COOLDOWN_MS,
+  FAILURE_THRESHOLD,
+  KV_DOMAINS,
+  KV_KEY_VERSION,
+  KV_MAX_KEY_LENGTH,
+  KV_MIN_TTL_SECONDS,
+  KvCache,
+  PURGE_LIST_LIMIT,
+  PURGE_MAX_PAGES,
+  UNMETERED,
+  buildKvKey,
+  clampTtl,
+  digest128,
+  resetBreakerForTests,
+  sanitizeSegment,
+  utf8ByteLength,
+} from './kv/index.ts';
+export type { KvDomainDef, KvDomainName, KvDomains, KvNamespaceLike, KvPutOptions, SubrequestMeterLike } from './kv/index.ts';
 export { AbstractScheduledTask, TaskRegistry } from './scheduled/index.ts';
 export type { ApplicationRunHandle, ScheduledTaskEnv, TaskLogger, TaskRunRecorder, TaskRunSummary } from './scheduled/index.ts';

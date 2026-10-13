@@ -59,7 +59,14 @@ export function parseFlags(argv: readonly string[], spec: FlagSpec): ParsedFlags
   const flags: ParsedFlags = new Map();
 
   for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
+    // `?? ''` rather than `as string`. `argv[index]` is `string | undefined` under
+    // `noUncheckedIndexedAccess`, which this package's own tsconfig does not enable
+    // and a consuming repo's does — so an assertion is redundant here and required
+    // there, and a script that only typechecks in its author's repository is a
+    // script a consumer cannot adopt. The loop bound already proves the element is
+    // present, and `''` is not a flag, so the fallthrough reports it rather than
+    // hiding it.
+    const arg = argv[index] ?? '';
     if (!arg.startsWith('-')) {
       throw new Error(`Unexpected argument: ${arg}`);
     }
@@ -135,7 +142,7 @@ export function splitPositional(
   const rest: string[] = [];
 
   for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
+    const arg = argv[index] ?? '';
     if (arg.startsWith('-')) {
       rest.push(arg);
       continue;

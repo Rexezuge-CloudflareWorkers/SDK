@@ -34,7 +34,7 @@
  */
 
 import { defineConfig, type Plugin } from 'vitest/config';
-import { DEFAULT_CLOUDFLARE_MOCKS, DEFAULT_WORKSPACE_PACKAGES, KIT_NO_EXTERNAL, workspaceAliases } from './vitest-aliases.ts';
+import { DEFAULT_CLOUDFLARE_MOCKS, DEFAULT_WORKSPACE_PACKAGES, KIT_DEDUPE, KIT_NO_EXTERNAL, workspaceAliases } from './vitest-aliases.ts';
 import type { VitestAlias } from './vitest-aliases.ts';
 
 export type { VitestAlias } from './vitest-aliases.ts';
@@ -198,7 +198,19 @@ export function defineUnitVitestConfig(options: UnitVitestConfigOptions = {}): R
 
   return defineConfig({
     ...(options.plugins !== undefined && { plugins: [...options.plugins] }),
-    resolve: { alias: aliases, noExternal: [...KIT_NO_EXTERNAL, ...(options.noExternal ?? [])] },
+    resolve: {
+      alias: aliases,
+      noExternal: [...KIT_NO_EXTERNAL, ...(options.noExternal ?? [])],
+      // The peer runtime a consumer and the kit must agree on. `@rexezuge/web`
+      // declares `react`, `react-dom` and `lucide-react` as peers, which under a
+      // registry install means neither package carries its own copy. Under the
+      // `link:` workflow this repo's own README recommends, the symlinked
+      // directory **does** have one — so the kit resolves its own React and the
+      // consumer resolves theirs, and every hook in a kit component throws
+      // `Cannot read properties of null (reading 'useState')`. Dedupe points the
+      // bare specifier at one copy for both.
+      dedupe: [...KIT_DEDUPE],
+    },
     test: {
       globals: true,
       environment: 'node',

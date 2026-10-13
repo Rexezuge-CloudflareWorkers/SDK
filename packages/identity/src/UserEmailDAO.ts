@@ -1,5 +1,6 @@
 import { BaseDAO } from '@rexezuge/d1';
 import type { D1Queryable } from '@rexezuge/d1';
+import type { SubrequestMeter } from '@rexezuge/shared';
 
 /**
  * One known address for an account.
@@ -23,8 +24,18 @@ export interface UserEmailRow {
 export type EmailClaim = 'claimed' | 'already-claimed';
 
 export class UserEmailDAO extends BaseDAO {
-  public constructor(database: D1Queryable) {
-    super(database);
+  /**
+   * @param database The binding.
+   * @param meter The invocation's subrequest counter. Optional, and defaulted,
+   *   because a consumer that meters its own DAOs must be able to meter this one
+   *   too: a DAO that charges nothing does not under-report loudly, it spends a
+   *   subrequest the ceiling never saw — and the failure surfaces as the platform
+   *   terminating an invocation, on no request, with no error in the application.
+   *   The parameter exists so adopting this class does not silently un-meter a
+   *   repository whose every other statement is charged.
+   */
+  public constructor(database: D1Queryable, meter?: SubrequestMeter) {
+    super(database, meter);
   }
 
   /**

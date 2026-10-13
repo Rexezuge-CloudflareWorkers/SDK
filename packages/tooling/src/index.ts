@@ -30,7 +30,7 @@ export type { RepoBackendOptions, RepoVitestConfigOptions, RepoWebOptions } from
 export { defineIntegrationVitestConfig } from './vitest-integration.ts';
 export type { IntegrationVitestConfigOptions } from './vitest-integration.ts';
 
-export { DEFAULT_CLOUDFLARE_MOCKS, DEFAULT_WORKSPACE_PACKAGES, KIT_NO_EXTERNAL, workspaceAliases } from './vitest-aliases.ts';
+export { DEFAULT_CLOUDFLARE_MOCKS, DEFAULT_WORKSPACE_PACKAGES, KIT_DEDUPE, KIT_NO_EXTERNAL, workspaceAliases } from './vitest-aliases.ts';
 export type { VitestAlias as WorkspaceAlias, WorkspaceAliasesOptions } from './vitest-aliases.ts';
 
 export { defineWebViteConfig, spaShellEmbedPlugin } from './vite.ts';
