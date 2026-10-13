@@ -38,6 +38,13 @@ import { DEFAULT_CLOUDFLARE_MOCKS, DEFAULT_WORKSPACE_PACKAGES, KIT_DEDUPE, KIT_N
 import type { VitestAlias } from './vitest-aliases.ts';
 
 export type { VitestAlias } from './vitest-aliases.ts';
+// Re-exported from this sub-barrel as well as the root, because a consumer
+// configuring **Vite** reaches for this path to find the same constants the vitest
+// factory applies — `KIT_DEDUPE` first, to keep one React between the app and the
+// kit's components. Exporting it only from the root meant that import failed with
+// `does not provide an export named 'KIT_DEDUPE'` at config-load time, which is a
+// build failure before any test runs and no error that names the install.
+export { KIT_DEDUPE, KIT_NO_EXTERNAL } from './vitest-aliases.ts';
 
 /**
  * Coverage thresholds, in the four figures Vitest gates on.
