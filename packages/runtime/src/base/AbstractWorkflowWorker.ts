@@ -17,8 +17,14 @@ import { BASE_WORKER_MESSAGES } from './baseWorkerError.ts';
  * retryable under the platform rather than a bare coroutine call. Both are
  * restored here, and the structural types are gone with them — the platform
  * types are the ones that were correct all along.
+ *
+ * `TEnv` is last and defaulted rather than first: every consumer in the family
+ * writes `AbstractWorkflowWorker<TPayload, TResult>`, so leading with the env
+ * type would silently reinterpret their payload as the environment. The default
+ * is the ambient `Env`, which is what a handler wants unless it has narrowed its
+ * bindings deliberately.
  */
-abstract class AbstractWorkflowWorker<TEnv = Env, TPayload = unknown, TResult = unknown> extends WorkflowEntrypoint<TEnv, TPayload> {
+abstract class AbstractWorkflowWorker<TPayload = unknown, TResult = unknown, TEnv = Env> extends WorkflowEntrypoint<TEnv, TPayload> {
   public async run(event: Readonly<WorkflowEvent<TPayload>>, step: WorkflowStep): Promise<TResult> {
     try {
       return await this.onWorkflow(event, step);
