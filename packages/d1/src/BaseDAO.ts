@@ -95,11 +95,26 @@ interface WriteResult {
  */
 abstract class BaseDAO {
   /**
+   * Public, and deliberately so.
+   *
+   * A composition root instantiates concrete DAOs directly — that is the whole
+   * point of a DI container, which binds `() => new UserDAO(db)` rather than
+   * handing the container a factory that hides the construction. A `protected`
+   * constructor blocks that and buys nothing: the class is `abstract`, so nobody
+   * can instantiate `BaseDAO` itself regardless, and the access modifier
+   * prevented exactly zero illegal constructions while forcing every concrete
+   * DAO to redeclare a pass-through constructor that added no invariant.
+   *
+   * It was `protected` to keep `database` from being reached as
+   * `BaseDAO.database` — but every field below carries its own `protected`, so
+   * the field's own modifier is what enforces that, and making the constructor
+   * public does not weaken it.
+   *
    * @param database The binding.
    * @param meter The invocation's subrequest counter, or an unmetered default.
    * @param options `billedRowsForTable` supplies the schema's write cost.
    */
-  protected constructor(
+  constructor(
     protected readonly database: D1Queryable,
     protected readonly meter: SubrequestMeter = UNMETERED_SUBREQUESTS,
     private readonly options: { billedRowsForTable?: BilledRowsForTable } = {},
