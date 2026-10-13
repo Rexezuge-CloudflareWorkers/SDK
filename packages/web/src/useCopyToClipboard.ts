@@ -32,6 +32,13 @@ import { COPY_FEEDBACK_TIMEOUT_MS } from './constants.ts';
  * A false success sends the operator away believing they have something they do
  * not.
  *
+ * ## `reset`
+ *
+ * The timer is cleared on unmount, but that is not the only way the affordance
+ * goes away: a clone menu that closes on an outside click hides the button
+ * while its feedback window is still running. `reset` covers that, and cancels
+ * the pending timer so the later unmount has nothing left to clear.
+ *
  * ## Timer handling
  *
  * The reset timer is a ref and is cleared on unmount. Local `setTimeout` handles
@@ -53,6 +60,17 @@ interface UseCopyToClipboardResult {
   Writes `text`, or does nothing if the clipboard is unavailable.
   */
   copy: (text: string) => void;
+  /**
+   * Clear the feedback early, cancelling the pending reset.
+   *
+   * For a host that hides the affordance itself — a clone menu that closes on
+   * an outside click, a tab that is no longer showing the field. Without this
+   * the only way to clear `copied` is to wait out the timer, and a consumer
+   * that hides the button is left holding a stale `true` for a copy whose
+   * confirmation is no longer on screen. Cancelling the timer here is what
+   * keeps a later unmount from clearing state twice.
+   */
+  reset: () => void;
 }
 
 function useCopyToClipboard(): UseCopyToClipboardResult {
@@ -93,7 +111,13 @@ function useCopyToClipboard(): UseCopyToClipboardResult {
       .catch(() => {});
   }, []);
 
-  return { copied, copy };
+  const reset = useCallback((): void => {
+    if (resetTimer.current !== null) clearTimeout(resetTimer.current);
+    resetTimer.current = null;
+    setCopied(false);
+  }, []);
+
+  return { copied, copy, reset };
 }
 
 export { useCopyToClipboard };

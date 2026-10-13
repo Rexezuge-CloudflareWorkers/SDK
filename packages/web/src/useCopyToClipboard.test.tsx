@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { useCopyToClipboard } from './useCopyToClipboard.ts';
 import { COPY_FEEDBACK_TIMEOUT_MS } from './constants.ts';
 
@@ -179,5 +179,23 @@ describe('useCopyToClipboard', () => {
     // A new identity per render would let a memoized child re-run its effect on
     // every parent render and arm a second timer.
     expect(result.current.copy).toBe(first);
+  });
+});
+
+describe('useCopyToClipboard reset', () => {
+  it('clears the feedback early and cancels the pending timer', async () => {
+    const writeText = vi.fn(async () => {});
+    withClipboard(writeText);
+    const { result } = renderHook(() => useCopyToClipboard());
+
+    act(() => result.current.copy('secret'));
+    await waitFor(() => expect(result.current.copied).toBe(true));
+
+    act(() => result.current.reset());
+    expect(result.current.copied).toBe(false);
+
+    // The cancelled timer must not fire later against a reset state.
+    await new Promise((resolve) => setTimeout(resolve, COPY_FEEDBACK_TIMEOUT_MS + 50));
+    expect(result.current.copied).toBe(false);
   });
 });
