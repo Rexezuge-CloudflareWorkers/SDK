@@ -70,24 +70,30 @@ describe('AbstractScheduledTask', () => {
     expect(rec.calls).toEqual(['start', 'succeed']);
   });
 
-  it('records a failure instead of losing the run', async () => {
+  it('records the failure, then re-throws so the caller learns the task failed', async () => {
     const rec = recorderDouble();
     const instance = task(rec);
     instance.shouldThrow = true;
 
-    await instance.handle(EVENT, ENV, CTX);
-
-    // The operator's task-runs table has to say which task failed and why;
-    // a row left at `running` is the failure mode this exists to prevent.
+    // The record must be written *before* the rejection escapes: a caller that
+    // caught it has to find a `failed` row behind it, not one stuck at `running`.
+    await expect(instance.handle(EVENT, ENV, CTX)).rejects.toThrow('origin refused the connection');
     expect(rec.calls).toEqual(['start', 'fail']);
   });
 
-  it('does not throw out of handle — the template owns the catch', async () => {
+  it('still records a failure when a task opts out of re-throwing', async () => {
     const rec = recorderDouble();
-    const instance = task(rec);
+    class Swallowing extends RecordingTask {
+      protected override swallowErrors(): boolean {
+        return true;
+      }
+    }
+    const instance = new Swallowing();
+    instance.recorder = rec;
     instance.shouldThrow = true;
 
     await expect(instance.handle(EVENT, ENV, CTX)).resolves.toBeUndefined();
+    expect(rec.calls).toEqual(['start', 'fail']);
   });
 
   it('records nothing when the task does not opt in', async () => {

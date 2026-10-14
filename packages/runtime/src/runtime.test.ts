@@ -251,6 +251,30 @@ describe('createLogger', () => {
     error.mockRestore();
   });
 
+  it('routes every accepted emit through an injected sink, with the prefix applied', () => {
+    const seen: { level: string; message: string; args: unknown[] }[] = [];
+    const logger = createLogger('svc', 'repo', { LOG_LEVEL: 'debug' }, (level, message, args) => {
+      seen.push({ level, message, args: [...args] });
+    });
+    logger.debug('a', { secret: 'x' });
+    logger.error('b');
+    logger.info('c');
+    // The level filter still runs before the sink, so a suppressed emit never
+    // reaches a redacting sink to be redacted — the cheaper ordering, and the
+    // one that keeps a `debug`-only diagnostic out of a production log tail.
+    expect(seen).toEqual([
+      { level: 'debug', message: '[repo] [svc]', args: ['a', { secret: 'x' }] },
+      { level: 'error', message: '[repo] [svc]', args: ['b'] },
+      { level: 'info', message: '[repo] [svc]', args: ['c'] },
+    ]);
+
+    const quiet = createLogger('svc', 'repo', { LOG_LEVEL: 'error' }, (level) => {
+      seen.push({ level, message: 'leaked', args: [] });
+    });
+    quiet.debug('nope');
+    expect(seen).toHaveLength(3);
+  });
+
   it('falls back to info on an unknown level', () => {
     const info = vi.spyOn(console, 'info').mockImplementation(() => {});
     const debug = vi.spyOn(console, 'debug').mockImplementation(() => {});

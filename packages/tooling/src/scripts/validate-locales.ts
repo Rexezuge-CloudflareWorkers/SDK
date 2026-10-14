@@ -50,6 +50,26 @@ One defect, kept as a locale plus a message so a caller can group them.
 interface LocaleProblem {
   locale: string;
   problem: string;
+  /**
+   * Reported, but not a failure.
+   *
+   * The distinction is **"this build is wrong"** against **"this merge is still
+   * in flight"**, and a gate that cannot tell them apart gets switched off. A
+   * key the bundles carry that no call site reaches is the ordinary state of a
+   * bundle running ahead of its UI, and a translator adding a string for a screen
+   * that has not been wired is doing the right thing. It is also the only thing
+   * that catches a call site deleted or renamed without its key — which keeps a
+   * translator re-translating a string no user will ever see.
+   *
+   * So it is reported and it does not fail the run.
+   *
+   * The finding that is **not** advisory is the mirror: a `t()` key the bundle
+   * lacks. That one renders the inline default for every user in every language,
+   * it is actionable in the same commit, and there is no in-flight state in which
+   * it is the right answer — so it stays fatal, and the report below prints the
+   * two classes separately rather than counting them together.
+   */
+  advisory?: boolean;
 }
 
 /**
@@ -452,47 +472,37 @@ function validateLocales(localesDir: string, baseLocale = 'en', shape: LocaleSha
  */
 function collectCallSites(scope: CallSiteScope, baseKeys: Set<string>, baseBundle: Map<string, unknown>): LocaleProblem[] {
   const problems: LocaleProblem[] = [];
-  const walk = (dir: string): void => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === 'coverage') continue;
-        walk(full);
+  for (const full of sourceFiles(scope)) {
+    const source = readFileSync(full, 'utf8');
+    // `t('…')` / `t("…")` with a string literal first argument. The key is the
+    // single source of truth for what is rendered, so anything else is out of scope.
+    const pattern = /\bt\(\s*(['"])((?:[^'"\\]|\\.)*)\1\s*(,)?/g;
+    for (const match of source.matchAll(pattern)) {
+      const key = match[2];
+      if (key.includes('${') || key.includes('{{')) continue;
+      const where = path.relative(process.cwd(), full) || full;
+      if (!baseKeys.has(key)) {
+        problems.push({
+          locale: 'call-site',
+          problem: `${where}: t('${key}') is not in the bundle — it renders as the inline default and is untranslatable`,
+        });
         continue;
       }
-      if (scope.extensions.every((extension) => !entry.name.endsWith(extension))) continue;
-      const source = readFileSync(full, 'utf8');
-      // `t('…')` / `t("…")` with a string literal first argument. The key is the
-      // single source of truth for what is rendered, so anything else is out of scope.
-      const pattern = /\bt\(\s*(['"])((?:[^'"\\]|\\.)*)\1\s*(,)?/g;
-      for (const match of source.matchAll(pattern)) {
-        const key = match[2];
-        if (key.includes('${') || key.includes('{{')) continue;
-        const where = path.relative(process.cwd(), full) || full;
-        if (!baseKeys.has(key)) {
-          problems.push({
-            locale: 'call-site',
-            problem: `${where}: t('${key}') is not in the bundle — it renders as the inline default and is untranslatable`,
-          });
-          continue;
-        }
-        // A default that disagrees with the shipped bundle **fails**: one of the two
-        // is a bug, and the default is the one that renders verbatim the day the key
-        // goes missing — which is the fallback path the whole check is about.
-        if (!match[3]) continue;
-        const inline = readDefault(source, match.index + match[0].length);
-        if (inline === null) continue;
-        const bundled = baseBundle.get(key);
-        if (inline !== bundled) {
-          problems.push({
-            locale: 'call-site',
-            problem: `${where}: t('${key}', …) default disagrees with the bundle — bundle=${JSON.stringify(bundled)} default=${JSON.stringify(inline)}`,
-          });
-        }
+      // A default that disagrees with the shipped bundle **fails**: one of the two
+      // is a bug, and the default is the one that renders verbatim the day the key
+      // goes missing — which is the fallback path the whole check is about.
+      if (!match[3]) continue;
+      const inline = readDefault(source, match.index + match[0].length);
+      if (inline === null) continue;
+      const bundled = baseBundle.get(key);
+      if (inline !== bundled) {
+        problems.push({
+          locale: 'call-site',
+          problem: `${where}: t('${key}', …) default disagrees with the bundle — bundle=${JSON.stringify(bundled)} default=${JSON.stringify(inline)}`,
+        });
       }
     }
-  };
-  walk(scope.dir);
+  }
   return problems;
 }
 
@@ -551,36 +561,201 @@ function decodeStringLiteral(raw: string): string {
 }
 
 /**
-CLI entry: `validateLocalesCli(['[locales-dir]?', '--shape=auto|dir|file|module'?, '--base=<tag>'?, '--call-sites=<src-dir>'?])`.
+ * Every key a `t()` call site names literally, under one scope.
+ *
+ * Extracted from {@link collectCallSites} so the unused-key sweep and the
+ * unresolved-key check read the **same** set. Two scanners that each carry their
+ * own idea of what a call site looks like disagree on exactly the interesting
+ * case — a shape one understands and the other does not — and then report a key
+ * as both unused and used.
+ */
+function usedKeys(scope: CallSiteScope): Set<string> {
+  const used = new Set<string>();
+  for (const file of sourceFiles(scope)) {
+    // `t('…')` / `t("…")` with a string literal first argument. The key is the
+    // single source of truth for what is rendered, so anything else is out of scope.
+    for (const match of readFileSync(file, 'utf8').matchAll(/\bt\(\s*(['"])((?:[^'"\\]|\\.)*)\1/g)) {
+      const key = match[2];
+      if (!key.includes('${') && !key.includes('{{')) used.add(key);
+    }
+  }
+  return used;
+}
+
+/**
+ * Every source file a scope covers, walking the skip list once.
+ */
+function sourceFiles(scope: CallSiteScope): string[] {
+  const files: string[] = [];
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === 'coverage') continue;
+        walk(full);
+        continue;
+      }
+      if (scope.extensions.some((extension) => entry.name.endsWith(extension))) files.push(full);
+    }
+  };
+  walk(scope.dir);
+  return files;
+}
+
+/**
+ * Base-bundle keys that no `t()` call site reaches.
+ *
+ * Advisory by construction, and for the reason {@link LocaleProblem.advisory}
+ * gives: a bundle routinely runs ahead of its UI, and a translator adding a
+ * string for a screen that has not been wired is doing the right thing. What it
+ * also catches is the case that matters — a renamed or deleted call site whose
+ * key was never removed, which keeps a translator re-translating a string no
+ * user will ever see.
+ *
+ * Dynamic keys are **not** reported as unused. `` t(`section.${name}`) `` cannot
+ * be resolved statically, so every key under that prefix would look dead; the
+ * honest answer is "unknown", and an `unknown` reported as `unused` is the kind
+ * of finding that makes a gate useless.
+ */
+function collectUnusedKeys(baseKeys: readonly string[], scope: CallSiteScope, used: Set<string>): LocaleProblem[] {
+  const prefixes = dynamicKeyPrefixes(scope);
+  const unused = baseKeys.filter(
+    (key) => !used.has(key) && [...prefixes].every((prefix) => !(key === prefix || key.startsWith(`${prefix}.`))),
+  );
+  if (unused.length === 0) return [];
+  return [
+    {
+      locale: 'call-site',
+      problem: `${unused.length} base key(s) are not reached by any t() call site: ${unused.slice(0, 20).join(', ')}${unused.length > 20 ? ', …' : ''}`,
+      advisory: true,
+    },
+  ];
+}
+
+/**
+ * The longest literal prefix of every dynamically-built key.
+ *
+ * A prefix rather than a whole key, because only the static head of
+ * `` t(`nav.${item}`) `` is knowable, and the keys it may resolve to are exactly
+ * the ones a static scan must not claim are dead.
+ */
+function dynamicKeyPrefixes(scope: CallSiteScope): Set<string> {
+  const prefixes = new Set<string>();
+  for (const file of sourceFiles(scope)) {
+    for (const match of readFileSync(file, 'utf8').matchAll(/\bt\(\s*`([^`$]*)\$\{/g)) {
+      const head = match[1].replace(/\.$/, '');
+      if (head) prefixes.add(head);
+    }
+  }
+  return prefixes;
+}
+
+/**
+ * The string tags a locale directory declares, parsed from a source file.
+ *
+ * A declared list and a directory of bundles are two independent facts about the
+ * same thing, and the only one that can be wrong *silently* is the declared list:
+ * a tag with no directory makes a runtime `import.meta.glob` lookup throw the
+ * moment that language is chosen, which is a support ticket and not a build
+ * failure. A directory with no declaration is a translation nobody can select.
+ *
+ * Parsed as text rather than imported, because the declaring file is a TypeScript
+ * module in the app being linted and importing it would run it.
+ */
+function declaredTags(file: string): string[] {
+  const source = readFileSync(file, 'utf8');
+  const match = /(?:export\s+)?const\s+(?:SUPPORTED_LANGUAGES|SUPPORTED_LOCALES)\s*=\s*\[([^\]]*)\]/.exec(source);
+  if (!match) throw new Error(`${file} declares no SUPPORTED_LANGUAGES/SUPPORTED_LOCALES array literal`);
+  return [...(match[1] ?? '').matchAll(/['"]([^'"]+)['"]/g)].map((tag) => tag[1]);
+}
+
+/**
+ * Cross-check a declared tag list against the bundle directories, both ways.
+ *
+ * Both directions are findings because both are wrong states: declared-but-absent
+ * is a runtime throw on selection, present-but-undeclared is a bundle no
+ * selector offers.
+ */
+function checkDeclaredTags(localesDir: string, declaredFile: string, onDisk: readonly string[]): LocaleProblem[] {
+  const declared = declaredTags(declaredFile);
+  const problems: LocaleProblem[] = [];
+  for (const tag of declared) {
+    if (!onDisk.includes(tag)) {
+      problems.push({
+        locale: 'tags',
+        problem: `${declaredFile} declares '${tag}' but ${localesDir}/${tag} does not exist — selecting that language throws`,
+      });
+    }
+  }
+  for (const tag of onDisk) {
+    if (!declared.includes(tag)) {
+      problems.push({
+        locale: 'tags',
+        problem: `${localesDir}/${tag} exists but ${declaredFile} does not declare it — the selector cannot offer it`,
+      });
+    }
+  }
+  return problems;
+}
+
+/**
+CLI entry: `validateLocalesCli(['[locales-dir]?', '--shape=auto|dir|file|module'?, '--base=<tag>'?, '--call-sites=<src-dir>'?, '--tags=<file>'?])`.
 
 `--call-sites=<dir>` opts into the application-side checks: every `t('key')` under
 `<dir>` must resolve against the base bundle, and any inline default must equal the
 bundled value. Without the flag the script stays bundle-to-bundle, because that is
 the only part it can answer for a repo whose bundles are consumed by something
 other than `t()` — a backend string table, for instance.
+
+`--tags=<file>` cross-checks a declared `SUPPORTED_LANGUAGES` / `SUPPORTED_LOCALES`
+array against the bundle directories, in both directions. It is separate from
+`--call-sites` because a repo can declare its tags in a file the scan never walks,
+and a directory of bundles with no declaration is exactly the state a
+bundle-to-bundle check reports as perfectly healthy.
 */
 function validateLocalesCli(argv: readonly string[] = process.argv.slice(2)): number {
   const dir = argv.find((arg) => !arg.startsWith('--')) ?? 'apps/web/src/locales';
   const shape = (argv.find((arg) => arg.startsWith('--shape='))?.slice('--shape='.length) ?? 'auto') as LocaleShape;
   const base = argv.find((arg) => arg.startsWith('--base='))?.slice('--base='.length) ?? 'en';
   const callSiteDir = argv.find((arg) => arg.startsWith('--call-sites='))?.slice('--call-sites='.length);
+  const tagsFile = argv.find((arg) => arg.startsWith('--tags='))?.slice('--tags='.length);
 
   const report = validateLocales(dir, base, shape);
   const problems = [...report.problems];
 
+  if (tagsFile !== undefined && existsSync(tagsFile)) {
+    try {
+      problems.push(...checkDeclaredTags(dir, tagsFile, tagsOnDisk(dir, shape)));
+    } catch (error: unknown) {
+      problems.push({ locale: 'tags', problem: `${tagsFile}: ${error instanceof Error ? error.message : String(error)}` });
+    }
+  }
+
   if (callSiteDir !== undefined && existsSync(callSiteDir)) {
     try {
       const baseBundle = bundleAt(dir, base, shape);
-      problems.push(...collectCallSites({ dir: callSiteDir, extensions: ['.ts', '.tsx'] }, new Set(baseBundle.keys()), baseBundle));
+      const scope = { dir: callSiteDir, extensions: ['.ts', '.tsx'] };
+      const used = usedKeys(scope);
+      problems.push(
+        ...collectCallSites(scope, new Set(baseBundle.keys()), baseBundle),
+        ...collectUnusedKeys([...baseBundle.keys()], scope, used),
+      );
     } catch (error: unknown) {
       problems.push({ locale: 'call-site', problem: `${callSiteDir}: ${error instanceof Error ? error.message : String(error)}` });
     }
   }
 
-  if (problems.length > 0) {
-    console.error(`Locale validation failed for ${dir} (${problems.length} problem(s)):`);
-    for (const problem of problems) console.error(`  - ${problem.locale}: ${problem.problem}`);
+  const failures = problems.filter((problem) => problem.advisory !== true);
+  const advisories = problems.filter((problem) => problem.advisory === true);
+
+  if (failures.length > 0) {
+    console.error(`Locale validation failed for ${dir} (${failures.length} problem(s)):`);
+    for (const problem of failures) console.error(`  - ${problem.locale}: ${problem.problem}`);
     return 1;
+  }
+  if (advisories.length > 0) {
+    console.warn(`Locale validation passed for ${dir} with ${advisories.length} advisory finding(s):`);
+    for (const problem of advisories) console.warn(`  - ${problem.locale}: ${problem.problem}`);
   }
   console.log(`Locale validation passed (${report.locales.length} locales, ${report.keys} keys each, shape ${shape}).`);
   return 0;

@@ -143,6 +143,29 @@ describe('defineRepoLintConfig', () => {
     expect(rules).toContain('ships zero backend dependencies');
   });
 
+  it('keeps every ban for a directory that appears more than once in the table', () => {
+    // `apps/api` carries four rows in the canonical table: the DAO boundary plus
+    // one per direct-client package. Flat config resolves a repeated rule by
+    // last-entry-wins, so emitting one entry per row kept only the last and
+    // silently dropped the DAO ban and `provider-clients` — the gate described
+    // in the kit's own table was not running. Asserted on the *merged* result
+    // for a file in that directory, because a single row always linted
+    // correctly on its own; only the accumulation was wrong.
+    const rules = rulesOf(config, 'apps/api/src/endpoints/users/index.ts');
+    const imports = JSON.stringify(rules['no-restricted-imports']);
+    expect(imports).toContain('@fixture/backend-data/dao');
+    expect(imports).toContain('@fixture/provider-clients');
+    // The DAO row allows type-only imports; the client row must not inherit that
+    // from its neighbour in the same merged object.
+    const patterns = (rules['no-restricted-imports'] as [string, { patterns: Record<string, unknown>[] }])[1].patterns;
+    expect(patterns.find((p) => (p['group'] as string[])[0] === '@fixture/backend-data/dao')?.['allowTypeImports']).toBe(true);
+    expect(patterns.find((p) => (p['group'] as string[])[0] === '@fixture/provider-clients')?.['allowTypeImports']).toBeUndefined();
+
+    const syntax = JSON.stringify(rules['no-restricted-syntax']);
+    expect(syntax).toContain('@fixture/backend-data/dao');
+    expect(syntax).toContain('@fixture/provider-clients');
+  });
+
   it('mirrors every boundary in a dynamic-import guard', () => {
     const syntax = rulesOf(config, 'packages/backend-runtime/src/x.ts')['no-restricted-syntax'];
     expect(Array.isArray(syntax)).toBe(true);
