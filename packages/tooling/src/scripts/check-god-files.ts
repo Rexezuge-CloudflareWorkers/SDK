@@ -47,9 +47,9 @@
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { fail } from './lib/github-actions.ts';
+import { isEntrypoint } from './lib/entrypoint.ts';
 import { isSet, parseFlags, splitPositional, valueOf } from './lib/cli-args.ts';
 
 /**
@@ -351,6 +351,6 @@ export function checkGodFilesCli(argv: readonly string[] = process.argv.slice(2)
 // an unconditional call is the same guard Durable-DAV's init-secrets.ts uses, and
 // it is what keeps the rule modules importable — which is the whole reason they are
 // separate modules in the first place.
-if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isEntrypoint(import.meta.url)) {
   process.exit(checkGodFilesCli(process.argv.slice(2)));
 }
