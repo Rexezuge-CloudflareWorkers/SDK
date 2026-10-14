@@ -29,10 +29,17 @@ class FakeStatement {
     return new FakeStatement(this.db, this.sql, values);
   }
 
-  public async run(): Promise<{ success: boolean; error?: string }> {
+  public async run(): Promise<{ success: boolean; meta?: { changes: number }; error?: string }> {
     this.ran += 1;
-    this.db.execute(this.sql, this.params);
-    return { success: true };
+    // `execute` returns a row list because `first`/`all` read it as one; a
+    // write's own answer is the first entry.
+    const rows = this.db.execute(this.sql, this.params);
+    const outcome = (Array.isArray(rows) ? rows[0] : rows) as { meta?: { changes?: number } } | undefined;
+    // D1 answers a write with `meta.changes`, and two of the kit's statements
+    // read it to tell "wrote a row" from "refused to". Dropping it here would
+    // make every such branch look like a refusal.
+    const changes = outcome?.meta?.changes;
+    return typeof changes === 'number' ? { success: true, meta: { changes } } : { success: true };
   }
 
   public async first<T>(): Promise<T | null> {
@@ -125,16 +132,19 @@ class FakeDb {
     const key = params[0] as string;
     if (this.failsOn.has('user_emails')) throw new Error('D1_ERROR: database is locked');
     const existing = this.userEmails.get(key);
-    // ON CONFLICT(email) DO UPDATE SET user_id = excluded.user_id, is_verified = excluded.is_verified,
-    // gated by register()'s own already-claimed check.
+    // ON CONFLICT(email) DO UPDATE SET user_id = excluded.user_id,
+    // is_verified = excluded.is_verified WHERE user_emails.is_verified = 0.
+    // The conditional is the invariant the real statement carries: a verified row
+    // is not re-pointed, and `changes` reports the refusal so `register` can
+    // answer 'already-claimed' rather than silently taking the address.
+    if (existing && existing.is_verified === 1) return { success: true, meta: { changes: 0 } };
     this.userEmails.set(key, {
       email: key,
       user_id: params[1] as string,
       is_verified: params[2] as number,
       created_at: params[3] as number,
     });
-    void existing;
-    return { success: true };
+    return { success: true, meta: { changes: 1 } };
   }
 
   private setUsername(params: unknown[], coalesce: boolean): unknown {
@@ -216,6 +226,33 @@ describe('registerAccount / resolveAccount', () => {
     await expect(resolveAccount(depsFor(db), 'alice@example.com')).resolves.toMatchObject({ id: account?.id });
   });
 
+  it('does not re-point a verified address when the claim loses the race', async () => {
+    const db = new FakeDb();
+    const emails = new UserEmailDAO(db);
+    expect(await emails.register({ email: 'Race@X.com', userId: 'usr_first', isVerified: true, now: NOW })).toBe('claimed');
+
+    // The lost-race shape: another writer verifies the address *between* this
+    // call's read and its write. The read below cannot see it, so the write is
+    // the only thing standing between a concurrent claim and a takeover.
+    const racing = new (class extends UserEmailDAO {
+      public override async get(): Promise<UserEmailRow | null> {
+        return null; // as if the row were not there yet
+      }
+    })(db);
+
+    expect(await racing.register({ email: 'Race@X.com', userId: 'usr_second', isVerified: true, now: NOW })).toBe('already-claimed');
+    expect(db.userEmails.get('race@x.com')?.user_id).toBe('usr_first');
+  });
+
+  it('re-points an unverified address, so a released address is never permanently reserved', async () => {
+    const db = new FakeDb();
+    const emails = new UserEmailDAO(db);
+    await emails.register({ email: 'moved@x.com', userId: 'usr_first', isVerified: true, now: NOW });
+    await emails.revoke('moved@x.com');
+    expect(await emails.register({ email: 'moved@x.com', userId: 'usr_second', isVerified: true, now: NOW })).toBe('claimed');
+    expect(db.userEmails.get('moved@x.com')?.user_id).toBe('usr_second');
+  });
+
   it('detects a taken anchor and reports null so the opaque-anchor retry runs', async () => {
     const db = new FakeDb();
     db.users.set('taken@x.com', {
@@ -241,6 +278,28 @@ describe('registerAccount / resolveAccount', () => {
     await expect(resolveAccount(depsFor(db), 'first@x.com')).resolves.toBeNull();
     // …and the previous holder's anchor does not re-adopt it.
     await expect(resolveAccount(depsFor(db), 'first@x.com')).resolves.not.toMatchObject({ id: /usr_/ });
+  });
+
+  it('refuses an anchor whose account has moved off it, with no registry row to say so', async () => {
+    // The case the registry branch cannot cover: a pre-identity database (or an
+    // account the migration left ambiguous) has no `user_emails` row, so the
+    // anchor lookup is the only thing standing between a reassigned address and
+    // the previous holder's account.
+    const db = new FakeDb();
+    db.users.set('moved-off@x.com', {
+      id: 'usr_moved',
+      email: 'moved-off@x.com',
+      current_email: 'somewhere-else@x.com',
+      created_at: NOW,
+      username: null,
+      updated_at: null,
+    });
+    await expect(resolveAccount(depsFor(db), 'moved-off@x.com')).resolves.toBeNull();
+
+    // An anchor the account still holds resolves exactly as before, and a case
+    // variant of it is the same address.
+    db.users.get('moved-off@x.com')!.current_email = 'Moved-Off@x.com';
+    await expect(resolveAccount(depsFor(db), 'moved-off@x.com')).resolves.toMatchObject({ id: 'usr_moved' });
   });
 
   it('tolerates only a missing registry; every other failure rethrows', async () => {

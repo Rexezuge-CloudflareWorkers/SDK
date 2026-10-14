@@ -45,18 +45,31 @@ export class UserEmailDAO extends BaseDAO {
    * someone, and silently re-pointing it would hand one account's identity to
    * another. Callers check `resolveVerified` first and reject on a hit.
    * An unverified (revoked) row is re-pointed, which releases the address.
+   *
+   * The `WHERE user_emails.is_verified = 0` on the upsert is **load-bearing**,
+   * not a refinement. The read above and this write are two statements, so a
+   * caller that checked `resolveVerified` a moment earlier can still be racing
+   * another claim for the same address — and an unconditional `DO UPDATE` lets
+   * the loser re-point a row that is verified *now*, which is an account
+   * takeover rather than a failed claim. The conditional update makes the write
+   * itself refuse, and `meta.changes` turns "lost the race" into the same
+   * `'already-claimed'` answer the pre-read would have given.
+   *
+   * Without it the read is an optimisation; with it, it is still an
+   * optimisation and the invariant no longer depends on a statement ordering.
    */
   public async register(input: { email: string; userId: string; isVerified: boolean; now: number }): Promise<EmailClaim> {
     const email = input.email.toLowerCase();
     const existing = await this.get(email);
     if (existing && existing.is_verified === 1) return 'already-claimed';
-    await this.run(
+    const result = await this.run(
       `INSERT INTO user_emails (email, user_id, is_verified, created_at)
        VALUES (?, ?, ?, ?)
-       ON CONFLICT(email) DO UPDATE SET user_id = excluded.user_id, is_verified = excluded.is_verified`,
+       ON CONFLICT(email) DO UPDATE SET user_id = excluded.user_id, is_verified = excluded.is_verified
+       WHERE user_emails.is_verified = 0`,
       [email, input.userId, input.isVerified ? 1 : 0, input.now],
     );
-    return 'claimed';
+    return (result.meta?.changes ?? 0) === 0 ? 'already-claimed' : 'claimed';
   }
 
   public async get(email: string): Promise<UserEmailRow | null> {

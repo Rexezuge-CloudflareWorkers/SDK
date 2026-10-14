@@ -217,25 +217,56 @@ export function layerBans(scope: string): readonly LayerBan[] {
 type ConfigInput = Parameters<typeof tseslint.config>[number];
 
 /**
- * The `no-restricted-imports` entries for one layer.
+ * The bans for one directory, in table order.
+ *
+ * **Grouping is load-bearing, not tidiness.** Flat config merges every matching
+ * config object and resolves each rule name by *last entry wins* — so two
+ * entries with the same `files` glob do not accumulate, the second replaces the
+ * first's rule outright. Emitting one entry per `LayerBan` therefore meant that
+ * a directory appearing twice in the table (`apps/api` does, four times) kept
+ * only its last row: the DAO ban and the `provider-clients` ban vanished, and
+ * the layer table in the kit's own documentation described a gate that was not
+ * running. It could not be caught by asserting a rule exists for a dir — the
+ * surviving rule exists — only by asserting every ban in the table survives.
+ *
+ * Merging happens at the **pattern** level rather than the layer level, because
+ * the two things a layer carries are not mergeable: each group keeps its own
+ * `message`, and `allowTypeImports` belongs to a group (`apps/api` may type its
+ * filters against DAO shapes but may not reach `provider-clients` even as a
+ * type). One config object per directory, every pattern inside it.
+ */
+function groupedByDir(bans: readonly LayerBan[]): Map<string, LayerBan[]> {
+  const grouped = new Map<string, LayerBan[]>();
+  for (const ban of bans) {
+    const existing = grouped.get(ban.dir);
+    if (existing) existing.push(ban);
+    else grouped.set(ban.dir, [ban]);
+  }
+  return grouped;
+}
+
+/**
+ * The `no-restricted-imports` entries, one per directory.
  *
  * Written as `group` patterns rather than exact `paths`, so `@myapp/backend-data`
  * and `@myapp/backend-data/dao` are both caught by one entry. `allowTypeImports`
- * is passed through only where the source repos set it, because `apps/api`
- * legitimately types its filters and models against DAO shapes.
+ * is carried per group rather than per directory, because only the DAO boundary
+ * sets it.
  */
 export function restrictedImports(bans: readonly LayerBan[]): ConfigInput[] {
-  return bans.map(({ dir, ban, message, allowTypeImports }) => ({
+  return [...groupedByDir(bans)].map(([dir, layers]) => ({
     files: [`${dir}/**/*.{ts,js,mts,cts,mjs,cjs}`],
     rules: {
       'no-restricted-imports': [
         'error',
         {
-          patterns: ban.map((group) => ({
-            group: [group, `${group}/*`],
-            message,
-            ...(allowTypeImports === true && { allowTypeImports: true }),
-          })),
+          patterns: layers.flatMap(({ ban, message, allowTypeImports }) =>
+            ban.map((group) => ({
+              group: [group, `${group}/*`],
+              message,
+              ...(allowTypeImports === true && { allowTypeImports: true }),
+            })),
+          ),
         },
       ],
     },
@@ -253,17 +284,23 @@ export function restrictedImports(bans: readonly LayerBan[]): ConfigInput[] {
  * hole was load-bearing there: the credential path reached a banned module
  * through it. `no-restricted-syntax` sees `ImportExpression`, so the boundary is
  * stated a second way.
+ *
+ * Grouped per directory for the same reason {@link restrictedImports} is: one
+ * entry per layer would leave only the last row standing, and `no-restricted-syntax`
+ * merges exactly like `no-restricted-imports` does.
  */
 export function restrictedDynamicImports(bans: readonly LayerBan[]): ConfigInput[] {
-  return bans.map(({ dir, ban, message }) => ({
+  return [...groupedByDir(bans)].map(([dir, layers]) => ({
     files: [`${dir}/**/*.{ts,js,mts,cts,mjs,cjs}`],
     rules: {
       'no-restricted-syntax': [
         'error',
-        ...ban.map((specifier) => ({
-          selector: `ImportExpression[source.type='Literal'][source.value=/^${specifier.replaceAll('/', String.raw`\/`)}/]`,
-          message: `A dynamic import() is not covered by no-restricted-imports, so this layer reaches \`${specifier}\` through the one syntax that gate does not see. Both say no: ${message}`,
-        })),
+        ...layers.flatMap(({ ban, message }) =>
+          ban.map((specifier) => ({
+            selector: `ImportExpression[source.type='Literal'][source.value=/^${specifier.replaceAll('/', String.raw`\/`)}/]`,
+            message: `A dynamic import() is not covered by no-restricted-imports, so this layer reaches \`${specifier}\` through the one syntax that gate does not see. Both say no: ${message}`,
+          })),
+        ),
       ],
     },
   }));

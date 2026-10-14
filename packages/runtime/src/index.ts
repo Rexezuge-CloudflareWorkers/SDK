@@ -18,8 +18,8 @@ export { AbstractQueueWorker } from './base/AbstractQueueWorker.ts';
 export { AbstractWorkflowWorker } from './base/AbstractWorkflowWorker.ts';
 export { BASE_WORKER_MESSAGES } from './base/baseWorkerError.ts';
 export type { BaseWorkerOperation } from './base/baseWorkerError.ts';
-export { createLogger, isLogLevel, resetLogLevelForTests, resolveLogLevel, setLogLevel } from './logger.ts';
-export type { LogLevel, Logger } from './logger.ts';
+export { consoleSink, createLogger, isLogLevel, resetLogLevelForTests, resolveLogLevel, setLogLevel } from './logger.ts';
+export type { LogLevel, Logger, LogSink } from './logger.ts';
 export {
   COOLDOWN_MS,
   FAILURE_THRESHOLD,

@@ -82,7 +82,62 @@ interface Logger {
   error(...args: unknown[]): void;
 }
 
-function createLogger(namespace?: string, fullRepoName?: string, env?: unknown): Logger {
+/**
+ * Where a formatted emit goes.
+ *
+ * A **port, not a policy**: the kit owns the level decision, the namespace
+ * prefix and the argument list, and the consumer owns what happens to the bytes.
+ * The gap this fills is redaction. A consumer whose surfaces handle AWS
+ * `SecretAccessKey`s, session tokens and HMAC secrets cannot let an arbitrary
+ * object reach `console.*` — and the defence that actually holds is applied at
+ * the sink, because a check at each call site is a hundred chances to forget
+ * one. Without a seam, that consumer has to reimplement the logger itself
+ * (level resolution included) or ship its secrets to the log tail.
+ *
+ * A deny-list is consumer policy and deliberately not here: the key names that
+ * mean "secret" are a property of the consumer's data model, and the kit
+ * redaction-guessing across nine repos' vocabularies would redact diagnostic
+ * fields and train everyone to ignore the markers.
+ *
+ * The sink receives the level **and the namespace prefix already applied**, so a
+ * consumer that forwards to an aggregator does not have to reconstruct either.
+ */
+interface LogSink {
+  (level: LogLevel, message: string, args: readonly unknown[]): void;
+}
+
+/**
+ * The default sink: today's behaviour, verbatim.
+ *
+ * Named rather than inlined so {@link createLogger}'s signature stays a plain
+ * optional argument and a consumer can wrap it — `createLogger(ns, repo, env,
+ * redactingSink(consoleSink))` — without reimplementing the level check.
+ */
+function consoleSink(level: LogLevel, message: string, args: readonly unknown[]): void {
+  const line = `[${level.toUpperCase()}] ${message}`;
+  switch (level) {
+    case 'debug': {
+      console.debug(line, ...args);
+      break;
+    }
+    case 'error': {
+      console.error(line, ...args);
+      break;
+    }
+    case 'warn': {
+      console.warn(line, ...args);
+      break;
+    }
+    default: {
+      console.info(line, ...args);
+    }
+  }
+}
+
+/**
+ * @param sink Where each accepted emit goes. Defaults to {@link consoleSink}.
+ */
+function createLogger(namespace?: string, fullRepoName?: string, env?: unknown, sink: LogSink = consoleSink): Logger {
   const argsStr = [fullRepoName, namespace]
     .filter(Boolean)
     .map((s) => `[${s}]`)
@@ -95,27 +150,19 @@ function createLogger(namespace?: string, fullRepoName?: string, env?: unknown):
 
   return {
     debug: (...args: unknown[]): void => {
-      if (enabled('debug')) {
-        console.debug(`[DEBUG] ${argsStr}`, ...args);
-      }
+      if (enabled('debug')) sink('debug', argsStr, args);
     },
     info: (...args: unknown[]): void => {
-      if (enabled('info')) {
-        console.info(`[INFO] ${argsStr}`, ...args);
-      }
+      if (enabled('info')) sink('info', argsStr, args);
     },
     warn: (...args: unknown[]): void => {
-      if (enabled('warn')) {
-        console.warn(`[WARN] ${argsStr}`, ...args);
-      }
+      if (enabled('warn')) sink('warn', argsStr, args);
     },
     error: (...args: unknown[]): void => {
-      if (enabled('error')) {
-        console.error(`[ERROR] ${argsStr}`, ...args);
-      }
+      if (enabled('error')) sink('error', argsStr, args);
     },
   };
 }
 
-export { createLogger, isLogLevel, resetLogLevelForTests, resolveLogLevel, setLogLevel };
-export type { LogLevel, Logger };
+export { consoleSink, createLogger, isLogLevel, resetLogLevelForTests, resolveLogLevel, setLogLevel };
+export type { LogLevel, Logger, LogSink };

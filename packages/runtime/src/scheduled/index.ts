@@ -132,10 +132,33 @@ abstract class AbstractScheduledTask<TEnv extends ScheduledTaskEnv = ScheduledTa
   }
 
   /**
+   * Whether `handle` swallows a failure after recording it.
+   *
+   * `false`, so a failed task **throws** at the platform once its run record
+   * says why. The record is the durable evidence, but it is not the caller's
+   * answer: a cron Durable Object that catches the rejection is the only party
+   * that knows which invocation failed, and swallowing inside the task turned
+   * that invocation into a *success* — an operator reading the schedule saw
+   * "completed" for a task that had failed outright, with the evidence one
+   * unrelated screen away.
+   *
+   * It exists because the opposite is a legitimate deployment choice, not
+   * because it is the default: a repo whose platform retries a cron rejection
+   * wants the whole batch re-run, and for that a per-task throw is the wrong
+   * blast radius. Recording happens either way — the escape hatch changes who
+   * learns about the failure, never whether it is remembered.
+   */
+  protected swallowErrors(): boolean {
+    return false;
+  }
+
+  /**
    * The entry point the platform calls.
    *
    * Owns the try/catch so a task cannot forget it: a scheduled task that throws
-   * uncaught is retried by the platform with no record of why.
+   * uncaught is retried by the platform with no record of why. So the record is
+   * written **before** the error is re-raised — that ordering is the point of
+   * this method, and a subclass that overrides `handle` loses it.
    */
   public async handle(event: ScheduledControllerLike, env: TEnv, ctx: ExecutionContextLike): Promise<void> {
     const taskType = this.getTaskType();
@@ -166,6 +189,9 @@ abstract class AbstractScheduledTask<TEnv extends ScheduledTaskEnv = ScheduledTa
           this.logger()('warn', `[${this.constructor.name}] failed to mark task run failed`);
         });
       }
+      // After the record, never before: a rejection that escapes this method
+      // must leave a `failed` row behind it, and `failRun` is what writes it.
+      if (!this.swallowErrors()) throw error;
     }
   }
 

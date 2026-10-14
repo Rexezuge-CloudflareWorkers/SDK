@@ -66,7 +66,22 @@ export async function resolveAccount(deps: AccountLookupDeps, email: string): Pr
   // as "no such account" would turn a D1 blip into a 404 and a spurious
   // re-registration attempt.
   const byCurrent = await userDAO.getByCurrentEmail(normalized);
-  const legacy = byCurrent ?? (await userDAO.getByEmail(normalized));
+  if (byCurrent) return summarize(byCurrent);
+  const legacy = await userDAO.getByEmail(normalized);
+  // The same rule the registry branch above applies, reached the other way.
+  // `getByEmail` is the *anchor* lookup, and an anchor is frozen — so a row
+  // found here whose mutable address has since moved away is an account that
+  // left this address, and answering with its id would install the caller's
+  // identity as that account. It is reachable whenever the registry is absent
+  // or incomplete: a pre-identity database has no `user_emails` at all, and the
+  // migration deliberately leaves `current_email` NULL for the mixed-case
+  // accounts it cannot disambiguate.
+  //
+  // The comparison is case-insensitive on both sides because `getByEmail`
+  // lowercases its parameter while `email` is stored as originally supplied:
+  // a case variant of an address the account still holds must resolve, and a
+  // case variant of one it left must not.
+  if (legacy?.current_email != null && legacy.current_email.trim().toLowerCase() !== normalized) return null;
   return summarize(legacy);
 }
 
