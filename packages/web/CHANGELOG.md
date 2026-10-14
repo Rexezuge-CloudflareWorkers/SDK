@@ -1,5 +1,13 @@
 # @rexezuge/web
 
+## 1.8.1
+
+### Patch Changes
+
+- Updated dependencies [be338b5]
+  - @rexezuge/errors@1.8.1
+  - @rexezuge/shared@1.8.1
+
 ## 1.8.0
 
 ### Patch Changes
