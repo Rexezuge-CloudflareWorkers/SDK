@@ -125,8 +125,26 @@ export interface WebViteConfigOptions {
  * naturally writes in a config, and a URL is what `import.meta.url` hands them.
  * Accepting both is one line and saves a `fileURLToPath` at every call site.
  */
+/**
+ * Normalise `string | URL` to a `URL`.
+ *
+ * A string that is **already a file URL** must be parsed, not converted:
+ * `pathToFileURL('file:///srv/app')` treats its argument as a filesystem path
+ * and produces `file:///<cwd>/file:/srv/app`, so every path built on top of it
+ * silently resolves into a directory named after the scheme.
+ *
+ * The failure this prevented is not loud. `spaShellEmbedPlugin` then reports
+ * "dist/index.html not found, skipping" — which is also what a genuinely fresh
+ * checkout prints on its first build — and the consumer's worker keeps serving
+ * the *previous* shell, so the SPA ships yesterday's JavaScript with no error
+ * anywhere in the build log. Both `root` and `distIndex` are documented as
+ * "a file URL or a path", and `new URL('.', import.meta.url).href` — the shape
+ * every config file reaches for first — is a file-URL string, so this is the
+ * path most callers take.
+ */
 function toUrl(value: string | URL): URL {
-  return typeof value === 'string' ? pathToFileURL(value) : value;
+  if (value instanceof URL) return value;
+  return value.startsWith('file:') ? new URL(value) : pathToFileURL(value);
 }
 
 /**

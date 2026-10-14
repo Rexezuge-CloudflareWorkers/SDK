@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { defineWebViteConfig, spaShellEmbedPlugin } from './vite.ts';
@@ -90,5 +91,49 @@ describe('spaShellEmbedPlugin', () => {
     expect(existsSync(path.join(root, 'apps/api/src/generated/spa-shell.ts'))).toBe(true);
     // The kit's own directory must not gain a generated file from a consumer's build.
     expect(existsSync(path.join(process.cwd(), 'apps/api/src/generated/spa-shell.ts'))).toBe(false);
+  });
+
+  describe('root and distIndex accept a file URL as well as a path', () => {
+    // `root` and `distIndex` are typed `string | URL` and documented as "a file
+    // URL or a path", and `new URL('.', import.meta.url).href` — the shape a
+    // config file reaches for first — is a file-URL *string*. Treating that as a
+    // filesystem path nests it under the cwd as `file:///<cwd>/file:/…`, after
+    // which the plugin reports "dist/index.html not found, skipping" — the same
+    // message a genuinely fresh checkout prints — and the consumer's worker
+    // keeps serving the previous shell with nothing in the log to say so.
+
+    it('accepts a file-URL string for root', async () => {
+      const root = tempRoot();
+      writeBuild(root);
+
+      const plugin = spaShellEmbedPlugin({ path: 'apps/api/src/generated/spa-shell.ts', root: pathToFileURL(root).href });
+      await plugin.closeBundle?.();
+
+      expect(existsSync(path.join(root, 'apps/api/src/generated/spa-shell.ts'))).toBe(true);
+    });
+
+    it('accepts a file-URL string for distIndex', async () => {
+      const root = tempRoot();
+      writeBuild(root);
+
+      const plugin = spaShellEmbedPlugin({
+        path: 'apps/api/src/generated/spa-shell.ts',
+        root,
+        distIndex: pathToFileURL(path.join(root, 'dist/index.html')).href,
+      });
+      await plugin.closeBundle?.();
+
+      expect(readFileSync(path.join(root, 'apps/api/src/generated/spa-shell.ts'), 'utf8')).toContain('SPA_HTML');
+    });
+
+    it('still treats a plain filesystem path as a path', async () => {
+      const root = tempRoot();
+      writeBuild(root);
+
+      const plugin = spaShellEmbedPlugin({ path: 'apps/api/src/generated/spa-shell.ts', root });
+      await plugin.closeBundle?.();
+
+      expect(existsSync(path.join(root, 'apps/api/src/generated/spa-shell.ts'))).toBe(true);
+    });
   });
 });
