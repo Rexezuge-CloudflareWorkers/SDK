@@ -131,6 +131,22 @@ export interface UnitVitestConfigOptions {
    */
   readonly coverageExclude?: readonly string[];
   /**
+   * Report coverage for `index.ts` re-export barrels.
+   *
+   * The canonical set excludes them because a barrel carries no logic of its
+   * own. Two repos in the family read that differently and deliberately keep
+   * them in: a barrel with no importer shows up as an uncovered file, which is
+   * the point — it is the only signal that the barrel is dead. Excluding them
+   * is what let four entirely unused root barrels sit in the tree unnoticed, one
+   * per repo that carried the habit.
+   *
+   * `coverageExclude` cannot express this, because it is merged with the
+   * canonical set rather than replacing it, so a consumer could not opt back in.
+   * Hence a named flag. Default `false`: today’s behaviour, unchanged for the
+   * seven repos that never asked.
+   */
+  readonly includeIndexBarrels?: boolean;
+  /**
    * Coverage floors. Omitted by default; a repo that wants them sets them.
    */
   readonly thresholds?: CoverageThresholds;
@@ -175,6 +191,22 @@ const CANONICAL_COVERAGE_EXCLUDE: readonly string[] = [
 ];
 
 /**
+ * The barrel exclusion, named so `includeIndexBarrels` can lift it.
+ */
+const INDEX_BARREL_EXCLUDE = '**/index.ts';
+
+/**
+ * The canonical exclude set, with the barrel entry lifted for a caller that
+ * asked to keep barrels in their coverage report.
+ */
+function coverageExcludeFor(options: { coverageExclude?: readonly string[]; includeIndexBarrels?: boolean }): string[] {
+  const canonical = options.includeIndexBarrels
+    ? CANONICAL_COVERAGE_EXCLUDE.filter((glob) => glob !== INDEX_BARREL_EXCLUDE)
+    : CANONICAL_COVERAGE_EXCLUDE;
+  return [...canonical, ...(options.coverageExclude ?? [])];
+}
+
+/**
  * Build the unit-test config.
  *
  * ```ts
@@ -189,7 +221,7 @@ const CANONICAL_COVERAGE_EXCLUDE: readonly string[] = [
 export function defineUnitVitestConfig(options: UnitVitestConfigOptions = {}): ReturnType<typeof defineConfig> {
   const root = options.root ?? new URL('.', import.meta.url).href;
   const coverageInclude = options.coverageInclude ?? ['apps/api/src/**/*.ts', 'apps/background/src/**/*.ts', 'packages/**/src/**/*.ts'];
-  const coverageExclude = [...CANONICAL_COVERAGE_EXCLUDE, ...(options.coverageExclude ?? [])];
+  const coverageExclude = coverageExcludeFor(options);
   const baseAliases = workspaceAliases({
     scope: options.scope ?? '@unused',
     root,

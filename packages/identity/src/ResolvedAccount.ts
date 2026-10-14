@@ -1,4 +1,21 @@
-import { randomUUID } from 'node:crypto';
+/**
+ * A v4 UUID.
+ *
+ * The global `crypto`, not `node:crypto`. Both APIs produce the same value, but
+ * only one of them resolves everywhere this kit runs: `node:crypto`'s
+ * *specifier* is a Node builtin, so a Worker needs either a compatibility date
+ * of 2026-08-04 or later, or an explicit `nodejs_compat` flag, before the
+ * module resolves at all. `globalThis.crypto.randomUUID` is a Web Crypto method,
+ * natively implemented in the Workers runtime and in Node 19+, and needs
+ * neither.
+ *
+ * This mattered because a consumer that adopted `@rexezuge/identity` without
+ * knowing it inherited a `nodejs_compat` requirement. That failure is invisible
+ * at build time and surfaces only on the account-creation path at runtime, in a
+ * Worker deployed with `compatibility_flags: []` — which is exactly how two of
+ * the family repos are configured.
+ */
+const randomUUID = (): string => crypto.randomUUID();
 
 /**
  * `users` rows — the stored form of an account.

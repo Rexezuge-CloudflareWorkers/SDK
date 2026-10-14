@@ -135,6 +135,11 @@ export interface RepoVitestConfigOptions {
    */
   readonly coverageExclude?: readonly string[];
   /**
+   * Report coverage for `index.ts` re-export barrels. See
+   * `defineUnitVitestConfig`'s option of the same name.
+   */
+  readonly includeIndexBarrels?: boolean;
+  /**
    * Coverage floors. Omitted by default; a repo that wants them sets them.
    */
   readonly thresholds?: CoverageThresholds;
@@ -179,6 +184,12 @@ const CANONICAL_COVERAGE_EXCLUDE: readonly string[] = [
   '**/ServiceEnv.ts',
   '**/env.d.ts',
 ];
+
+/**
+ * The barrel exclusion, named so `includeIndexBarrels` can lift it. See the
+ * unit factory's option for why a consumer might want it.
+ */
+const INDEX_BARREL_EXCLUDE = '**/index.ts';
 
 /**
  * Build the single-file `projects` config.
@@ -261,7 +272,9 @@ export function defineRepoVitestConfig(options: RepoVitestConfigOptions): Return
             'packages/**/src/**/*.ts',
           ]),
         ],
-        exclude: [...CANONICAL_COVERAGE_EXCLUDE, ...(options.coverageExclude ?? [])],
+        exclude: options.includeIndexBarrels
+          ? [...CANONICAL_COVERAGE_EXCLUDE.filter((glob) => glob !== INDEX_BARREL_EXCLUDE), ...(options.coverageExclude ?? [])]
+          : [...CANONICAL_COVERAGE_EXCLUDE, ...(options.coverageExclude ?? [])],
         ...(options.thresholds !== undefined && { thresholds: { ...options.thresholds } }),
       },
     },
