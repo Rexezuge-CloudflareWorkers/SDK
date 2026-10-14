@@ -1,5 +1,12 @@
 # @rexezuge/web
 
+## 1.9.0
+
+### Patch Changes
+
+- @rexezuge/errors@1.9.0
+  - @rexezuge/shared@1.9.0
+
 ## 1.8.2
 
 ### Patch Changes
