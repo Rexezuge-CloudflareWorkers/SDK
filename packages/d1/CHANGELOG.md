@@ -1,5 +1,12 @@
 # @rexezuge/d1
 
+## 1.8.0
+
+### Patch Changes
+
+- @rexezuge/errors@1.8.0
+  - @rexezuge/shared@1.8.0
+
 ## 1.7.2
 
 ### Patch Changes
