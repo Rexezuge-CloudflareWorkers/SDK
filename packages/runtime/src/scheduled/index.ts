@@ -132,6 +132,29 @@ abstract class AbstractScheduledTask<TEnv extends ScheduledTaskEnv = ScheduledTa
   }
 
   /**
+   * How a caught error becomes the `errorMessage` written to the run record.
+   *
+   * The default is the error's own message, which is right for a console log and
+   * **wrong for a row a user reads back**. Run records are persisted and surfaced
+   * through an authenticated route, so a failure whose message carries a token, a
+   * bearer header or a signed URL writes credential material into the database and
+   * hands it to whoever loads the task-runs screen.
+   *
+   * A repo with that exposure overrides this and routes the value through its own
+   * redactor. The kit cannot do it here: `runtime` is the DI and platform layer
+   * with no dependency on the logging packages that carry those redaction rules,
+   * and taking one would invert the package graph.
+   *
+   * There was no seam for this before, so the only options were to accept the
+   * unredacted message or to keep a local copy of the whole Template Method — and
+   * five of the seven repos the file was converged from have exactly that
+   * redactor, so every one of them was carrying a duplicated base class.
+   */
+  protected describeFailure(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+  }
+
+  /**
    * Whether `handle` swallows a failure after recording it.
    *
    * `false`, so a failed task **throws** at the platform once its run record
@@ -184,7 +207,7 @@ abstract class AbstractScheduledTask<TEnv extends ScheduledTaskEnv = ScheduledTa
     } catch (error: unknown) {
       this.logger()('error', `[${this.constructor.name}] uncaught error`);
       if (recorder && runId) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = this.describeFailure(error);
         await recorder.failRun(runId, message).catch(() => {
           this.logger()('warn', `[${this.constructor.name}] failed to mark task run failed`);
         });

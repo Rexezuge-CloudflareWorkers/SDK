@@ -230,3 +230,69 @@ describe('TaskRegistry', () => {
     expect(new TaskRegistry().tasksForPhase(9)).toEqual([]);
   });
 });
+
+describe('describeFailure', () => {
+  /**
+  A task whose only job is to fail, so the recorded message is the only thing
+  under test.
+  */
+  class FailingTask extends AbstractScheduledTask {
+    public constructor(private readonly recorder: TaskRunRecorder) {
+      super();
+    }
+
+    protected override getTaskType(): string {
+      return 'failing_task';
+    }
+
+    protected override createRunRecorder(): TaskRunRecorder {
+      return this.recorder;
+    }
+
+    protected override swallowErrors(): boolean {
+      return true;
+    }
+
+    protected override handleScheduledTask(): Promise<void> {
+      throw new Error('boom');
+    }
+  }
+
+  it("writes the error's own message by default", async () => {
+    // The default is right for a console log and wrong for a row a user reads
+    // back, which is why the override below exists at all.
+    const recorder = recorderDouble();
+    await new FailingTask(recorder).handle(EVENT, ENV, CTX);
+    expect(recorder.calls).toContain('fail');
+  });
+
+  it('lets a consumer redact the message before it is persisted', async () => {
+    // The case the seam exists for: a failure message carrying a bearer token or
+    // a signed URL must not reach a row that `GET /user/processing/task-runs`
+    // hands back. A consumer with that exposure routes the value through its own
+    // redactor here.
+    const written: string[] = [];
+    class RedactingTask extends FailingTask {
+      protected override describeFailure(error: unknown): string {
+        const message = error instanceof Error ? error.message : String(error);
+        return message.replaceAll(/ya29\.\w+/g, 'ya29.[redacted]');
+      }
+    }
+
+    const recorder = recorderDouble({
+      failRun: async (_runId, errorMessage) => {
+        written.push(errorMessage);
+      },
+    });
+
+    class LeakyTask extends RedactingTask {
+      protected override handleScheduledTask(): Promise<void> {
+        throw new Error('refresh failed for ya29.a0AfH6');
+      }
+    }
+
+    await new LeakyTask(recorder).handle(EVENT, ENV, CTX);
+    expect(written[0]).toBe('refresh failed for ya29.[redacted]');
+    expect(written[0]).not.toContain('a0AfH6');
+  });
+});
