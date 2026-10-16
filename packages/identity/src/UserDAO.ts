@@ -52,16 +52,25 @@ export class UserDAO extends BaseDAO {
    * then resolves to nothing, and the opaque-anchor retry fails the same way.
    * Making the no-op detectable here is what keeps registration from stranding
    * an address forever.
+   *
+   * The row is stamped `updated_at = now` as well as `created_at`. The canonical
+   * schema types `updated_at` nullable, so this is additive there — but a
+   * consumer whose `updated_at` is `NOT NULL` cannot relax that through `ALTER`,
+   * and D1 forbids the table rebuild that could, so omitting the column left
+   * `createUser` — and with it the whole identity package — unusable on such a
+   * schema. A created account is a touched account: there is no window in which
+   * the row exists with no update timestamp.
    */
   public async createUser(input: { anchor: string; loginEmail: string; now: number }): Promise<string | null> {
     const anchor = input.anchor.toLowerCase();
     const loginEmail = input.loginEmail.toLowerCase();
     const id = newAccountId();
-    await this.run('INSERT INTO users (email, created_at, id, current_email) VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING', [
+    await this.run('INSERT INTO users (email, created_at, id, current_email, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING', [
       anchor,
       input.now,
       id,
       loginEmail,
+      input.now,
     ]);
     const row = await this.getByEmail(anchor);
     return row?.id === id ? id : null;

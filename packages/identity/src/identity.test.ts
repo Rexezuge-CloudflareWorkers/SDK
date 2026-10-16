@@ -123,7 +123,7 @@ class FakeDb {
       current_email: params[3] as string,
       created_at: params[1] as number,
       username: null,
-      updated_at: null,
+      updated_at: params[4] as number,
     });
     return { success: true };
   }
@@ -410,6 +410,11 @@ describe('UserDAO', () => {
     await expect(dao.createUser({ anchor: 'A@X.com', loginEmail: 'A@X.com', now: NOW })).resolves.toMatch(/^usr_/);
     const row = await dao.getByEmail('a@x.com');
     expect(row?.current_email).toBe('a@x.com');
+    // A created row carries its creation moment in `updated_at` as well as
+    // `created_at`. The canonical column is nullable, but a consumer schema with
+    // `updated_at NOT NULL` — and the retention heartbeat that reads it — depends
+    // on the stamp, and omitting it made `createUser` fail there outright.
+    expect(row?.updated_at).toBe(NOW);
     await dao.setCurrentEmail(row!.id!, 'b@x.com', NOW + 1);
     expect((await dao.getById(row!.id!))?.current_email).toBe('b@x.com');
     await dao.setUsername(row!.id!, 'Alice2', NOW);
