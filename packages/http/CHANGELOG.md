@@ -1,5 +1,12 @@
 # @rexezuge/http
 
+## 1.9.1
+
+### Patch Changes
+
+- @rexezuge/errors@1.9.1
+  - @rexezuge/shared@1.9.1
+
 ## 1.9.0
 
 ### Patch Changes
