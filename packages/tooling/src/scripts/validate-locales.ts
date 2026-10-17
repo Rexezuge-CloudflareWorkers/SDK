@@ -1,3 +1,4 @@
+import { isEntrypoint } from './lib/entrypoint.ts';
 /**
  * Validate that every locale bundle carries exactly the base locale's keys.
  *
@@ -36,7 +37,6 @@
  *   the kit ships and the SPA bundles the repos do.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 
 /**
@@ -771,6 +771,6 @@ export type { LocaleProblem, LocaleReport, LocaleShape };
 // an unconditional call is the same guard Durable-DAV's init-secrets.ts uses, and
 // it is what keeps the rule modules importable — which is the whole reason they are
 // separate modules in the first place.
-if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isEntrypoint(import.meta.url)) {
   process.exit(validateLocalesCli(process.argv.slice(2)));
 }
