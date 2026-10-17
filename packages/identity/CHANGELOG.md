@@ -1,5 +1,13 @@
 # @rexezuge/identity
 
+## 1.9.2
+
+### Patch Changes
+
+- @rexezuge/d1@1.9.2
+  - @rexezuge/errors@1.9.2
+  - @rexezuge/shared@1.9.2
+
 ## 1.9.1
 
 ### Patch Changes
