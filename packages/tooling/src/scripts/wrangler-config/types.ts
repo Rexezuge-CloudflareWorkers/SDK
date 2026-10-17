@@ -54,8 +54,9 @@ export const DEFAULT_WORKER_NAME = process.env['WRANGLER_WORKER_NAME'] ?? 'my-wo
 /**
  * KV bindings a deployment always needs, and the namespace each maps to.
  *
- * A consumer whose worker has no cache binding passes an empty map; a consumer
- * with one names it here or leaves the derived `<worker>-<BINDING>` convention.
+ * The default for `provisionWranglerResources`'s `namespaceNames` argument: a
+ * consumer whose worker has no cache binding passes an empty map, and one whose
+ * namespaces predate this convention passes its own map.
  */
 export const DEFAULT_KV_NAMESPACE_NAMES: Record<string, string> = {
   CACHE: `${DEFAULT_WORKER_NAME}-cache`,

@@ -11,6 +11,7 @@
  */
 
 import { copyFileSync, readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 import { applyEdits, modify, parse } from 'jsonc-parser';
 import { CONFIG_PATH, TEMPLATE_PATH, type WranglerConfig } from './types.ts';
 
@@ -91,6 +92,14 @@ function parseJsonObject(raw: string | undefined, name: string, expected: string
 }
 
 /**
+ * A path as a log line should name it: relative to the working directory the
+ * script was invoked from, which is the repo root in every consumer.
+ */
+function displayPath(filePath: string): string {
+  return path.relative(process.cwd(), filePath) || filePath;
+}
+
+/**
  * Materialize the config: the repository variable when it is set, otherwise the
  * committed template.
  */
@@ -102,7 +111,7 @@ export function prepareConfigFile(): void {
     return;
   }
   copyFileSync(TEMPLATE_PATH, CONFIG_PATH);
-  console.log('WRANGLER_JSONC is empty; copied apps/api/wrangler.template.jsonc to wrangler.jsonc.');
+  console.log(`WRANGLER_JSONC is empty; copied ${displayPath(TEMPLATE_PATH)} to ${displayPath(CONFIG_PATH)}.`);
 }
 
 /**
@@ -122,7 +131,7 @@ export function ensureMinimumConfigVersion(): void {
   const currentVersion = config.$version;
   if (typeof currentVersion !== 'number' || currentVersion < template.$minimumVersion) {
     throw new Error(
-      `wrangler.jsonc version (${typeof currentVersion === 'number' ? currentVersion : 'missing'}) is below minimum template version (${template.$minimumVersion}). Regenerate it from apps/api/wrangler.template.jsonc.`,
+      `wrangler.jsonc version (${typeof currentVersion === 'number' ? currentVersion : 'missing'}) is below minimum template version (${template.$minimumVersion}). Regenerate it from ${displayPath(TEMPLATE_PATH)}.`,
     );
   }
 }

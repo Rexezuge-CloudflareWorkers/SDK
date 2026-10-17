@@ -77,14 +77,27 @@ export function listKVNamespaces(): KVNamespace[] {
 }
 
 /**
-The namespace name a binding's namespace is created under.
-*/
-export function getKVNamespaceName(config: WranglerConfig, binding: string): string {
-  return DEFAULT_KV_NAMESPACE_NAMES[binding] ?? `${config.name ?? DEFAULT_WORKER_NAME}-${binding.toLowerCase()}`;
+ * The namespace name a binding's namespace is created under.
+ *
+ * `namespaceNames` is the binding → namespace map, defaulting to the kit's
+ * `DEFAULT_KV_NAMESPACE_NAMES`. A consumer whose namespaces predate that convention
+ * passes its own, so provisioning finds the namespace that already holds the data
+ * instead of creating an empty one beside it and binding the worker to the new one.
+ */
+export function getKVNamespaceName(
+  config: WranglerConfig,
+  binding: string,
+  namespaceNames: Record<string, string> = DEFAULT_KV_NAMESPACE_NAMES,
+): string {
+  return namespaceNames[binding] ?? `${config.name ?? DEFAULT_WORKER_NAME}-${binding.toLowerCase()}`;
 }
 
-export function ensureKVNamespace(config: WranglerConfig, binding: string): Provisioned {
-  const namespaceName = getKVNamespaceName(config, binding);
+export function ensureKVNamespace(
+  config: WranglerConfig,
+  binding: string,
+  namespaceNames: Record<string, string> = DEFAULT_KV_NAMESPACE_NAMES,
+): Provisioned {
+  const namespaceName = getKVNamespaceName(config, binding, namespaceNames);
   const candidateNames = new Set([namespaceName, `${config.name ?? DEFAULT_WORKER_NAME}-${binding}`, binding]);
   let namespace = listKVNamespaces().find((candidate) => {
     const candidateName = candidate.title ?? candidate.name;
@@ -106,8 +119,8 @@ export function ensureKVNamespace(config: WranglerConfig, binding: string): Prov
 /**
 The bindings a deployment always needs, whether or not a custom config lists them.
 */
-export function getRequiredKvBindings(): string[] {
-  return Object.keys(DEFAULT_KV_NAMESPACE_NAMES);
+export function getRequiredKvBindings(namespaceNames: Record<string, string> = DEFAULT_KV_NAMESPACE_NAMES): string[] {
+  return Object.keys(namespaceNames);
 }
 
 /**
@@ -116,9 +129,13 @@ export function getRequiredKvBindings(): string[] {
  * A config supplied through `WRANGLER_JSONC` is edited by hand and drifts; without
  * this the worker starts with an unbound `CACHE` and fails on the first read.
  */
-export function ensureRequiredKvBindings(content: string, config: WranglerConfig): string {
+export function ensureRequiredKvBindings(
+  content: string,
+  config: WranglerConfig,
+  namespaceNames: Record<string, string> = DEFAULT_KV_NAMESPACE_NAMES,
+): string {
   const existing = new Set((config.kv_namespaces ?? []).map((namespace) => namespace.binding).filter((binding) => binding !== undefined));
-  const missing = getRequiredKvBindings().filter((binding) => !existing.has(binding));
+  const missing = getRequiredKvBindings(namespaceNames).filter((binding) => !existing.has(binding));
   if (missing.length === 0) {
     return content;
   }
@@ -256,15 +273,15 @@ function provisionD1Databases(content: string, config: WranglerConfig, created: 
 /**
 Replace each placeholder KV namespace id with a real one.
 */
-function provisionKvNamespaces(content: string, config: WranglerConfig, created: string[]): string {
+function provisionKvNamespaces(content: string, config: WranglerConfig, created: string[], namespaceNames: Record<string, string>): string {
   let patched = content;
   for (const [index, namespace] of config.kv_namespaces?.entries() ?? []) {
     if (namespace.id !== DEFAULT_HEX_ID) continue;
     if (namespace.binding === undefined || namespace.binding === '') {
       throw new Error(`KV namespace at index ${index} has a placeholder id but no binding.`);
     }
-    const resolved = ensureKVNamespace(config, namespace.binding);
-    const namespaceName = getKVNamespaceName(config, namespace.binding);
+    const resolved = ensureKVNamespace(config, namespace.binding, namespaceNames);
+    const namespaceName = getKVNamespaceName(config, namespace.binding, namespaceNames);
     if (resolved.created) {
       created.push(`kv:${namespaceName}`);
     }
@@ -302,16 +319,21 @@ function provisionSecretStore(content: string, config: WranglerConfig, created: 
  * Create every resource the config names, and write the real ids over the
  * placeholders.
  *
+ * `namespaceNames` is the binding → namespace map KV provisioning reconciles
+ * against, defaulting to the kit's `DEFAULT_KV_NAMESPACE_NAMES`; a consumer whose
+ * namespaces were named before that convention passes its own so the existing
+ * namespace is found instead of a second empty one being created.
+ *
  * Returns what it had to create, as `<kind>:<name>` — returned rather than logged,
  * because a caller acts on it: the backup workflow refuses to export a D1 database
  * that appears here, since one created moments ago holds no user data and an empty
  * dump uploaded on schedule is a false sense of safety.
  */
-export function provisionWranglerResources(): string[] {
+export function provisionWranglerResources(namespaceNames: Record<string, string> = DEFAULT_KV_NAMESPACE_NAMES): string[] {
   const created: string[] = [];
   let { content, config } = readConfig();
 
-  content = ensureRequiredKvBindings(content, config);
+  content = ensureRequiredKvBindings(content, config, namespaceNames);
   config = parse(content) as WranglerConfig;
 
   // Each of the three below re-parses before it patches, because each writes into
@@ -322,7 +344,7 @@ export function provisionWranglerResources(): string[] {
   content = provisionD1Databases(content, config, created);
   config = parse(content) as WranglerConfig;
 
-  content = provisionKvNamespaces(content, config, created);
+  content = provisionKvNamespaces(content, config, created, namespaceNames);
   config = parse(content) as WranglerConfig;
 
   content = provisionSecretStore(content, config, created);
