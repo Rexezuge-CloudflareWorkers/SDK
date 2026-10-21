@@ -40,4 +40,12 @@ export {
 } from './kv/index.ts';
 export type { KvDomainDef, KvDomainName, KvDomains, KvNamespaceLike, KvPutOptions, SubrequestMeterLike } from './kv/index.ts';
 export { AbstractScheduledTask, TaskRegistry } from './scheduled/index.ts';
-export type { ApplicationRunHandle, ScheduledTaskEnv, TaskLogger, TaskRunRecorder, TaskRunSummary } from './scheduled/index.ts';
+export type {
+  ApplicationRunHandle,
+  ExecutionContextLike,
+  ScheduledControllerLike,
+  ScheduledTaskEnv,
+  TaskLogger,
+  TaskRunRecorder,
+  TaskRunSummary,
+} from './scheduled/index.ts';
