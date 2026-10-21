@@ -299,4 +299,12 @@ class TaskRegistry {
 }
 
 export { AbstractScheduledTask, TaskRegistry };
-export type { ApplicationRunHandle, ScheduledTaskEnv, TaskLogger, TaskRunRecorder, TaskRunSummary };
+export type {
+  ApplicationRunHandle,
+  ExecutionContextLike,
+  ScheduledControllerLike,
+  ScheduledTaskEnv,
+  TaskLogger,
+  TaskRunRecorder,
+  TaskRunSummary,
+};
