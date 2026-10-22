@@ -213,7 +213,15 @@ export function defineRepoLintConfig(options: RepoLintConfigOptions): FlatConfig
     // `no-nested-assignment` and `no-all-duplicated-branches` linted as errors
     // in every consumer. The two presets do not share rule names, so their
     // relative order decides nothing.
-    asConfig(unicorn.configs['flat/recommended']),
+    //
+    // The unicorn preset is read from whichever spelling the installed major
+    // publishes. v78 dropped the `flat/`-prefixed aliases and exports the flat
+    // configs directly, so `configs['flat/recommended']` is `undefined` there —
+    // and a config object built around it is `undefined` too, which ESLint
+    // rejects outright with "Unexpected undefined config". The fallback is
+    // what makes the factory work on both majors rather than only the one the
+    // kit was written against.
+    asConfig(unicorn.configs['flat/recommended'] ?? unicorn.configs.recommended),
     asConfig(sonarjsConfigs.recommended),
     {
       rules: asRules(UNICORN_RULES),
