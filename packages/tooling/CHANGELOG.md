@@ -1,5 +1,46 @@
 # @rexezuge/tooling
 
+## 1.9.3
+
+### Patch Changes
+
+- e5d3c72: `spaShellEmbedPlugin` resolves a relative `distIndex` against the root, and
+  `ProxyEntry` can say it proxies a WebSocket.
+
+  **The relative `distIndex`.** It resolved against the process's working
+  directory rather than the `root` the plugin was given, and under
+  `pnpm --filter … build` the working directory is the _package_ directory
+  rather than the repository root — so a consumer naming the built file
+  relative to the root it had just been given wrote nowhere. The plugin then
+  reported "dist/index.html not found, skipping", which is also what a
+  genuinely fresh checkout prints on its first build, so the two are
+  indistinguishable in the log and the worker keeps serving the _previous_
+  shell: the SPA ships yesterday's JavaScript with nothing in the build log
+  to explain it. A relative path now resolves against the root, exactly as
+  `path` already did.
+
+  **The WebSocket proxy.** `ProxyEntry` had no way to say that a path carries a
+  WebSocket. Vite's `server.proxy` needs `ws: true` for such an entry, and
+  without it the handshake is proxied as an ordinary request and the socket
+  never opens — so a consumer with a live-update or realtime endpoint could not
+  express its dev proxy through this table at all.
+
+- e5d3c72: `defineRepoLintConfig` works on `eslint-plugin-unicorn` v78.
+
+  v78 dropped the `flat/`-prefixed aliases and exports the flat configs
+  directly, so `configs['flat/recommended']` is `undefined` there — and the
+  config object built around it is `undefined` too, which ESLint rejects
+  outright with "Unexpected undefined config". The factory therefore only
+  worked on the major it was written against, while the peer range said
+  `^76.0.0` and every repo in the family had moved to 78.
+
+  The preset is now read from whichever spelling the installed major
+  publishes, and the peer range admits both. The rest of the config is
+  unchanged: this is the same rule set, reachable on the version the family
+  actually runs.
+
+- @rexezuge/d1@1.9.3
+
 ## 1.9.2
 
 ### Patch Changes
