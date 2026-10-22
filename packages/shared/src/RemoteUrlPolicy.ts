@@ -210,9 +210,16 @@ function stripTrailingDot(host: string): string {
  * questions. It was module-private, which left one consumer re-implementing this
  * exact line beside a kit call that answered the other half — two predicates for
  * one decision, in the same function, free to drift.
+ *
+ * **Case-insensitive**, because DNS is: `LOCALHOST` names the same host as
+ * `localhost`, and a check that refused one spelling and accepted the other
+ * was a hole rather than a rule. The set is lowercase, so the host is
+ * normalized here rather than at every call site — the same reason
+ * `isPrivateOrInternalHost` normalizes before it asks.
  */
 function isLocalhostName(host: string): boolean {
-  return BLOCKED_HOSTNAMES.has(host) || host.endsWith('.localhost');
+  const lower = host.toLowerCase();
+  return BLOCKED_HOSTNAMES.has(lower) || lower.endsWith('.localhost');
 }
 
 /**

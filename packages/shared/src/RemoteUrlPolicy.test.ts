@@ -3,6 +3,7 @@ import {
   normalizeRemoteUrl,
   resolveRedirectUrl,
   parseAllowedHosts,
+  isLocalhostName,
   isPrivateOrInternalHost,
   RemoteUrlRejectedError,
 } from './RemoteUrlPolicy.ts';
@@ -144,6 +145,22 @@ describe('isPrivateOrInternalHost (merged SsrfHosts predicate)', () => {
   it('allows public hosts, including a trailing dot and a public IPv6 literal', () => {
     for (const host of ['dav.example.com', 'example.com.', '8.8.8.8', '172.32.0.1', '2001:4860:4860::8888']) {
       expect(isPrivateOrInternalHost(host), host).toBe(false);
+    }
+  });
+});
+
+describe('isLocalhostName', () => {
+  it('answers about the host, not about its spelling', () => {
+    // DNS is case-insensitive, so `LOCALHOST` names the same host as
+    // `localhost` and resolves to loopback.
+    for (const host of ['localhost', 'LOCALHOST', 'LocalHost', 'localhost.localdomain', 'foo.localhost', 'FOO.LOCALHOST']) {
+      expect(isLocalhostName(host), host).toBe(true);
+    }
+  });
+
+  it('leaves an ordinary internet host alone', () => {
+    for (const host of ['example.com', 'notlocalhost.example.com', 'localhost.example.com']) {
+      expect(isLocalhostName(host), host).toBe(false);
     }
   });
 });
