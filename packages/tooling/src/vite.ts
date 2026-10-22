@@ -41,6 +41,16 @@ export interface ProxyEntry {
   readonly target: string;
   readonly changeOrigin?: boolean;
   readonly bypass?: (request: { headers: Record<string, string | string[] | undefined> }) => string | undefined;
+  /**
+   * Proxy WebSocket upgrades on this path.
+   *
+   * Vite's `server.proxy` needs `ws: true` for an entry that carries a
+   * WebSocket, and the entry has no other way to say so: without it the
+   * handshake is proxied as an ordinary request and the socket never opens.
+   * A consumer with a live-update or realtime endpoint therefore could not
+   * express its dev proxy through this table at all.
+   */
+  readonly ws?: boolean;
 }
 
 /**
@@ -70,6 +80,17 @@ export interface SpaShellTarget {
    *
    * Defaults to `dist/index.html` under the same root. Vite's `closeBundle` runs
    * after the bundle is written, so this is the file the build just produced.
+   *
+   * A **relative** path resolves against {@link SpaShellTarget.root}, exactly as
+   * {@link SpaShellTarget.path} does. It used to resolve against the process's
+   * working directory, which under `pnpm --filter … build` is the *package*
+   * directory rather than the repository root — so a consumer naming the file
+   * relative to the root it had just been given wrote nowhere, and the plugin
+   * reported "dist/index.html not found, skipping". That message is also what a
+   * genuinely fresh checkout prints on its first build, so the two are
+   * indistinguishable in the log, and the worker keeps serving the *previous*
+   * shell: the SPA ships yesterday's JavaScript with nothing in the build log
+   * to explain it.
    */
   readonly distIndex?: string | URL;
 }
@@ -172,8 +193,17 @@ export function spaShellEmbedPlugin(target: SpaShellTarget): Plugin & { closeBun
       // `pnpm --filter @scope/web build`, which is how every consumer runs it.
       const root = toDirUrl(target.root ?? process.cwd());
       const outputPath = fileURLToPath(new URL(target.path, root));
+      // A relative `distIndex` resolves against the root, like `path` does —
+      // not against the process's working directory, which under
+      // `pnpm --filter … build` is the package directory.
       const indexPath =
-        target.distIndex === undefined ? fileURLToPath(new URL('dist/index.html', root)) : fileURLToPath(toUrl(target.distIndex));
+        target.distIndex === undefined
+          ? fileURLToPath(new URL('dist/index.html', root))
+          : fileURLToPath(
+              typeof target.distIndex === 'string' && !/^[a-z][a-z\d+\-.]*:/i.test(target.distIndex)
+                ? new URL(target.distIndex, root)
+                : toUrl(target.distIndex),
+            );
 
       if (!existsSync(indexPath)) {
         console.warn('spa-shell-embed: dist/index.html not found, skipping');
