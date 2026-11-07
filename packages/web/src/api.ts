@@ -98,6 +98,14 @@ interface ApiRequestInit {
   body?: unknown;
   headers?: HeadersInit;
   signal?: AbortSignal | null;
+  /**
+  Passed through to `fetch`; omitted leaves the browser default.
+
+  It is a standard `RequestInit` field, so a caller that needs `'no-store'`
+  (an auth probe that must never read a cached page) or `'reload'` does not have
+  to reach around the client to set it.
+  */
+  cache?: RequestCache;
 }
 
 interface CreateApiClientOptions {
@@ -349,6 +357,9 @@ function createApiClient(fetchFn: FetchFn, options: CreateApiClientOptions = {})
     }
     if (init.signal !== undefined && init.signal !== null) {
       requestInit.signal = init.signal;
+    }
+    if (init.cache !== undefined) {
+      requestInit.cache = init.cache;
     }
 
     const context = `${method} ${url}`;
