@@ -230,6 +230,15 @@ describe('createApiClient', () => {
     expect(init.method).toBe('DELETE');
     expect(init.signal).toBe(controller.signal);
   });
+
+  it('forwards a caller cache mode through request', async () => {
+    const fetchMock = vi.fn<FetchFn>(async () => jsonResponse({}));
+    const client = createApiClient(fetchMock);
+
+    await client.request<unknown>('/thing', { cache: 'no-store' });
+
+    expect(recordedCall(fetchMock).init.cache).toBe('no-store');
+  });
 });
 
 describe('buildQuery', () => {

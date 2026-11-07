@@ -22,6 +22,10 @@ implements the three checks its header advertised. Full detail in
 
 ### `@rexezuge/web`
 
+- **The API client is framework-free in practice.** `createApiClient` forwards a
+  caller's `cache` mode to `fetch` (an auth probe needs `no-store`), and the UI
+  peers (`react`, `react-dom`, `lucide-react`) are optional, so a consumer that
+  imports only `@rexezuge/web/api` no longer needs a React toolchain installed.
 - **Nine more components converged** from the family's copies: `AppPage`,
   `PageHeaderCard`, `ContextBar`, `Unauthorized`, `NoticeBar`, `LanguageSelector`,
   `RefreshButton`, `ReadOnlyField`, `TypeToConfirmModal`, plus the
