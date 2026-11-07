@@ -1,5 +1,9 @@
 # @rexezuge/i18n
 
+## 1.9.4
+
+No changes in this release.
+
 ## 1.9.3
 
 No changes in this release.
