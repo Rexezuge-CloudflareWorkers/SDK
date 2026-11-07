@@ -1,5 +1,15 @@
 # @rexezuge/web
 
+## 1.9.4
+
+### Patch Changes
+
+- d1a61b3: `createApiClient` forwards a caller's `cache` mode to `fetch`, and the UI peers
+  (`react`, `react-dom`, `lucide-react`) are optional so importing the
+  framework-free API client does not require a UI toolchain.
+- @rexezuge/errors@1.9.4
+  - @rexezuge/shared@1.9.4
+
 ## 1.9.3
 
 ### Patch Changes

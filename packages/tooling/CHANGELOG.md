@@ -1,5 +1,11 @@
 # @rexezuge/tooling
 
+## 1.9.4
+
+### Patch Changes
+
+- @rexezuge/d1@1.9.4
+
 ## 1.9.3
 
 ### Patch Changes
